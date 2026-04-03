@@ -13,11 +13,15 @@ async function getPolicy(slug: string) {
 }
 
 export async function generateStaticParams() {
-  const policies = await prisma.policy.findMany({
-    where:  { status: 'PUBLISHED' },
-    select: { slug: true },
-  })
-  return policies.map(p => ({ slug: p.slug }))
+  try {
+    const policies = await prisma.policy.findMany({
+      where:  { status: 'PUBLISHED' },
+      select: { slug: true },
+    })
+    return policies.map(p => ({ slug: p.slug }))
+  } catch (e) {
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
