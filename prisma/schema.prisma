@@ -116,4 +116,9 @@ model FcmToken {
   createdAt DateTime @default(now())
 }
 
-enum PolicyStatus { DRAFT REVIEW PUBLISHED ARCHIVED }
+enum PolicyStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
