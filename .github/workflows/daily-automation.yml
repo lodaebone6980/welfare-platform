@@ -1,0 +1,106 @@
+name: Daily Full Automation
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # 오전 11시 KST — 크롤러
+    - cron: '0 0 * * *'   # 오전 9시 KST  — Threads 발행
+    - cron: '0 10 * * *'  # 오후 7시 KST  — Threads 발행
+    - cron: '0 17 * * *'  # 오전 2시 KST  — 광고 에이전트
+    - cron: '0 15 * * *'  # 자정 KST       — 성과 수집
+  workflow_dispatch:
+
+jobs:
+  # 1. 크롤러 — 공공API + 뉴스 수집 + WP 포스팅
+  content-pipeline:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 2 * * *' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 패키지 설치
+        run: |
+          pip install feedparser newspaper3k openai \
+            python-wordpress-xmlrpc httpx beautifulsoup4 \
+            schedule sqlite3-api Pillow requests
+      - name: 크롤러 실행
+        run: python crawler/main.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+
+  # 2. Threads 자동 발행 (오전)
+  threads-morning:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 0 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - name: Threads 발행
+        run: npx tsx scripts/threads-post.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+
+  # 3. Threads 자동 발행 (저녁)
+  threads-evening:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 10 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - name: Threads 발행
+        run: npx tsx scripts/threads-post.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+
+  # 4. 구글 광고 에이전트
+  ads-agent:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 17 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - name: 광고 자동 최적화
+        run: npx tsx scripts/ads-agent.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GOOGLE_ADS_CLIENT_ID: ${{ secrets.GOOGLE_ADS_CLIENT_ID }}
+          GOOGLE_ADS_CLIENT_SECRET: ${{ secrets.GOOGLE_ADS_CLIENT_SECRET }}
+          GOOGLE_ADS_DEV_TOKEN: ${{ secrets.GOOGLE_ADS_DEV_TOKEN }}
+          GOOGLE_ADS_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_CUSTOMER_ID }}
+          GOOGLE_ADS_REFRESH_TOKEN: ${{ secrets.GOOGLE_ADS_REFRESH_TOKEN }}
+
+  # 5. 성과 수집 + REWARD 판정 업데이트
+  verdict-update:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 15 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - name: 성과 수집 및 판정
+        run: npx tsx scripts/update-verdicts.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
