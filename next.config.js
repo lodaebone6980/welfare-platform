@@ -1,6 +1,5 @@
-import type { NextConfig } from 'next'
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   // WP → Next.js 이전 시 URL 301 리다이렉트 (SEO 손실 없음)
   async redirects() {
     return [
@@ -18,12 +17,12 @@ const nextConfig: NextConfig = {
       // WP ?p=ID → wp-redirect 핸들러
       {
         source:      '/',
-        has:         [{ type: 'query', key: 'p', value: '(?<id>.*)' }],
+        has:         [{ type: 'query', key: 'p', value: '(?<id>.+)' }],
         destination: '/wp-redirect/:id',
       },
       {
         source:      '/',
-        has:         [{ type: 'query', key: 'page_id', value: '(?<id>.*)' }],
+        has:         [{ type: 'query', key: 'page_id', value: '(?<id>.+)' }],
         destination: '/wp-redirect/:id',
       },
     ]
@@ -38,10 +37,10 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // 외부 패키지 서버 컴포넌트에서 번들 제외
+  // 일부 패키지 서버 컴포넌트에서 번들 제외
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client'],
   },
 }
 
-export default nextConfig
+module.exports = nextConfig
