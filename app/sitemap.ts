@@ -10,11 +10,16 @@ const GEO_REGIONS = [
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const policies = await prisma.policy.findMany({
-    where:   { status: 'PUBLISHED' },
-    select:  { slug: true, updatedAt: true, priority: true },
-    orderBy: { updatedAt: 'desc' },
-  })
+  let policies: any[] = []
+  try {
+    policies = await prisma.policy.findMany({
+      where:   { status: 'PUBLISHED' },
+      select:  { slug: true, updatedAt: true, priority: true },
+      orderBy: { updatedAt: 'desc' },
+    })
+  } catch (e) {
+    policies = []
+  }
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL,              lastModified: new Date(), changeFrequency: 'daily',  priority: 1.0 },
