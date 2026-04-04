@@ -74,7 +74,7 @@ model Category {
   displayOrder Int      @default(0)
   policies     Policy[]
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  updatedAt    DateTime @default(now()) @updatedAt
 }
 
 model Faq {
