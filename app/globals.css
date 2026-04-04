@@ -2,9 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui,
-    Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo',
-    'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji',
-    'Segoe UI Symbol', sans-serif;
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply text-gray-900 antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  .animate-slideDown {
+    animation: slideDown 0.2s ease-out;
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+/* Prose overrides for policy content */
+.prose h2 {
+  @apply text-lg font-bold mt-6 mb-3 pb-2 border-b border-gray-100;
+}
+.prose h3 {
+  @apply text-base font-semibold mt-4 mb-2;
+}
+.prose p {
+  @apply text-sm leading-relaxed mb-3;
+}
+.prose ul, .prose ol {
+  @apply text-sm pl-5 mb-3;
+}
+.prose li {
+  @apply mb-1;
+}
+.prose a {
+  @apply text-blue-600 no-underline hover:underline;
+}
+.prose table {
+  @apply text-sm w-full border-collapse;
+}
+.prose th, .prose td {
+  @apply border border-gray-200 px-3 py-2 text-left;
+}
+.prose th {
+  @apply bg-gray-50 font-semibold;
 }
