@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && prisma db push --skip-generate && next build",
     "start": "next start",
     "lint": "next lint",
     "db:generate": "prisma generate",
@@ -13,7 +13,9 @@
     "db:studio": "prisma studio",
     "threads:post": "tsx scripts/threads-post.ts",
     "threads:sync": "tsx scripts/update-verdicts.ts",
-    "ads:agent": "tsx scripts/ads-agent.ts"
+    "ads:agent": "tsx scripts/ads-agent.ts",
+    "db:push": "prisma db push",
+    "seed:bulk": "tsx scripts/bulk-seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
