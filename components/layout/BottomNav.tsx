@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const tabs = [
-  { href: '/', label: '홈', icon: '🏠', activeIcon: '🏠' },
-  { href: '/welfare/search', label: '검색', icon: '🔍', activeIcon: '🔎' },
-  { href: '/welfare/categories', label: '카테고리', icon: '📋', activeIcon: '📋' },
-  { href: '/more', label: '더보기', icon: '☰', activeIcon: '☰' },
+  { href: '/', label: 'í', icon: 'ð ', activeIcon: 'ð ' },
+  { href: '/welfare/search', label: 'ê²ì', icon: 'ð', activeIcon: 'ð' },
+  { href: '/welfare/categories', label: 'ì¹´íê³ ë¦¬', icon: 'ð', activeIcon: 'ð' },
+  { href: '/more', label: 'ëë³´ê¸°', icon: 'â°', activeIcon: 'â°' },
 ];
 
 export default function BottomNav() {
