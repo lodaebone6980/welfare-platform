@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import PolicyCard from '@/components/home/PolicyCard';
+import CategoryIcon from '@/components/ui/CategoryIcon';
 
 export const metadata: Metadata = {
   title: '정책지금 - 나에게 맞는 정부 지원금 찾기',
@@ -49,7 +50,7 @@ async function getCategories() {
   });
 }
 
-export const revalidate = 3600; // ISR: 1시간
+export const revalidate = 60; // ISR: 1시간
 
 export default async function HomePage() {
   const [stats, latestPolicies, popularPolicies, categories] = await Promise.all([
@@ -104,7 +105,7 @@ export default async function HomePage() {
             {categories.map(cat => (
               <Link key={cat.slug} href={`/welfare/categories/${cat.slug}`}
                 className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                <span className="text-2xl">{cat.icon || '📌'}</span>
+                <CategoryIcon slug={cat.slug} size={32} withBg />
                 <span className="text-[10px] md:text-xs text-gray-600 text-center leading-tight">{cat.name}</span>
               </Link>
             ))}
