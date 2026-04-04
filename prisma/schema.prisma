@@ -9,111 +9,126 @@ datasource db {
 }
 
 model Policy {
-  id           Int          @id @default(autoincrement())
-  slug         String       @unique
-  title        String
-  content      String       @db.Text
-  excerpt      String?
-  focusKeyword String?
-  metaDesc     String?
-  status       PolicyStatus @default(DRAFT)
-  categoryId   Int?
-  category     Category?    @relation(fields: [categoryId], references: [id])
-  geoRegion    String?
-  geoDistrict  String?
-  featuredImg  String?
-  applyUrl     String?
-  viewCount    Int          @default(0)
-  wpId         Int?         @unique
-  priority     Float?
-  publishedAt  DateTime?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  faqs         Faq[]
-  threadsPosts ThreadsPost[]
+  id                Int          @id @default(autoincrement())
+  slug              String       @unique
+  title             String
+  content           String       @db.Text
+  excerpt           String?
+  description       String?      @db.Text
+  eligibility       String?      @db.Text
+  applicationMethod String?      @db.Text
+  requiredDocuments String?      @db.Text
+  deadline          String?
+  focusKeyword      String?
+  metaDesc          String?
+  status            PolicyStatus @default(DRAFT)
+  categoryId        Int?
+  category          Category?    @relation(fields: [categoryId], references: [id])
+  geoRegion         String?
+  geoDistrict       String?
+  featuredImg       String?
+  thumbnail         String?
+  applyUrl          String?
+  externalId        String?      @unique
+  externalUrl       String?
+  viewCount         Int          @default(0)
+  views             Int          @default(0)
+  wpId              Int?         @unique
+  priority          Float?
+  publishedAt       DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  tags              String?
+  faqs              Faq[]
+  threadsPosts      ThreadsPost[]
+  socialPosts       SocialPost[]
 
   @@index([status, publishedAt])
   @@index([geoRegion])
+  @@index([status, categoryId])
+  @@index([externalId])
 }
 
 model ThreadsPost {
-  id          Int      @id @default(autoincrement())
-  policyId    Int?
-  policy      Policy?  @relation(fields: [policyId], references: [id])
-  content     String   @db.Text
-  format      String
-  threadsId   String?
-  views       Int      @default(0)
-  likes       Int      @default(0)
-  comments    Int      @default(0)
-  shares      Int      @default(0)
-  verdict     String?
-  scheduledAt DateTime?
-  publishedAt DateTime?
-  status      String   @default("DRAFT")
-  createdAt   DateTime @default(now())
-
-  @@index([format])
-  @@index([verdict])
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  format    String   @default("text")
+  threadsId String?  @unique
+  views     Int      @default(0)
+  likes     Int      @default(0)
+  comments  Int      @default(0)
+  shares    Int      @default(0)
+  verdict   String?
+  status    String   @default("draft")
+  policyId  Int?
+  policy    Policy?  @relation(fields: [policyId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Category {
-  id       Int      @id @default(autoincrement())
-  name     String
-  slug     String   @unique
-  policies Policy[]
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  slug         String   @unique
+  icon         String?
+  displayOrder Int      @default(0)
+  policies     Policy[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Faq {
-  id       Int    @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
   question String
-  answer   String @db.Text
-  policyId Int
-  policy   Policy @relation(fields: [policyId], references: [id])
-  order    Int    @default(0)
+  answer   String  @db.Text
+  policyId Int?
+  policy   Policy? @relation(fields: [policyId], references: [id])
+  order    Int     @default(0)
 }
 
 model ApiSource {
-  id          Int      @id @default(autoincrement())
-  name        String
-  url         String
-  type        String
-  status      String   @default("ACTIVE")
-  lastSuccess DateTime?
-  lastError   String?
-  todayCount  Int      @default(0)
-  totalCount  Int      @default(0)
-  createdAt   DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  url          String
+  type         String   @default("REST")
+  status       String   @default("active")
+  lastSuccess  DateTime?
+  lastError    DateTime?
+  todayCount   Int      @default(0)
+  totalCount   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model UrlMapping {
-  id        Int      @id @default(autoincrement())
-  wpId      Int      @unique
-  oldSlug   String
-  newSlug   String
-  createdAt DateTime @default(now())
+  id      Int    @id @default(autoincrement())
+  wpId    Int    @unique
+  oldSlug String
+  newSlug String @unique
 }
 
 model SocialPost {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   platform    String
-  content     String   @db.Text
+  content     String    @db.Text
   imageUrl    String?
   scheduledAt DateTime?
   publishedAt DateTime?
-  status      String   @default("SCHEDULED")
-  reach       Int?
-  likes       Int?
-  comments    Int?
+  status      String    @default("draft")
+  reach       Int       @default(0)
+  likes       Int       @default(0)
+  comments    Int       @default(0)
   policyId    Int?
-  createdAt   DateTime @default(now())
+  policy      Policy?   @relation(fields: [policyId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model FcmToken {
   id        Int      @id @default(autoincrement())
   token     String   @unique
-  platform  String   @default("android")
-  userId    Int?
+  platform  String   @default("web")
+  userId    String?
   createdAt DateTime @default(now())
 }
 
