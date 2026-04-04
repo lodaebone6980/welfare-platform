@@ -9,6 +9,7 @@
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:seed": "tsx scripts/seed-policies.ts",
     "db:studio": "prisma studio",
     "threads:post": "tsx scripts/threads-post.ts",
     "threads:sync": "tsx scripts/update-verdicts.ts",

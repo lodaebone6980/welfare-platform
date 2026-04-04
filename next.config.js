@@ -2,6 +2,10 @@
 const nextConfig = {
   async redirects() {
     return [
+      // /admin → 어드민 대시보드
+      { source: '/admin',        destination: '/dashboard',        permanent: false },
+      { source: '/admin/:path*', destination: '/:path*',           permanent: false },
+      // WP 레거시 URL
       { source: '/category/:slug', destination: '/welfare/category/:slug', permanent: true },
       { source: '/tag/:slug',      destination: '/welfare/tag/:slug',      permanent: true },
       { source: '/archives/:slug', destination: '/welfare/:slug',          permanent: true },
