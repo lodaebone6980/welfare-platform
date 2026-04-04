@@ -34,7 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority:        0.85,
   }))
 
-  const policyPages: MetadataRoute.Sitemap = policies.map(p => ({
+  const policyPages: MetadataRoute.Sitemap = policies.map((p: any) => ({
     url:             `${BASE_URL}/welfare/${p.slug}`,
     lastModified:    p.updatedAt,
     changeFrequency: 'weekly' as const,

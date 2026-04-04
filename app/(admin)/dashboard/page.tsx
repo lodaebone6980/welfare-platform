@@ -23,7 +23,7 @@ async function getData() {
   ])
 
   const stats = recentThreads.length >= 5
-    ? calcFormatStats(recentThreads.map(p => ({
+    ? calcFormatStats(recentThreads.map((p: any) => ({
         views: p.views, likes: p.likes,
         comments: p.comments, shares: p.shares,
         format: p.format as Format, verdict: p.verdict as any,
@@ -113,7 +113,7 @@ export default async function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {recentPolicies.map(p => (
+              {recentPolicies.map((p: any) => (
                 <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="py-2 text-gray-700 max-w-32 truncate">{p.title}</td>
                   <td className="py-2 text-gray-400">{p.category?.name ?? '-'}</td>

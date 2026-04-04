@@ -18,7 +18,7 @@ export async function generateStaticParams() {
       where:  { status: 'PUBLISHED' },
       select: { slug: true },
     })
-    return policies.map(p => ({ slug: p.slug }))
+    return policies.map((p: { slug: string }) => ({ slug: p.slug }))
   } catch (e) {
     return []
   }
@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     slug:         policy.slug,
     focusKeyword: policy.focusKeyword ?? '',
     geoRegion:    policy.geoRegion ?? undefined,
-    faqs:         policy.faqs.map(f => ({ q: f.question, a: f.answer })),
+    faqs:         policy.faqs.map((f: any) => ({ q: f.question, a: f.answer })),
     publishedAt:  policy.publishedAt?.toISOString(),
   })
 
@@ -59,7 +59,7 @@ export default async function PolicyPage({ params }: Props) {
     slug:         policy.slug,
     focusKeyword: policy.focusKeyword ?? '',
     geoRegion:    policy.geoRegion ?? undefined,
-    faqs:         policy.faqs.map(f => ({ q: f.question, a: f.answer })),
+    faqs:         policy.faqs.map((f: any) => ({ q: f.question, a: f.answer })),
   })
 
   // 조회수 증가 (fire-and-forget)
@@ -143,7 +143,7 @@ export default async function PolicyPage({ params }: Props) {
           <section className="mt-8" itemScope itemType="https://schema.org/FAQPage">
             <h2 className="text-lg font-bold text-gray-800 mb-4">자주 묻는 질문</h2>
             <div className="space-y-3">
-              {policy.faqs.map(faq => (
+              {policy.faqs.map((faq: any) => (
                 <div key={faq.id}
                   itemScope itemProp="mainEntity"
                   itemType="https://schema.org/Question"
