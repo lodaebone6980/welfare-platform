@@ -6,26 +6,32 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const status    = searchParams.get('status')    as any
   const geoRegion = searchParams.get('geoRegion') ?? undefined
+  const search    = searchParams.get('search')    ?? undefined
   const take      = Number(searchParams.get('take') ?? 20)
   const skip      = Number(searchParams.get('skip') ?? 0)
 
-  const policies = await prisma.policy.findMany({
-    where: {
-      ...(status    && { status }),
-      ...(geoRegion && { geoRegion }),
-    },
-    orderBy: { publishedAt: 'desc' },
-    take,
-    skip,
-    include: { category: true, faqs: { orderBy: { order: 'asc' } } },
-  })
+  const where: any = {
+    ...(status    && { status }),
+    ...(geoRegion && { geoRegion }),
+    ...(search    && {
+      OR: [
+        { title: { contains: search, mode: 'insensitive' } },
+        { excerpt: { contains: search, mode: 'insensitive' } },
+        { focusKeyword: { contains: search, mode: 'insensitive' } },
+      ],
+    }),
+  }
 
-  const total = await prisma.policy.count({
-    where: {
-      ...(status    && { status }),
-      ...(geoRegion && { geoRegion }),
-    },
-  })
+  const [policies, total] = await Promise.all([
+    prisma.policy.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take,
+      skip,
+      include: { category: true, _count: { select: { faqs: true } } },
+    }),
+    prisma.policy.count({ where }),
+  ])
 
   return NextResponse.json({ policies, total })
 }
