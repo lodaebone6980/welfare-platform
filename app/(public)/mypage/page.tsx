@@ -1,58 +1,124 @@
-import { Metadata } from 'next';
+'use client';
 
-export const metadata: Metadata = {
-  title: '\uB9C8\uC774\uD398\uC774\uC9C0',
-  description: '\uB0B4 \uC815\uBCF4 \uBC0F \uC124\uC815',
-};
+import { useSession, signIn, signOut } from 'next-auth/react';
+import Link from 'next/link';
 
 export default function MyPage() {
+  const { data: session, status } = useSession();
+  const isLoading = status === 'loading';
+
   return (
-    <div className="pb-24 px-4 pt-6">
-      <h1 className="text-xl font-bold mb-6">\uB9C8\uC774\uD398\uC774\uC9C0</h1>
-      
-      {/* Login section */}
-      <div className="bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-2xl p-6 text-center mb-6">
-        <p className="text-black font-bold text-lg mb-2">\uB85C\uADF8\uC778\uD558\uACE0 \uB9DE\uCDA4 \uC815\uCC45 \uBC1B\uAE30</p>
-        <p className="text-black/70 text-sm mb-4">\uCE74\uCE74\uC624\uD1A1\uC73C\uB85C \uAC04\uD3B8\uD558\uAC8C \uC2DC\uC791\uD558\uC138\uC694</p>
-        <button className="bg-black text-yellow-400 font-bold px-6 py-3 rounded-xl flex items-center gap-2 mx-auto hover:bg-gray-900 transition-colors">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#FEE500"><path d="M12 3C6.477 3 2 6.463 2 10.691c0 2.728 1.818 5.122 4.545 6.467-.2.745-.725 2.697-.831 3.115-.13.512.188.505.395.367.162-.108 2.583-1.752 3.63-2.464.733.104 1.487.159 2.261.159 5.523 0 10-3.463 10-7.691S17.523 3 12 3z"/></svg>
-          \uCE74\uCE74\uC624\uD1A1\uC73C\uB85C \uB85C\uADF8\uC778
-        </button>
+    <div className="max-w-lg mx-auto px-4 py-6 pb-24">
+      {/* Profile Section */}
+      <div className="mb-6">
+        {isLoading ? (
+          <div className="bg-gradient-to-r from-yellow-300 to-yellow-400 rounded-2xl p-6 animate-pulse">
+            <div className="h-16 w-16 bg-yellow-200 rounded-full mb-3"></div>
+            <div className="h-4 bg-yellow-200 rounded w-1/2 mb-2"></div>
+            <div className="h-3 bg-yellow-200 rounded w-1/3"></div>
+          </div>
+        ) : session?.user ? (
+          /* Logged in state */
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
+            <div className="flex items-center gap-4 mb-4">
+              {session.user.image ? (
+                <img
+                  src={session.user.image}
+                  alt="프로필"
+                  className="w-16 h-16 rounded-full border-2 border-white"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-blue-400 flex items-center justify-center text-2xl">
+                  {(session.user.name || '사')[0]}
+                </div>
+              )}
+              <div>
+                <h2 className="text-xl font-bold">{session.user.name || '사용자'}</h2>
+                <p className="text-blue-100 text-sm">{session.user.email || '카카오 로그인'}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className="w-full bg-white/20 hover:bg-white/30 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
+            >
+              로그아웃
+            </button>
+          </div>
+        ) : (
+          /* Logged out state */
+          <div className="bg-gradient-to-r from-yellow-300 to-yellow-400 rounded-2xl p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-1">로그인하고 맞춤 정책 받기</h2>
+            <p className="text-sm text-gray-700 mb-4">
+              카카오 로그인으로 나에게 맞는 정책을 추천받으세요
+            </p>
+            <button
+              onClick={() => signIn('kakao', { callbackUrl: '/mypage' })}
+              className="w-full bg-[#191919] hover:bg-[#3C1E1E] text-[#FEE500] font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-colors text-base shadow-md"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 2C5.03 2 1 5.13 1 8.97c0 2.44 1.57 4.59 3.93 5.86l-1 3.68c-.09.32.27.58.55.4l4.4-2.93c.37.04.74.06 1.12.06 4.97 0 9-3.13 9-6.97C19 5.13 14.97 2 10 2z" fill="#FEE500"/>
+              </svg>
+              카카오 로그인
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Menu items */}
-      <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-100">
-        <a href="/recommend" className="flex items-center justify-between p-4 hover:bg-gray-50">
+      {/* Menu Items */}
+      <div className="bg-white rounded-2xl border overflow-hidden mb-6">
+        <Link href="/recommend" className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b">
           <div className="flex items-center gap-3">
-            <span className="text-lg">\uD83C\uDFAF</span>
-            <span className="font-medium">\uB9DE\uCDA4 \uC815\uCC45 \uCD94\uCC9C</span>
+            <span className="text-xl">🎯</span>
+            <span className="font-medium text-gray-800">맞춤 정책 추천</span>
           </div>
-          <svg width="20" height="20" fill="none" stroke="#9ca3af" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
-        </a>
-        <a href="/welfare/categories" className="flex items-center justify-between p-4 hover:bg-gray-50">
+          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+        <Link href="/welfare/categories" className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b">
           <div className="flex items-center gap-3">
-            <span className="text-lg">\uD83D\uDCC2</span>
-            <span className="font-medium">\uCE74\uD14C\uACE0\uB9AC\uBCC4 \uBCF4\uAE30</span>
+            <span className="text-xl">📂</span>
+            <span className="font-medium text-gray-800">카테고리별 보기</span>
           </div>
-          <svg width="20" height="20" fill="none" stroke="#9ca3af" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
-        </a>
-        <a href="#" className="flex items-center justify-between p-4 hover:bg-gray-50">
+          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+        <Link href="/notifications" className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b">
           <div className="flex items-center gap-3">
-            <span className="text-lg">\uD83D\uDD14</span>
-            <span className="font-medium">\uC54C\uB9BC \uC124\uC815</span>
+            <span className="text-xl">🔔</span>
+            <span className="font-medium text-gray-800">알림 설정</span>
           </div>
-          <svg width="20" height="20" fill="none" stroke="#9ca3af" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
-        </a>
-        <a href="#" className="flex items-center justify-between p-4 hover:bg-gray-50">
+          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+        <Link href="/welfare/search" className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-3">
-            <span className="text-lg">\u2753</span>
-            <span className="font-medium">\uC790\uC8FC \uBB3B\uB294 \uC9C8\uBB38</span>
+            <span className="text-xl">❓</span>
+            <span className="font-medium text-gray-800">자주 묻는 질문</span>
           </div>
-          <svg width="20" height="20" fill="none" stroke="#9ca3af" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
-        </a>
+          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
       </div>
 
-      <p className="text-center text-xs text-gray-400 mt-8">\uC815\uCC45\uC9C0\uAE08 v1.0 | \u00A9 2025</p>
+      {/* App Download */}
+      <div className="bg-gray-50 rounded-2xl p-5 text-center mb-6">
+        <p className="text-sm text-gray-500 mb-3">더 편리한 정책지금 앱</p>
+        <div className="flex gap-3 justify-center">
+          <a href="#" className="flex-1 max-w-[160px] bg-black text-white text-sm font-medium py-2.5 rounded-lg flex items-center justify-center gap-1.5">
+            🍎 App Store
+          </a>
+          <a href="#" className="flex-1 max-w-[160px] bg-black text-white text-sm font-medium py-2.5 rounded-lg flex items-center justify-center gap-1.5">
+            ▶ Google Play
+          </a>
+        </div>
+      </div>
+
+      {/* Footer info */}
+      <p className="text-center text-xs text-gray-400">정책지금 v1.2.0</p>
     </div>
   );
 }

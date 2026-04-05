@@ -4,6 +4,8 @@ import './globals.css';
 import BottomNav from '@/components/layout/BottomNav';
 import MobileHeader from '@/components/layout/MobileHeader';
 import AppSmartBanner from '@/components/layout/AppSmartBanner';
+import SessionProvider from '@/components/auth/SessionProvider';
+import ChannelTalk from '@/components/layout/ChannelTalk';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 
@@ -69,10 +71,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </head>
       <body className={inter.className}>
-        <AppSmartBanner />
+        <SessionProvider>
+            <AppSmartBanner />
         <MobileHeader />
         <main className="min-h-screen">{children}</main>
         <BottomNav />
+            <ChannelTalk />
+          </SessionProvider>
       </body>
     </html>
   );
