@@ -23,8 +23,8 @@ export default function BottomNav() {
   if (pathname?.startsWith('/dashboard') || pathname?.startsWith('/content') || pathname?.startsWith('/marketing')) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 md:hidden safe-area-bottom">
-      <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200  safe-area-bottom">
+      <div className="flex justify-around items-center h-16 max-w-3xl mx-auto">
         {tabs.map((tab) => {
           const isActive = tab.href === '/'
             ? pathname === '/'

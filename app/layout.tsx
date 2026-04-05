@@ -74,7 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SessionProvider>
             <AppSmartBanner />
         <MobileHeader />
-        <main className="min-h-screen">{children}</main>
+        <main className="min-h-screen bg-gray-50"><div className="max-w-3xl mx-auto">{children}</div></main>
         <BottomNav />
             <ChannelTalk />
           </SessionProvider>
