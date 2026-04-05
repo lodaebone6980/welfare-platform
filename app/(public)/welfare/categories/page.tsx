@@ -26,7 +26,7 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; light: string 
 export default async function CategoriesPage() {
   const categories = await prisma.category.findMany({
     select: {
-      id: true, name: true, slug: true, icon: true, description: true,
+      id: true, name: true, slug: true, icon: true,
       _count: { select: { policies: true } },
       policies: {
         where: { status: 'PUBLISHED' },
