@@ -10,27 +10,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Invalid key' }, { status: 401 });
     }
 
-    const policies = await prisma.policy.findMany({
-      where: { applyUrl: { contains: 'gov.kr/portal/welfare/' } },
-      select: { id: true, title: true, geoRegion: true }
+    // Use raw SQL for speed - single query updates all at once
+    const result = await prisma.$executeRaw`
+      UPDATE "Policy"
+      SET 
+        "applyUrl" = 'https://www.gov.kr/search?srhQuery=' || regexp_replace("title", '^\\[.*?\\]\\s*', ''),
+        "externalUrl" = 'https://www.bokjiro.go.kr/ssis-tbu/NationalWelfareInformationM.do?searchKeyword=' || regexp_replace("title", '^\\[.*?\\]\\s*', '')
+      WHERE "applyUrl" LIKE '%gov.kr/portal/welfare/%'
+    `;
+
+    return NextResponse.json({ 
+      success: true, 
+      updated: result,
+      message: `Updated ${result} policies with raw SQL`
     });
-
-    let updated = 0;
-    for (const p of policies) {
-      const keyword = encodeURIComponent(p.title.replace(/\[.*?\]\s*/, ''));
-      await prisma.policy.update({
-        where: { id: p.id },
-        data: {
-          applyUrl: `https://www.gov.kr/search?srhQuery=${keyword}`,
-          externalUrl: `https://www.bokjiro.go.kr/ssis-tbu/NationalWelfareInformationM.do?searchKeyword=${keyword}`
-        }
-      });
-      updated++;
-    }
-
-    return NextResponse.json({ success: true, updated, message: `Updated ${updated} policies` });
   } catch (error) {
-    return NextResponse.json({ success: false, message: error instanceof Error ? error.message : 'Unknown' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false, 
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   } finally {
     await prisma.$disconnect();
   }
