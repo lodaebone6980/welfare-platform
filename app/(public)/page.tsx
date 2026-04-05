@@ -30,7 +30,11 @@ async function getLatestPolicies() {
     where: { status: 'PUBLISHED' },
     orderBy: { publishedAt: 'desc' },
     take: 12,
-    include: { category: true },
+    select: {
+      id: true, title: true, slug: true, excerpt: true,
+      geoRegion: true, publishedAt: true, viewCount: true,
+      category: { select: { name: true, slug: true, icon: true } },
+    },
   });
 }
 
@@ -39,7 +43,11 @@ async function getPopularPolicies() {
     where: { status: 'PUBLISHED' },
     orderBy: { viewCount: 'desc' },
     take: 6,
-    include: { category: true },
+    select: {
+      id: true, title: true, slug: true, excerpt: true,
+      geoRegion: true, publishedAt: true, viewCount: true,
+      category: { select: { name: true, slug: true, icon: true } },
+    },
   });
 }
 
@@ -50,7 +58,7 @@ async function getCategories() {
   });
 }
 
-export const revalidate = 60; // ISR: 1시간
+export const revalidate = 300; // ISR: 5분
 
 export default async function HomePage() {
   const [stats, latestPolicies, popularPolicies, categories] = await Promise.all([
