@@ -34,23 +34,29 @@ async function getPopularPolicies() {
 }
 
 async function getExpiringPolicies() {
-  // Get policies with deadline that haven't expired yet
-  const today = new Date().toISOString().split('T')[0];
-  return prisma.policy.findMany({
-    where: {
-      status: 'PUBLISHED',
-      deadline: { not: null, gt: today },
-    },
-    orderBy: { deadline: 'asc' },
-    take: 5,
+  const policies = await prisma.policy.findMany({
+    where: { status: 'PUBLISHED', deadline: { not: null } },
     select: {
       id: true, title: true, slug: true, excerpt: true,
       geoRegion: true, viewCount: true, deadline: true,
       category: { select: { name: true, slug: true, icon: true } },
     },
+    take: 100,
   });
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return policies
+    .filter((p) => {
+      const d = parseKoreanDate(p.deadline);
+      return d && d.getTime() >= today.getTime();
+    })
+    .sort((a, b) => {
+      const da = parseKoreanDate(a.deadline)!;
+      const db = parseKoreanDate(b.deadline)!;
+      return da.getTime() - db.getTime();
+    })
+    .slice(0, 5);
 }
-
 async function getLatestPolicies() {
   return prisma.policy.findMany({
     where: { status: 'PUBLISHED' },
@@ -71,18 +77,28 @@ async function getCategories() {
   });
 }
 
+
+function parseKoreanDate(str: string | null): Date | null {
+  if (!str) return null;
+  const m = str.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  if (!m) return null;
+  const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function getDday(deadline: string | null): { text: string; urgent: boolean } | null {
   if (!deadline) return null;
+  if (deadline.includes('상시') || deadline.includes('수시')) return { text: '상시', urgent: false };
+  const deadlineDate = parseKoreanDate(deadline);
+  if (!deadlineDate) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const deadlineDate = new Date(deadline);
   deadlineDate.setHours(0, 0, 0, 0);
   const diff = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   if (diff < 0) return null;
   if (diff === 0) return { text: 'D-DAY', urgent: true };
-  return { text: 'D-' + diff, urgent: diff <= 7 };
+  return { text: `D-${diff}`, urgent: diff <= 7 };
 }
-
 function cleanTitle(title: string) {
   return title.replace(/^\[.*?\]\s*/, '');
 }
