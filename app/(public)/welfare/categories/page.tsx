@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { CategoryIcon } from '@/components/CategoryIcon';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 
 export const metadata: Metadata = {
   title: '카테고리별 정책',
