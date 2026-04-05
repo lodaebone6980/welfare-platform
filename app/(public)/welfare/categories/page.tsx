@@ -1,26 +1,26 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import CategoryIcon from '@/components/ui/CategoryIcon';
 
 export const metadata: Metadata = {
-  title: '카테고리별 정책',
-  description: '분야별로 나에게 맞는 정부 지원금을 찾아보세요.',
+  title: 'ì¹´íê³ ë¦¬ë³ ì ì±',
+  description: 'ë¶ì¼ë³ë¡ ëìê² ë§ë ì ë¶ ì§ìê¸ì ì°¾ìë³´ì¸ì.',
 };
 
 export const revalidate = 300;
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; light: string }> = {
-  '환급금': { bg: 'from-green-500 to-emerald-600', text: 'text-green-700', light: 'bg-green-50' },
-  '바우처': { bg: 'from-purple-500 to-violet-600', text: 'text-purple-700', light: 'bg-purple-50' },
-  '지원금': { bg: 'from-blue-500 to-blue-600', text: 'text-blue-700', light: 'bg-blue-50' },
-  '대출': { bg: 'from-amber-500 to-orange-600', text: 'text-amber-700', light: 'bg-amber-50' },
-  '보조금': { bg: 'from-teal-500 to-cyan-600', text: 'text-teal-700', light: 'bg-teal-50' },
-  '교육': { bg: 'from-indigo-500 to-indigo-600', text: 'text-indigo-700', light: 'bg-indigo-50' },
-  '주거': { bg: 'from-rose-500 to-pink-600', text: 'text-rose-700', light: 'bg-rose-50' },
-  '의료': { bg: 'from-sky-500 to-sky-600', text: 'text-sky-700', light: 'bg-sky-50' },
-  '고용': { bg: 'from-yellow-500 to-amber-600', text: 'text-yellow-700', light: 'bg-yellow-50' },
-  '문화': { bg: 'from-fuchsia-500 to-pink-600', text: 'text-fuchsia-700', light: 'bg-fuchsia-50' },
+  'íê¸ê¸': { bg: 'from-green-500 to-emerald-600', text: 'text-green-700', light: 'bg-green-50' },
+  'ë°ì°ì²': { bg: 'from-purple-500 to-violet-600', text: 'text-purple-700', light: 'bg-purple-50' },
+  'ì§ìê¸': { bg: 'from-blue-500 to-blue-600', text: 'text-blue-700', light: 'bg-blue-50' },
+  'ëì¶': { bg: 'from-amber-500 to-orange-600', text: 'text-amber-700', light: 'bg-amber-50' },
+  'ë³´ì¡°ê¸': { bg: 'from-teal-500 to-cyan-600', text: 'text-teal-700', light: 'bg-teal-50' },
+  'êµì¡': { bg: 'from-indigo-500 to-indigo-600', text: 'text-indigo-700', light: 'bg-indigo-50' },
+  'ì£¼ê±°': { bg: 'from-rose-500 to-pink-600', text: 'text-rose-700', light: 'bg-rose-50' },
+  'ìë£': { bg: 'from-sky-500 to-sky-600', text: 'text-sky-700', light: 'bg-sky-50' },
+  'ê³ ì©': { bg: 'from-yellow-500 to-amber-600', text: 'text-yellow-700', light: 'bg-yellow-50' },
+  'ë¬¸í': { bg: 'from-fuchsia-500 to-pink-600', text: 'text-fuchsia-700', light: 'bg-fuchsia-50' },
 };
 
 export default async function CategoriesPage() {
@@ -45,8 +45,8 @@ export default async function CategoriesPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-6 text-center">
-        <h1 className="text-white text-lg font-bold">카테고리별 정책</h1>
-        <p className="text-blue-100 text-xs mt-1">분야별로 나에게 맞는 지원금을 찾아보세요</p>
+        <h1 className="text-white text-lg font-bold">ì¹´íê³ ë¦¬ë³ ì ì±</h1>
+        <p className="text-blue-100 text-xs mt-1">ë¶ì¼ë³ë¡ ëìê² ë§ë ì§ìê¸ì ì°¾ìë³´ì¸ì</p>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6">
@@ -59,11 +59,11 @@ export default async function CategoriesPage() {
                   <div className={`bg-gradient-to-r ${colors.bg} px-5 py-4 flex items-center justify-between`}>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                        <CategoryIcon icon={cat.icon || cat.name} className="w-6 h-6 text-white" />
+                        <CategoryIcon slug={cat.slug} className="w-6 h-6 text-white" />
                       </div>
                       <div>
                         <h2 className="text-white font-bold text-base">{cat.name}</h2>
-                        <p className="text-white/80 text-xs">{cat._count.policies}개 정책</p>
+                        <p className="text-white/80 text-xs">{cat._count.policies}ê° ì ì±</p>
                       </div>
                     </div>
                     <svg className="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
