@@ -2,123 +2,99 @@
 
 import { useSession, signIn, signOut } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function MyPage() {
   const { data: session, status } = useSession();
-  const isLoading = status === 'loading';
+  const isLoggedIn = status === 'authenticated' && session?.user;
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-20">
       {/* Profile Section */}
-      <div className="mb-6">
-        {isLoading ? (
-          <div className="bg-gradient-to-r from-yellow-300 to-yellow-400 rounded-2xl p-6 animate-pulse">
-            <div className="h-16 w-16 bg-yellow-200 rounded-full mb-3"></div>
-            <div className="h-4 bg-yellow-200 rounded w-1/2 mb-2"></div>
-            <div className="h-3 bg-yellow-200 rounded w-1/3"></div>
-          </div>
-        ) : session?.user ? (
-          /* Logged in state */
-          <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
-            <div className="flex items-center gap-4 mb-4">
-              {session.user.image ? (
-                <img
-                  src={session.user.image}
-                  alt="프로필"
-                  className="w-16 h-16 rounded-full border-2 border-white"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-blue-400 flex items-center justify-center text-2xl">
-                  {(session.user.name || '사')[0]}
-                </div>
-              )}
-              <div>
-                <h2 className="text-xl font-bold">{session.user.name || '사용자'}</h2>
-                <p className="text-blue-100 text-sm">{session.user.email || '카카오 로그인'}</p>
+      <div className="bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 px-4 pt-8 pb-6">
+        {isLoggedIn ? (
+          <div className="flex items-center gap-4">
+            {session.user.image ? (
+              <Image src={session.user.image} alt="" width={56} height={56} className="rounded-full border-2 border-white/30" />
+            ) : (
+              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-white text-xl font-bold">
+                {(session.user.name || '?')[0]}
               </div>
+            )}
+            <div className="flex-1">
+              <p className="text-white font-bold text-lg">{session.user.name || '사용자'}</p>
+              <p className="text-blue-100 text-xs">{session.user.email || ''}</p>
             </div>
-            <button
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="w-full bg-white/20 hover:bg-white/30 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
-            >
+            <button onClick={() => signOut()} className="px-3 py-1.5 bg-white/15 rounded-lg text-white text-xs hover:bg-white/25 transition">
               로그아웃
             </button>
           </div>
         ) : (
-          /* Logged out state */
-          <div className="bg-gradient-to-r from-yellow-300 to-yellow-400 rounded-2xl p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-1">로그인하고 맞춤 정책 받기</h2>
-            <p className="text-sm text-gray-700 mb-4">
-              카카오 로그인으로 나에게 맞는 정책을 추천받으세요
-            </p>
-            <button
-              onClick={() => signIn('kakao', { callbackUrl: '/mypage' })}
-              className="w-full bg-[#191919] hover:bg-[#3C1E1E] text-[#FEE500] font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-colors text-base shadow-md"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2C5.03 2 1 5.13 1 8.97c0 2.44 1.57 4.59 3.93 5.86l-1 3.68c-.09.32.27.58.55.4l4.4-2.93c.37.04.74.06 1.12.06 4.97 0 9-3.13 9-6.97C19 5.13 14.97 2 10 2z" fill="#FEE500"/>
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto rounded-full bg-white/20 flex items-center justify-center mb-3">
+              <svg className="w-8 h-8 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              카카오 로그인
+            </div>
+            <p className="text-white font-bold text-lg mb-1">로그인해주세요</p>
+            <p className="text-blue-100 text-xs mb-4">맞춤 정책 추천과 즐겨찾기를 이용하세요</p>
+            <button onClick={() => signIn('kakao')}
+              className="inline-flex items-center gap-2 bg-[#FEE500] text-[#191919] px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#FDD800] transition">
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#191919"><path d="M12 3C6.48 3 2 6.36 2 10.44c0 2.62 1.75 4.93 4.38 6.24l-1.12 4.15c-.1.36.32.64.62.43l4.94-3.28c.38.04.77.06 1.18.06 5.52 0 10-3.36 10-7.6C22 6.36 17.52 3 12 3z"/></svg>
+              카카오로 로그인
             </button>
           </div>
         )}
       </div>
 
-      {/* Menu Items */}
-      <div className="bg-white rounded-2xl border overflow-hidden mb-6">
-        <Link href="/recommend" className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">🎯</span>
-            <span className="font-medium text-gray-800">맞춤 정책 추천</span>
+      <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
+        {/* Quick Menu */}
+        <div className="bg-white rounded-2xl p-4 border border-gray-100">
+          <h3 className="text-sm font-bold text-gray-900 mb-3">빠른 메뉴</h3>
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { icon: '📋', label: '전체 정책', href: '/welfare/search' },
+              { icon: '📂', label: '카테고리', href: '/welfare/categories' },
+              { icon: '🎯', label: '맞춤 추천', href: '/recommend' },
+              { icon: '🔔', label: '알림', href: '/notifications' },
+            ].map((item) => (
+              <Link key={item.href} href={item.href} className="flex flex-col items-center gap-1.5 py-2 rounded-xl hover:bg-gray-50 transition">
+                <span className="text-2xl">{item.icon}</span>
+                <span className="text-[11px] text-gray-600 font-medium">{item.label}</span>
+              </Link>
+            ))}
           </div>
-          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-        <Link href="/welfare/categories" className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">📂</span>
-            <span className="font-medium text-gray-800">카테고리별 보기</span>
-          </div>
-          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-        <Link href="/notifications" className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">🔔</span>
-            <span className="font-medium text-gray-800">알림 설정</span>
-          </div>
-          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-        <Link href="/welfare/search" className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">❓</span>
-            <span className="font-medium text-gray-800">자주 묻는 질문</span>
-          </div>
-          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-      </div>
+        </div>
 
-      {/* App Download */}
-      <div className="bg-gray-50 rounded-2xl p-5 text-center mb-6">
-        <p className="text-sm text-gray-500 mb-3">더 편리한 정책지금 앱</p>
-        <div className="flex gap-3 justify-center">
-          <a href="#" className="flex-1 max-w-[160px] bg-black text-white text-sm font-medium py-2.5 rounded-lg flex items-center justify-center gap-1.5">
-            🍎 App Store
-          </a>
-          <a href="#" className="flex-1 max-w-[160px] bg-black text-white text-sm font-medium py-2.5 rounded-lg flex items-center justify-center gap-1.5">
-            ▶ Google Play
-          </a>
+        {/* Service Menu */}
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <h3 className="text-sm font-bold text-gray-900 px-4 pt-4 pb-2">서비스</h3>
+          {[
+            { icon: '📱', label: '앱 다운로드', desc: 'App Store / Google Play', href: '#' },
+            { icon: '❓', label: '자주 묻는 질문', desc: '서비스 이용 안내', href: '#' },
+            { icon: '📧', label: '문의하기', desc: '의견 및 제안', href: '#' },
+            { icon: '⚙️', label: '설정', desc: '알림, 테마 등', href: '#' },
+          ].map((item, idx) => (
+            <Link key={idx} href={item.href}
+              className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition border-t border-gray-50">
+              <span className="text-xl w-8 text-center">{item.icon}</span>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900">{item.label}</p>
+                <p className="text-[11px] text-gray-400">{item.desc}</p>
+              </div>
+              <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          ))}
+        </div>
+
+        {/* Info */}
+        <div className="text-center py-4">
+          <p className="text-[11px] text-gray-400">정책지금 v2.0</p>
+          <p className="text-[10px] text-gray-300 mt-1">© 2025 정책지금. All rights reserved.</p>
         </div>
       </div>
-
-      {/* Footer info */}
-      <p className="text-center text-xs text-gray-400">정책지금 v1.2.0</p>
     </div>
   );
 }
