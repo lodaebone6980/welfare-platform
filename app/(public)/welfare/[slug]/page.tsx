@@ -34,7 +34,7 @@ async function getPolicy(slug: string) {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const policy = await getPolicy(params.slug);
-  if (!policy) return { title: '정책 정보 | 정책지금' };
+  if (!policy) return { title: 'ì ì± ì ë³´ | ì ì±ì§ê¸' };
 
   const seoData: PolicySeoData = {
     title: policy.title,
@@ -56,14 +56,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const metaDesc = generatePolicyMetaDescription(seoData);
 
   return {
-    title: policy.title + ' | 정책지금',
+    title: policy.title,
     description: metaDesc,
     keywords: [
-      policy.category?.name || '복지',
-      policy.geoRegion || '전국',
-      '정부지원금',
-      '보조금',
-      '복지혜택',
+      policy.category?.name || 'ë³µì§',
+      policy.geoRegion || 'ì êµ­',
+      'ì ë¶ì§ìê¸',
+      'ë³´ì¡°ê¸',
+      'ë³µì§íí',
       policy.title.replace(/^\[.*?\]\s*/, ''),
     ].filter(Boolean).join(', '),
     alternates: {
@@ -82,7 +82,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: 'summary_large_image',
-      title: policy.title + ' | 정책지금',
+      title: policy.title + ' | ì ì±ì§ê¸',
       description: metaDesc,
     },
     robots: {
@@ -121,7 +121,7 @@ export default async function PolicyDetailPage({ params }: PageProps) {
     });
   } catch (e) { /* ignore */ }
 
-  const categoryName = policy.category?.name || '복지';
+  const categoryName = policy.category?.name || 'ë³µì§';
   const cleanTitle = policy.title.replace(/^\[.*?\]\s*/, '');
 
   // SEO structured data
@@ -168,9 +168,9 @@ export default async function PolicyDetailPage({ params }: PageProps) {
         {/* Breadcrumb Navigation */}
         <nav aria-label="breadcrumb" className="mb-4">
           <ol className="flex items-center text-sm text-gray-500 flex-wrap gap-1">
-            <li><Link href="/" className="hover:text-blue-600">홈</Link></li>
+            <li><Link href="/" className="hover:text-blue-600">í</Link></li>
             <li className="mx-1">/</li>
-            <li><Link href="/welfare/search" className="hover:text-blue-600">정책검색</Link></li>
+            <li><Link href="/welfare/search" className="hover:text-blue-600">ì ì±ê²ì</Link></li>
             {policy.category && (
               <>
                 <li className="mx-1">/</li>
@@ -194,12 +194,12 @@ export default async function PolicyDetailPage({ params }: PageProps) {
             </span>
             {policy.geoRegion && (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                📍 {policy.geoRegion}
+                ð {policy.geoRegion}
               </span>
             )}
             {policy.status === 'PUBLISHED' && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-emerald-100 text-emerald-700">
-                모집중
+                ëª¨ì§ì¤
               </span>
             )}
           </div>
@@ -211,27 +211,27 @@ export default async function PolicyDetailPage({ params }: PageProps) {
           )}
           <div className="flex items-center gap-4 mt-3 text-sm text-gray-400">
             {policy.publishedAt && (
-              <span>등록일: {new Date(policy.publishedAt).toLocaleDateString('ko-KR')}</span>
+              <span>ë±ë¡ì¼: {new Date(policy.publishedAt).toLocaleDateString('ko-KR')}</span>
             )}
-            <span>조회 {(policy.viewCount || 0).toLocaleString()}회</span>
+            <span>ì¡°í {(policy.viewCount || 0).toLocaleString()}í</span>
           </div>
         </header>
 
         {/* Quick Summary Box */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6">
-          <h2 className="text-lg font-bold text-blue-900 mb-3">📋 한눈에 보기</h2>
+          <h2 className="text-lg font-bold text-blue-900 mb-3">ð íëì ë³´ê¸°</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-blue-800 whitespace-nowrap">카테고리</span>
+              <span className="font-semibold text-blue-800 whitespace-nowrap">ì¹´íê³ ë¦¬</span>
               <span className="text-gray-700">{categoryName}</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-blue-800 whitespace-nowrap">지역</span>
-              <span className="text-gray-700">{policy.geoRegion || '전국'}</span>
+              <span className="font-semibold text-blue-800 whitespace-nowrap">ì§ì­</span>
+              <span className="text-gray-700">{policy.geoRegion || 'ì êµ­'}</span>
             </div>
             {policy.deadline && (
               <div className="flex items-start gap-2">
-                <span className="font-semibold text-blue-800 whitespace-nowrap">마감일</span>
+                <span className="font-semibold text-blue-800 whitespace-nowrap">ë§ê°ì¼</span>
                 <span className="text-gray-700">{policy.deadline}</span>
               </div>
             )}
@@ -244,7 +244,7 @@ export default async function PolicyDetailPage({ params }: PageProps) {
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                 <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
-                상세 설명
+                ìì¸ ì¤ëª
               </h2>
               <div className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-white rounded-lg p-4 border">
                 {policy.description}
@@ -256,7 +256,7 @@ export default async function PolicyDetailPage({ params }: PageProps) {
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                 <span className="w-1 h-5 bg-green-600 rounded-full"></span>
-                지원 대상
+                ì§ì ëì
               </h2>
               <div className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-white rounded-lg p-4 border">
                 {policy.eligibility}
@@ -268,7 +268,7 @@ export default async function PolicyDetailPage({ params }: PageProps) {
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                 <span className="w-1 h-5 bg-purple-600 rounded-full"></span>
-                신청 방법
+                ì ì²­ ë°©ë²
               </h2>
               <div className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-white rounded-lg p-4 border">
                 {policy.applicationMethod}
@@ -280,7 +280,7 @@ export default async function PolicyDetailPage({ params }: PageProps) {
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                 <span className="w-1 h-5 bg-orange-600 rounded-full"></span>
-                필요 서류
+                íì ìë¥
               </h2>
               <div className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-white rounded-lg p-4 border">
                 {policy.requiredDocuments}
@@ -298,7 +298,7 @@ export default async function PolicyDetailPage({ params }: PageProps) {
               rel="noopener noreferrer"
               className="flex-1 text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-colors text-lg shadow-lg"
             >
-              🔗 신청하기
+              ð ì ì²­íê¸°
             </a>
           )}
           {policy.externalUrl && (
@@ -308,20 +308,20 @@ export default async function PolicyDetailPage({ params }: PageProps) {
               rel="noopener noreferrer"
               className="flex-1 text-center bg-white hover:bg-gray-50 text-blue-600 font-semibold py-4 px-6 rounded-xl border-2 border-blue-600 transition-colors"
             >
-              📄 복지로에서 보기
+              ð ë³µì§ë¡ìì ë³´ê¸°
             </a>
           )}
         </div>
 
         {/* Share Info */}
         <div className="flex items-center gap-3 mb-10 p-4 bg-gray-50 rounded-xl text-sm text-gray-500">
-          이 정책 정보가 도움이 되셨나요? 주변에 필요한 분께 공유해주세요.
+          ì´ ì ì± ì ë³´ê° ëìì´ ëì¨ëì? ì£¼ë³ì íìí ë¶ê» ê³µì í´ì£¼ì¸ì.
         </div>
 
         {/* Related Policies */}
         {relatedPolicies.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">관련 정책</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">ê´ë ¨ ì ì±</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {relatedPolicies.map((rp) => (
                 <Link
@@ -331,10 +331,10 @@ export default async function PolicyDetailPage({ params }: PageProps) {
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
-                      {rp.category?.name || '복지'}
+                      {rp.category?.name || 'ë³µì§'}
                     </span>
                     {rp.geoRegion && (
-                      <span className="text-xs text-gray-400">📍 {rp.geoRegion}</span>
+                      <span className="text-xs text-gray-400">ð {rp.geoRegion}</span>
                     )}
                   </div>
                   <h3 className="font-semibold text-gray-800 line-clamp-2 text-sm">
