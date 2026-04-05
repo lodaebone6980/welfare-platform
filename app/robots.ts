@@ -1,15 +1,32 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://welfare-platform-five.vercel.app';
+  const baseUrl = 'https://welfare-platform-five.vercel.app';
+  
   return {
     rules: [
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/dashboard', '/content', '/marketing', '/api/'],
+        disallow: ['/admin/', '/api/', '/_next/', '/dashboard/'],
+      },
+      {
+        userAgent: 'Googlebot',
+        allow: '/',
+        disallow: ['/admin/', '/api/', '/_next/'],
+      },
+      {
+        userAgent: 'Yeti',  // Naver
+        allow: '/',
+        disallow: ['/admin/', '/api/', '/_next/'],
+      },
+      {
+        userAgent: 'Daumoa',  // Daum/Kakao
+        allow: '/',
+        disallow: ['/admin/', '/api/', '/_next/'],
       },
     ],
-    sitemap: `${siteUrl}/sitemap.xml`,
+    sitemap: baseUrl + '/sitemap.xml',
+    host: baseUrl,
   };
 }
