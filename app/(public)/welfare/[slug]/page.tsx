@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     slug: policy.slug,
     category: policy.category?.name || '',
     region: policy.geoRegion || '',
-    publishedAt: policy.publishedAt?.toISOString() || policy.createdAt.toISOString(),
+    publishedAt: policy.publishedAt ? policy.publishedAt.toISOString() : policy.createdAt.toISOString(),
     updatedAt: policy.updatedAt.toISOString(),
   };
   const ogData = generatePolicyOgData(seoData);
@@ -43,19 +43,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-function formatDate(date: Date | null | undefined): string {
+function formatDate(date: Date | string | null | undefined): string {
   if (!date) return '-';
-  return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(date));
+  try {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return String(date);
+    return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }).format(d);
+  } catch { return String(date); }
 }
 
-function getDday(deadline: Date | null | undefined): { text: string; urgent: boolean } | null {
+function getDday(deadline: string | Date | null | undefined): { text: string; urgent: boolean } | null {
   if (!deadline) return null;
+  try {
   const now = new Date();
-  const dl = new Date(deadline);
+  const dl = typeof deadline === 'string' ? new Date(deadline) : deadline;
+  if (isNaN(dl.getTime())) return null;
   const diff = Math.ceil((dl.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
   if (diff < 0) return { text: '마감', urgent: true };
   if (diff === 0) return { text: 'D-Day', urgent: true };
   return { text: `D-${diff}`, urgent: diff <= 14 };
+  } catch { return null; }
 }
 
 export default async function PolicyDetailPage({ params }: Props) {
@@ -91,7 +98,7 @@ export default async function PolicyDetailPage({ params }: Props) {
     slug: policy.slug,
     category: policy.category?.name || '',
     region: policy.geoRegion || '',
-    publishedAt: policy.publishedAt?.toISOString() || policy.createdAt.toISOString(),
+    publishedAt: policy.publishedAt ? policy.publishedAt.toISOString() : policy.createdAt.toISOString(),
     updatedAt: policy.updatedAt.toISOString(),
   };
   const policyJsonLd = generatePolicyJsonLd(seoData);
