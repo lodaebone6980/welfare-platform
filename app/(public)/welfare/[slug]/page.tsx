@@ -97,7 +97,6 @@ export default async function PolicyDetailPage({ params }: PageProps) {
     },
     take: 4,
     orderBy: { viewCount: 'desc' },
-    include: { category: true },
     select: {
       id: true,
       title: true,
