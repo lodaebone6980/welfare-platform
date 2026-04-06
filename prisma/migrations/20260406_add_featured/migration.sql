@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Policy" ADD COLUMN "featured" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Policy" ADD COLUMN "featuredOrder" INTEGER NOT NULL DEFAULT 0;
