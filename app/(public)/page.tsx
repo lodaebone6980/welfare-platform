@@ -4,11 +4,11 @@ import { prisma } from '@/lib/prisma';
 import CategoryIcon from '@/components/ui/CategoryIcon';
 
 export const metadata: Metadata = {
-  title: 'ì ì±ì§ê¸ - ëìê² ë§ë ì ë¶ ì§ìê¸ ì°¾ê¸°',
-  description: '2024ë ìµì  ì ë¶ ë³µì§ ì ì±, ì§ìê¸, ë³´ì¡°ê¸ ì ë³´ë¥¼ íëì! ìíìì , ì£¼ê±°, êµì¡, ê³ ì©, ê±´ê° ë± ë§ì¶¤í ë³µì§ ìë¹ì¤ë¥¼ ì°¾ìë³´ì¸ì.',
+  title: '정책지금 - 나에게 맞는 정부 지원금 찾기',
+  description: '2024년 최신 정부 복지 정책, 지원금, 보조금 정보를 한눈에! 생활안정, 주거, 교육, 고용, 건강 등 맞춤형 복지 서비스를 찾아보세요.',
   openGraph: {
-    title: 'ì ì±ì§ê¸ - ëìê² ë§ë ì ë¶ ì§ìê¸ ì°¾ê¸°',
-    description: 'ìµì  ì ë¶ ë³µì§ ì ì±ê³¼ ì§ìê¸ ì ë³´ë¥¼ íëì íì¸íì¸ì.',
+    title: '정책지금 - 나에게 맞는 정부 지원금 찾기',
+    description: '최신 정부 복지 정책과 지원금 정보를 한눈에 확인하세요.',
     type: 'website',
   },
 };
@@ -88,7 +88,7 @@ function parseKoreanDate(str: string | null): Date | null {
 
 function getDday(deadline: string | null): { text: string; urgent: boolean } | null {
   if (!deadline) return null;
-  if (deadline.includes('ìì') || deadline.includes('ìì')) return { text: 'ìì', urgent: false };
+  if (deadline.includes('상시') || deadline.includes('수시')) return { text: '상시', urgent: false };
   const deadlineDate = parseKoreanDate(deadline);
   if (!deadlineDate) return null;
   const today = new Date();
@@ -104,8 +104,8 @@ function cleanTitle(title: string) {
 }
 
 function formatViewCount(count: number): string {
-  if (count >= 10000) return (count / 10000).toFixed(1) + 'ë§';
-  if (count >= 1000) return (count / 1000).toFixed(1) + 'ì²';
+  if (count >= 10000) return (count / 10000).toFixed(1) + '만';
+  if (count >= 1000) return (count / 1000).toFixed(1) + '천';
   return count.toLocaleString();
 }
 
@@ -123,8 +123,8 @@ export default async function HomePage() {
     <div className="pb-20">
       {/* Compact Hero */}
       <section className="bg-gradient-to-br from-blue-600 to-indigo-700 px-4 pt-8 pb-6">
-        <h1 className="text-white text-xl font-bold mb-1">ëìê² ë§ë ì§ìê¸ ì°¾ê¸°</h1>
-        <p className="text-blue-200 text-sm mb-4">{stats.totalPolicies.toLocaleString()}ê°ì ì ì± ì ë³´</p>
+        <h1 className="text-white text-xl font-bold mb-1">나에게 맞는 지원금 찾기</h1>
+        <p className="text-blue-200 text-sm mb-4">{stats.totalPolicies.toLocaleString()}개의 정책 정보</p>
         <Link
           href="/welfare/search"
           className="flex items-center gap-2 bg-white rounded-xl px-4 py-3 text-gray-400 text-sm shadow-lg"
@@ -132,7 +132,7 @@ export default async function HomePage() {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          ì°¾ê³  ì¶ì ì ì±ì ê²ìí´ë³´ì¸ì
+          찾고 싶은 정책을 검색해보세요
         </Link>
       </section>
 
@@ -158,9 +158,9 @@ export default async function HomePage() {
       <section className="px-4 pt-5 pb-2">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
-            <span className="text-lg">ð¥</span> íì¬ ì£¼ëª©ë°ë ì§ìê¸
+            <span className="text-lg">🔥</span> 현재 주목받는 지원금
           </h2>
-          <Link href="/welfare/search?sort=popular" className="text-xs text-blue-600">ëë³´ê¸°</Link>
+          <Link href="/welfare/search?sort=popular" className="text-xs text-blue-600">더보기</Link>
         </div>
         <div className="space-y-0 bg-white rounded-2xl border overflow-hidden">
           {popularPolicies.map((policy, idx) => {
@@ -175,7 +175,7 @@ export default async function HomePage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{cleanTitle(policy.title)}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[11px] text-gray-400">ð {formatViewCount(policy.viewCount || 0)}</span>
+                    <span className="text-[11px] text-gray-400">👁 {formatViewCount(policy.viewCount || 0)}</span>
                     {dday && (
                       <span className={'text-[11px] font-semibold ' + (dday.urgent ? 'text-red-500' : 'text-orange-500')}>
                         {dday.text}
@@ -184,7 +184,7 @@ export default async function HomePage() {
                   </div>
                 </div>
                 <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2.5 py-1 rounded-lg whitespace-nowrap">
-                  ì ì²­íê¸°
+                  신청하기
                 </span>
               </Link>
             );
@@ -197,9 +197,9 @@ export default async function HomePage() {
         <section className="px-4 pt-5 pb-2">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
-              <span className="text-lg">â°</span> ê³§ ë§ê°ëë ì§ìê¸
+              <span className="text-lg">⏰</span> 곧 마감되는 지원금
             </h2>
-            <Link href="/welfare/search?sort=deadline" className="text-xs text-blue-600">ëë³´ê¸°</Link>
+            <Link href="/welfare/search?sort=deadline" className="text-xs text-blue-600">더보기</Link>
           </div>
           <div className="space-y-0 bg-white rounded-2xl border overflow-hidden">
             {expiringPolicies.map((policy) => {
@@ -213,8 +213,8 @@ export default async function HomePage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{cleanTitle(policy.title)}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[11px] text-gray-400">ð {formatViewCount(policy.viewCount || 0)}</span>
-                      <span className="text-[11px] text-gray-400">{policy.geoRegion || 'ì êµ­'}</span>
+                      <span className="text-[11px] text-gray-400">👁 {formatViewCount(policy.viewCount || 0)}</span>
+                      <span className="text-[11px] text-gray-400">{policy.geoRegion || '전국'}</span>
                     </div>
                   </div>
                   {dday && (
@@ -223,7 +223,7 @@ export default async function HomePage() {
                     </span>
                   )}
                   <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2.5 py-1 rounded-lg whitespace-nowrap">
-                    ì ì²­íê¸°
+                    신청하기
                   </span>
                 </Link>
               );
@@ -236,9 +236,9 @@ export default async function HomePage() {
       <section className="px-4 pt-5 pb-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
-            <span className="text-lg">ð</span> ìµì  ì§ìê¸
+            <span className="text-lg">📋</span> 최신 지원금
           </h2>
-          <Link href="/welfare/search?sort=latest" className="text-xs text-blue-600">ëë³´ê¸°</Link>
+          <Link href="/welfare/search?sort=latest" className="text-xs text-blue-600">더보기</Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {latestPolicies.map((policy) => {
@@ -251,10 +251,10 @@ export default async function HomePage() {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[11px] px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full font-medium">
-                    {policy.category?.name || 'ë³µì§'}
+                    {policy.category?.name || '복지'}
                   </span>
                   {policy.geoRegion && (
-                    <span className="text-[11px] text-gray-400">ð {policy.geoRegion}</span>
+                    <span className="text-[11px] text-gray-400">📍 {policy.geoRegion}</span>
                   )}
                   {dday && (
                     <span className={'text-[11px] font-semibold ml-auto ' + (dday.urgent ? 'text-red-500' : 'text-orange-500')}>
@@ -269,7 +269,7 @@ export default async function HomePage() {
                   <p className="text-xs text-gray-500 line-clamp-1 mb-2">{policy.excerpt}</p>
                 )}
                 <div className="flex items-center justify-between text-[11px] text-gray-400">
-                  <span>ð {formatViewCount(policy.viewCount || 0)}</span>
+                  <span>👁 {formatViewCount(policy.viewCount || 0)}</span>
                   {policy.publishedAt && (
                     <span>{new Date(policy.publishedAt).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}</span>
                   )}
@@ -288,10 +288,10 @@ export default async function HomePage() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-1">ëìê² ë§ë ì ì± ì°¾ê¸°</h3>
-              <p className="text-xs text-gray-500">ê°ë¨í ì ë³´ ìë ¥ì¼ë¡ ë§ì¶¤ ì¶ì²ë°ê¸°</p>
+              <h3 className="text-sm font-bold text-gray-900 mb-1">나에게 맞는 정책 찾기</h3>
+              <p className="text-xs text-gray-500">간단한 정보 입력으로 맞춤 추천받기</p>
             </div>
-            <span className="text-2xl">ð¯</span>
+            <span className="text-2xl">🎯</span>
           </div>
         </Link>
       </section>

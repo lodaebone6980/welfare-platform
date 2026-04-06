@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'ì ì± ê²ì',
-  description: 'ëìê² ë§ë ì ë¶ ì§ìê¸ì ê²ìíì¸ì. ì¹´íê³ ë¦¬, ì§ì­, í¤ìëë¡ íí°ë§í  ì ììµëë¤.',
+  title: '정책 검색',
+  description: '나에게 맞는 정부 지원금을 검색하세요. 카테고리, 지역, 키워드로 필터링할 수 있습니다.',
 };
 
 export const revalidate = 300;
@@ -12,8 +12,8 @@ export const revalidate = 300;
 const ITEMS_PER_PAGE = 20;
 
 const REGIONS = [
-  'ìì¸', 'ë¶ì°', 'ëêµ¬', 'ì¸ì²', 'ê´ì£¼', 'ëì ', 'ì¸ì°', 'ì¸ì¢',
-  'ê²½ê¸°', 'ê°ì', 'ì¶©ë¶', 'ì¶©ë¨', 'ì ë¶', 'ì ë¨', 'ê²½ë¶', 'ê²½ë¨', 'ì ì£¼',
+  '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
+  '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주',
 ];
 
 function parseKoreanDate(str: string | null): Date | null {
@@ -26,7 +26,7 @@ function parseKoreanDate(str: string | null): Date | null {
 
 function getDday(deadline: string | null): { text: string; urgent: boolean; color: string } | null {
   if (!deadline) return null;
-  if (deadline.includes('ìì') || deadline.includes('ìì')) return { text: 'ìì', urgent: false, color: 'bg-gray-100 text-gray-600' };
+  if (deadline.includes('상시') || deadline.includes('수시')) return { text: '상시', urgent: false, color: 'bg-gray-100 text-gray-600' };
   const deadlineDate = parseKoreanDate(deadline);
   if (!deadlineDate) return null;
   const today = new Date();
@@ -104,10 +104,10 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Search Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-6">
-        <h1 className="text-white text-lg font-bold mb-3">ì ì± ê²ì</h1>
+        <h1 className="text-white text-lg font-bold mb-3">정책 검색</h1>
         <form action="/welfare/search" method="get" className="relative">
           <input type="text" name="q" defaultValue={query}
-            placeholder="ì ì±ëª, í¤ìëë¡ ê²ì..."
+            placeholder="정책명, 키워드로 검색..."
             className="w-full px-4 py-3 pl-10 rounded-xl text-sm bg-white/95 focus:outline-none focus:ring-2 focus:ring-white"
           />
           <svg className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,12 +119,12 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
         </form>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-4">
+      <div className="max-w-6xl mx-auto px-4 py-4">
         {/* Category Chips */}
         <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
           <Link href={buildUrl({ category: '', page: '1' })}
             className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition ${!categoryFilter ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}>
-            ì ì²´
+            전체
           </Link>
           {categories.map(cat => (
             <Link key={cat.slug} href={buildUrl({ category: cat.slug === categoryFilter ? '' : cat.slug, page: '1' })}
@@ -139,7 +139,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
             <Link href={buildUrl({ region: '', page: '1' })}
               className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-xs transition ${!regionFilter ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-              ì êµ­
+              전국
             </Link>
             {REGIONS.map(r => (
               <Link key={r} href={buildUrl({ region: r === regionFilter ? '' : r, page: '1' })}
@@ -151,24 +151,24 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
           <div className="flex-shrink-0 flex gap-1">
             <Link href={buildUrl({ sort: 'latest', page: '1' })}
               className={`px-2.5 py-1 rounded-lg text-xs ${sortBy === 'latest' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
-              ìµì ì
+              최신순
             </Link>
             <Link href={buildUrl({ sort: 'popular', page: '1' })}
               className={`px-2.5 py-1 rounded-lg text-xs ${sortBy === 'popular' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
-              ì¸ê¸°ì
+              인기순
             </Link>
           </div>
         </div>
 
         {/* Results count */}
-        <p className="text-sm text-gray-500 mb-4">ì´ <span className="font-semibold text-blue-600">{totalCount.toLocaleString()}</span>ê±´{query && <> &middot; &quot;{query}&quot; ê²ìê²°ê³¼</>}</p>
+        <p className="text-sm text-gray-500 mb-4">총 <span className="font-semibold text-blue-600">{totalCount.toLocaleString()}</span>건{query && <> &middot; &quot;{query}&quot; 검색결과</>}</p>
 
         {/* Policy Cards Grid */}
         {policies.length === 0 ? (
           <div className="text-center py-16">
-            <div className="text-4xl mb-3">ð</div>
-            <p className="text-gray-500 text-sm">ê²ì ê²°ê³¼ê° ììµëë¤</p>
-            <Link href="/welfare/search" className="text-blue-600 text-sm mt-2 inline-block hover:underline">ì ì²´ ì ì± ë³´ê¸°</Link>
+            <div className="text-4xl mb-3">🔍</div>
+            <p className="text-gray-500 text-sm">검색 결과가 없습니다</p>
+            <Link href="/welfare/search" className="text-blue-600 text-sm mt-2 inline-block hover:underline">전체 정책 보기</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -221,7 +221,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
             {currentPage > 1 && (
               <Link href={buildUrl({ page: String(currentPage - 1) })}
                 className="px-3 py-2 rounded-lg text-sm bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">
-                ì´ì 
+                이전
               </Link>
             )}
             {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
@@ -238,7 +238,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
             {currentPage < totalPages && (
               <Link href={buildUrl({ page: String(currentPage + 1) })}
                 className="px-3 py-2 rounded-lg text-sm bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">
-                ë¤ì
+                다음
               </Link>
             )}
           </div>
