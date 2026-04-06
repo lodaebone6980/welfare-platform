@@ -149,17 +149,33 @@ export default async function HomePage() {
                 <CategoryIcon slug={cat.slug} size={28} />
               </div>
               <span className="text-[11px] text-gray-600 whitespace-nowrap">{cat.name}</span>
+                <span className="text-[9px] text-gray-400">{cat._count.policies}건</span>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* Popular Policies - gg24 style */}
+      
+        {/* CTA Banner - bokjiking style */}
+        <section className="px-4 py-3">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-800">맞춤 정책을 설정해보세요</p>
+              <p className="text-xs text-gray-500 mt-0.5">나에게 딱 맞는 정책을 찾아드려요</p>
+            </div>
+            <Link href="/welfare/search" className="text-xs font-medium text-white bg-blue-500 px-3 py-1.5 rounded-lg whitespace-nowrap">
+              설정하기
+            </Link>
+          </div>
+        </section>
+
+{/* Popular Policies - gg24 style */}
       <section className="px-4 pt-5 pb-2">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
             <span className="text-lg">🔥</span> 현재 주목받는 지원금
           </h2>
+            <div className="h-0.5 w-16 bg-blue-500 mt-1 rounded-full"></div>
           <Link href="/welfare/search?sort=popular" className="text-xs text-blue-600">더보기</Link>
         </div>
         <div className="space-y-0 bg-white rounded-2xl border overflow-hidden">
@@ -174,6 +190,7 @@ export default async function HomePage() {
                 <span className="text-sm font-bold text-blue-600 w-5">{idx + 1}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{cleanTitle(policy.title)}</p>
+                    {policy.category && <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">{policy.category.name}</span>}
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[11px] text-gray-400">👁 {formatViewCount(policy.viewCount || 0)}</span>
                     {dday && (
@@ -198,7 +215,8 @@ export default async function HomePage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
               <span className="text-lg">⏰</span> 곧 마감되는 지원금
-            </h2>
+          </h2>
+            <div className="h-0.5 w-16 bg-red-400 mt-1 rounded-full"></div>
             <Link href="/welfare/search?sort=deadline" className="text-xs text-blue-600">더보기</Link>
           </div>
           <div className="space-y-0 bg-white rounded-2xl border overflow-hidden">
@@ -212,6 +230,7 @@ export default async function HomePage() {
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{cleanTitle(policy.title)}</p>
+                    {policy.category && <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">{policy.category.name}</span>}
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[11px] text-gray-400">👁 {formatViewCount(policy.viewCount || 0)}</span>
                       <span className="text-[11px] text-gray-400">{policy.geoRegion || '전국'}</span>
@@ -238,6 +257,7 @@ export default async function HomePage() {
           <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
             <span className="text-lg">📋</span> 최신 지원금
           </h2>
+            <div className="h-0.5 w-16 bg-blue-400 mt-1 rounded-full"></div>
           <Link href="/welfare/search?sort=latest" className="text-xs text-blue-600">더보기</Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
