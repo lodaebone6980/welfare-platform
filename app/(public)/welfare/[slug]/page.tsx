@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import {
   generatePolicyJsonLd,
-  generateBreadcrumbJsonLd,
+  generateBreadcrumbsJsonLd,
   generateFaqJsonLd,
   generatePolicyMetaDescription,
   generatePolicyOgData,
@@ -34,7 +34,7 @@ async function getPolicy(slug: string) {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const policy = await getPolicy(params.slug);
-  if (!policy) return { title: 'ì ì± ì ë³´ | ì ì±ì§ê¸' };
+  if (!policy) return { title: '찾으시는 정책 정보가 없습니다' };
 
   const seoData: PolicySeoData = {
     title: policy.title,
@@ -59,12 +59,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: policy.title,
     description: metaDesc,
     keywords: [
-      policy.category?.name || 'ë³µì§',
-      policy.geoRegion || 'ì êµ­',
-      'ì ë¶ì§ìê¸',
-      'ë³´ì¡°ê¸',
-      'ë³µì§íí',
-      policy.title.replace(/^\[.*?\]\s*/, ''),
+      policy.category?.name || '복지',
+      policy.geoRegion || '전국',
+      '정부 지원금',
+      '복지 정책',
+      '보조금',
+      policy.title.replace(/[^\w\s가-힣]/g, ''),
     ].filter(Boolean).join(', '),
     alternates: {
       canonical: 'https://welfare-platform-five.vercel.app/welfare/' + encodeURIComponent(policy.slug),
@@ -76,21 +76,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           url: 'https://welfare-platform-five.vercel.app/og-image.png',
           width: 1200,
           height: 630,
-          alt: policy.title,
         },
       ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: policy.title + ' | ì ì±ì§ê¸',
-      description: metaDesc,
-    },
-    robots: {
-      index: true,
-      follow: true,
-      'max-snippet': -1,
-      'max-image-preview': 'large' as any,
-      'max-video-preview': -1,
     },
   };
 }
@@ -99,32 +86,29 @@ export default async function PolicyDetailPage({ params }: PageProps) {
   const policy = await getPolicy(params.slug);
   if (!policy) notFound();
 
-  // Increment view count
-  try {
-    await prisma.policy.update({
-      where: { id: policy.id },
-      data: { viewCount: { increment: 1 } },
-    });
-  } catch (e) { /* ignore */ }
+  const cleanTitle = policy.title;
 
-  // Get related policies
-  let relatedPolicies: any[] = [];
-  try {
-    relatedPolicies = await prisma.policy.findMany({
-      where: {
-        categoryId: policy.categoryId,
-        id: { not: policy.id },
-        status: 'PUBLISHED',
-      },
-      take: 4,
-      include: { category: true },
-    });
-  } catch (e) { /* ignore */ }
+  // Fetch related policies
+  const relatedPolicies = await prisma.policy.findMany({
+    where: {
+      categoryId: policy.categoryId,
+      id: { not: policy.id },
+      status: 'PUBLISHED',
+    },
+    take: 4,
+    orderBy: { viewCount: 'desc' },
+    include: { category: true },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      geoRegion: true,
+      excerpt: true,
+      category: { select: { name: true, slug: true } },
+    },
+  });
 
-  const categoryName = policy.category?.name || 'ë³µì§';
-  const cleanTitle = policy.title.replace(/^\[.*?\]\s*/, '');
-
-  // SEO structured data
+  // JSON-LD structured data
   const seoData: PolicySeoData = {
     title: policy.title,
     slug: policy.slug,
@@ -137,40 +121,28 @@ export default async function PolicyDetailPage({ params }: PageProps) {
     applicationMethod: policy.applicationMethod,
     requiredDocuments: policy.requiredDocuments,
     applyUrl: policy.applyUrl,
-    externalUrl: policy.externalUrl,
     publishedAt: policy.publishedAt,
     updatedAt: policy.updatedAt,
   };
 
-  const policyJsonLd = generatePolicyJsonLd(seoData);
-  const breadcrumbJsonLd = generateBreadcrumbJsonLd(seoData);
+  const jsonLd = generatePolicyJsonLd(seoData);
+  const breadcrumbsJsonLd = generateBreadcrumbsJsonLd(seoData);
   const faqJsonLd = generateFaqJsonLd(seoData);
 
   return (
     <>
-      {/* Structured Data for SEO/AEO */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(policyJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
-      {faqJsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-        />
-      )}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }} />
+      {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
 
-      <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
-        {/* Breadcrumb Navigation */}
-        <nav aria-label="breadcrumb" className="mb-4">
-          <ol className="flex items-center text-sm text-gray-500 flex-wrap gap-1">
-            <li><Link href="/" className="hover:text-blue-600">í</Link></li>
-            <li className="mx-1">/</li>
-            <li><Link href="/welfare/search" className="hover:text-blue-600">ì ì±ê²ì</Link></li>
+      <div className="pb-24 max-w-3xl mx-auto">
+
+        {/* Breadcrumb */}
+        <nav className="px-4 pt-4 mb-2">
+          <ol className="flex items-center text-xs text-gray-400 flex-wrap">
+            <li>
+              <Link href="/" className="hover:text-blue-600">홈</Link>
+            </li>
             {policy.category && (
               <>
                 <li className="mx-1">/</li>
@@ -190,16 +162,16 @@ export default async function PolicyDetailPage({ params }: PageProps) {
         <header className="mb-6">
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-              {categoryName}
+              {policy.category?.name}
             </span>
             {policy.geoRegion && (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                ð {policy.geoRegion}
+                📍 {policy.geoRegion}
               </span>
             )}
             {policy.status === 'PUBLISHED' && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-emerald-100 text-emerald-700">
-                ëª¨ì§ì¤
+                모집중
               </span>
             )}
           </div>
@@ -207,31 +179,31 @@ export default async function PolicyDetailPage({ params }: PageProps) {
             {cleanTitle}
           </h1>
           {policy.excerpt && (
-            <p className="text-gray-600 text-base leading-relaxed">{policy.excerpt}</p>
+            <p className="text-gray-400 text-base leading-relaxed">{policy.excerpt}</p>
           )}
           <div className="flex items-center gap-4 mt-3 text-sm text-gray-400">
             {policy.publishedAt && (
-              <span>ë±ë¡ì¼: {new Date(policy.publishedAt).toLocaleDateString('ko-KR')}</span>
+              <span>등록일: {new Date(policy.publishedAt).toLocaleDateString('ko-KR')}</span>
             )}
-            <span>ì¡°í {(policy.viewCount || 0).toLocaleString()}í</span>
+            <span>조회 {(policy.viewCount || 0).toLocaleString()}회</span>
           </div>
         </header>
 
         {/* Quick Summary Box */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6">
-          <h2 className="text-lg font-bold text-blue-900 mb-3">ð íëì ë³´ê¸°</h2>
+          <h2 className="text-lg font-bold text-blue-900 mb-3">📌 이 정책의 핵심정보</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-blue-800 whitespace-nowrap">ì¹´íê³ ë¦¬</span>
-              <span className="text-gray-700">{categoryName}</span>
+              <span className="font-semibold text-blue-800 whitespace-nowrap">카테고리</span>
+              <span className="text-gray-700">{policy.category?.name}</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-blue-800 whitespace-nowrap">ì§ì­</span>
-              <span className="text-gray-700">{policy.geoRegion || 'ì êµ­'}</span>
+              <span className="font-semibold text-blue-800 whitespace-nowrap">지역</span>
+              <span className="text-gray-700">{policy.geoRegion || '전국'}</span>
             </div>
             {policy.deadline && (
               <div className="flex items-start gap-2">
-                <span className="font-semibold text-blue-800 whitespace-nowrap">ë§ê°ì¼</span>
+                <span className="font-semibold text-blue-800 whitespace-nowrap">마감일</span>
                 <span className="text-gray-700">{policy.deadline}</span>
               </div>
             )}
@@ -239,12 +211,12 @@ export default async function PolicyDetailPage({ params }: PageProps) {
         </div>
 
         {/* Detail Sections */}
-        <div className="space-y-6 mb-8">
+        <div className="space-y-6 mb-6">
           {policy.description && (
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                 <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
-                ìì¸ ì¤ëª
+                상세 설명
               </h2>
               <div className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-white rounded-lg p-4 border">
                 {policy.description}
@@ -256,7 +228,7 @@ export default async function PolicyDetailPage({ params }: PageProps) {
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                 <span className="w-1 h-5 bg-green-600 rounded-full"></span>
-                ì§ì ëì
+                지원 대상
               </h2>
               <div className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-white rounded-lg p-4 border">
                 {policy.eligibility}
@@ -268,7 +240,7 @@ export default async function PolicyDetailPage({ params }: PageProps) {
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                 <span className="w-1 h-5 bg-purple-600 rounded-full"></span>
-                ì ì²­ ë°©ë²
+                신청 방법
               </h2>
               <div className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-white rounded-lg p-4 border">
                 {policy.applicationMethod}
@@ -280,7 +252,7 @@ export default async function PolicyDetailPage({ params }: PageProps) {
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                 <span className="w-1 h-5 bg-orange-600 rounded-full"></span>
-                íì ìë¥
+                필요 서류
               </h2>
               <div className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-white rounded-lg p-4 border">
                 {policy.requiredDocuments}
@@ -298,7 +270,7 @@ export default async function PolicyDetailPage({ params }: PageProps) {
               rel="noopener noreferrer"
               className="flex-1 text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-colors text-lg shadow-lg"
             >
-              ð ì ì²­íê¸°
+              📋 신청하기
             </a>
           )}
           {policy.externalUrl && (
@@ -308,20 +280,20 @@ export default async function PolicyDetailPage({ params }: PageProps) {
               rel="noopener noreferrer"
               className="flex-1 text-center bg-white hover:bg-gray-50 text-blue-600 font-semibold py-4 px-6 rounded-xl border-2 border-blue-600 transition-colors"
             >
-              ð ë³µì§ë¡ìì ë³´ê¸°
+              🔗 복지로에서 보기
             </a>
           )}
         </div>
 
         {/* Share Info */}
         <div className="flex items-center gap-3 mb-10 p-4 bg-gray-50 rounded-xl text-sm text-gray-500">
-          ì´ ì ì± ì ë³´ê° ëìì´ ëì¨ëì? ì£¼ë³ì íìí ë¶ê» ê³µì í´ì£¼ì¸ì.
+          이 정책 정보가 도움이 되셨나요? 주변에 필요한 분께 공유해주세요.
         </div>
 
         {/* Related Policies */}
         {relatedPolicies.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">ê´ë ¨ ì ì±</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">관련 정책</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {relatedPolicies.map((rp) => (
                 <Link
@@ -331,15 +303,16 @@ export default async function PolicyDetailPage({ params }: PageProps) {
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
-                      {rp.category?.name || 'ë³µì§'}
+                      {rp.category?.name || '복지'}
                     </span>
                     {rp.geoRegion && (
-                      <span className="text-xs text-gray-400">ð {rp.geoRegion}</span>
+                      <span className="text-xs text-gray-400">📍 {rp.geoRegion}</span>
                     )}
                   </div>
-                  <h3 className="font-semibold text-gray-800 line-clamp-2 text-sm">
-                    {rp.title.replace(/^\[.*?\]\s*/, '')}
-                  </h3>
+                  <h3 className="font-medium text-gray-800 text-sm line-clamp-2">{rp.title}</h3>
+                  {rp.excerpt && (
+                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">{rp.excerpt}</p>
+                  )}
                 </Link>
               ))}
             </div>
