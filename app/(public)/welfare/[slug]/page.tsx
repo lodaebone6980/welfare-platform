@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import {
   generatePolicyJsonLd,
-  generateBreadcrumbsJsonLd,
   generateFaqJsonLd,
   generatePolicyMetaDescription,
   generatePolicyOgData,
@@ -125,13 +124,11 @@ export default async function PolicyDetailPage({ params }: PageProps) {
   };
 
   const jsonLd = generatePolicyJsonLd(seoData);
-  const breadcrumbsJsonLd = generateBreadcrumbsJsonLd(seoData);
   const faqJsonLd = generateFaqJsonLd(seoData);
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }} />
       {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
 
       <div className="pb-24 max-w-3xl mx-auto">
