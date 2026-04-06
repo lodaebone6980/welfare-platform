@@ -20,11 +20,11 @@ async function getStats() {
   return { totalPolicies };
 }
 
-async function getPopularPolicies() {
+async function getFeaturedPolicies() {
   return prisma.policy.findMany({
-    where: { status: 'PUBLISHED' },
-    orderBy: { viewCount: 'desc' },
-    take: 5,
+    where: { status: 'PUBLISHED', featured: true },
+    orderBy: { featuredOrder: 'asc' },
+    take: 6,
     select: {
       id: true, title: true, slug: true, excerpt: true,
       geoRegion: true, viewCount: true, deadline: true,
@@ -111,9 +111,9 @@ function formatViewCount(count: number): string {
 
 
 export default async function HomePage() {
-  const [stats, popularPolicies, expiringPolicies, latestPolicies, categories] = await Promise.all([
+  const [stats, featuredPolicies, expiringPolicies, latestPolicies, categories] = await Promise.all([
     getStats(),
-    getPopularPolicies(),
+    getFeaturedPolicies(),
     getExpiringPolicies(),
     getLatestPolicies(),
     getCategories(),
@@ -173,13 +173,13 @@ export default async function HomePage() {
       <section className="px-4 pt-5 pb-2">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
-            <span className="text-lg">🔥</span> 현재 주목받는 지원금
+            <span className="text-lg">🔥</span> 에디터 추천 지원금
           </h2>
             <div className="h-0.5 w-16 bg-blue-500 mt-1 rounded-full"></div>
           <Link href="/welfare/search?sort=popular" className="text-xs text-blue-600">더보기</Link>
         </div>
         <div className="space-y-0 bg-white rounded-2xl border overflow-hidden">
-          {popularPolicies.map((policy, idx) => {
+          {featuredPolicies.map((policy, idx) => {
             const dday = getDday(policy.deadline);
             return (
               <Link
@@ -192,7 +192,7 @@ export default async function HomePage() {
                   <p className="text-sm font-medium text-gray-900 truncate">{cleanTitle(policy.title)}</p>
                     {policy.category && <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">{policy.category.name}</span>}
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[11px] text-gray-400">👁 {formatViewCount(policy.viewCount || 0)}</span>
+                    {/* viewCount hidden */}
                     {dday && (
                       <span className={'text-[11px] font-semibold ' + (dday.urgent ? 'text-red-500' : 'text-orange-500')}>
                         {dday.text}
@@ -232,7 +232,7 @@ export default async function HomePage() {
                     <p className="text-sm font-medium text-gray-900 truncate">{cleanTitle(policy.title)}</p>
                     {policy.category && <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">{policy.category.name}</span>}
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[11px] text-gray-400">👁 {formatViewCount(policy.viewCount || 0)}</span>
+                      {/* viewCount hidden */}
                       <span className="text-[11px] text-gray-400">{policy.geoRegion || '전국'}</span>
                     </div>
                   </div>
@@ -289,7 +289,7 @@ export default async function HomePage() {
                   <p className="text-xs text-gray-500 line-clamp-1 mb-2">{policy.excerpt}</p>
                 )}
                 <div className="flex items-center justify-between text-[11px] text-gray-400">
-                  <span>👁 {formatViewCount(policy.viewCount || 0)}</span>
+                  {/* viewCount hidden */}
                   {policy.publishedAt && (
                     <span>{new Date(policy.publishedAt).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}</span>
                   )}
