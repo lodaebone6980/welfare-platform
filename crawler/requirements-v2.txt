@@ -1,0 +1,6 @@
+# govmate 크롤러 v2 — Postgres 직접 upsert 경로
+# 기존 requirements.txt (WP 경로) 와 병행 설치 가능
+
+feedparser==6.0.11
+httpx==0.27.2
+psycopg[binary]==3.2.3

@@ -1,0 +1,64 @@
+name: Daily Crawler v2
+
+on:
+  schedule:
+    # 18:00 UTC = 03:00 KST (매일 새벽 3시)
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "수집 소스"
+        type: choice
+        default: "all"
+        options:
+          - all
+          - bokjiro
+          - youth
+          - rss
+      max_items:
+        description: "소스별 최대 아이템 수"
+        type: string
+        default: "50"
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: crawler-v2
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: crawler/requirements-v2.txt
+
+      - name: Install deps
+        run: pip install -r crawler/requirements-v2.txt
+
+      - name: Connectivity dry-run
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -m crawler.v2.main --dry-run
+
+      - name: Reset today counters
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -m crawler.v2.main --reset-today
+
+      - name: Run crawler
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://govmate.co.kr' }}
+        run: |
+          python -m crawler.v2.main \
+            --source "${{ github.event.inputs.source || 'all' }}" \
+            --max "${{ github.event.inputs.max_items || '50' }}" \
+            --verbose
