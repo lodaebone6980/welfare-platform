@@ -15,11 +15,24 @@ interface Props {
   regions: KrRegion[]
 }
 
+type PreviewRow = { regionSlug: string; regionName: string; slug: string; title: string }
+type ResultState =
+  | { kind: 'idle' }
+  | { kind: 'loading' }
+  | { kind: 'error'; message: string }
+  | {
+      kind: 'done'
+      created: { id: number; slug: string; title: string; regionSlug: string }[]
+      skipped: { slug: string; reason: string }[]
+      errors: { slug: string; error: string }[]
+    }
+
 export default function BulkClient({ policies, regions }: Props) {
   const [baseId, setBaseId] = useState<number | ''>('')
   const [picked, setPicked] = useState<Set<string>>(new Set(regions.map((r) => r.slug)))
   const [titleTemplate, setTitleTemplate] = useState<string>('{region} {title}')
-  const [preview, setPreview] = useState<{ slug: string; title: string }[]>([])
+  const [preview, setPreview] = useState<PreviewRow[]>([])
+  const [result, setResult] = useState<ResultState>({ kind: 'idle' })
 
   const base = useMemo(
     () => policies.find((p) => p.id === baseId) || null,
@@ -35,19 +48,46 @@ export default function BulkClient({ policies, regions }: Props) {
     })
   }
 
-  function compose() {
-    if (!base) return setPreview([])
-    const out: { slug: string; title: string }[] = []
-    for (const r of regions) {
-      if (!picked.has(r.slug)) continue
-      const t = titleTemplate
-        .replaceAll('{region}', r.short)
-        .replaceAll('{regionFull}', r.name)
-        .replaceAll('{title}', base.title)
-      const slug = `${base.slug}-${r.slug}`.slice(0, 120)
-      out.push({ slug, title: t })
+  async function callApi(dryRun: boolean) {
+    if (!base) return
+    const regionSlugs = Array.from(picked)
+    if (regionSlugs.length === 0) return
+    setResult({ kind: 'loading' })
+    try {
+      const res = await fetch('/api/admin/bulk-region', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          baseId: base.id,
+          regionSlugs,
+          titleTemplate,
+          dryRun,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.ok) {
+        if (dryRun && Array.isArray(json.plans)) {
+          setPreview(json.plans)
+          setResult({ kind: 'idle' })
+          return
+        }
+        setResult({ kind: 'error', message: json.error || `HTTP ${res.status}` })
+        return
+      }
+      if (dryRun) {
+        setPreview(Array.isArray(json.plans) ? json.plans : [])
+        setResult({ kind: 'idle' })
+      } else {
+        setResult({
+          kind: 'done',
+          created: json.created || [],
+          skipped: json.skipped || [],
+          errors: json.errors || [],
+        })
+      }
+    } catch (err: any) {
+      setResult({ kind: 'error', message: String(err?.message || err) })
     }
-    setPreview(out)
   }
 
   return (
@@ -125,19 +165,23 @@ export default function BulkClient({ policies, regions }: Props) {
       <div className="mt-4 flex justify-end gap-2">
         <button
           type="button"
-          onClick={compose}
-          disabled={!base}
-          className="rounded bg-gray-900 px-3 py-1.5 text-[12px] text-white disabled:opacity-40"
+          onClick={() => callApi(true)}
+          disabled={!base || picked.size === 0 || result.kind === 'loading'}
+          className="rounded border border-gray-300 px-3 py-1.5 text-[12px] text-gray-700 disabled:opacity-40"
         >
-          미리보기 생성
+          미리보기
         </button>
         <button
           type="button"
-          disabled
-          title="다음 PR: /api/admin/bulk-region 연결 후 활성화"
-          className="rounded border border-gray-200 px-3 py-1.5 text-[12px] text-gray-400"
+          onClick={() => {
+            if (!base) return
+            if (!confirm(`DRAFT 상태로 ${picked.size}건을 실제 생성합니다. 진행할까요?`)) return
+            callApi(false)
+          }}
+          disabled={!base || picked.size === 0 || result.kind === 'loading'}
+          className="rounded bg-gray-900 px-3 py-1.5 text-[12px] text-white disabled:opacity-40"
         >
-          실행 (예정)
+          {result.kind === 'loading' ? '처리중…' : '실행'}
         </button>
       </div>
 
@@ -156,6 +200,41 @@ export default function BulkClient({ policies, regions }: Props) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {result.kind === 'error' && (
+        <div className="mt-4 rounded border border-rose-200 bg-rose-50 p-3 text-[12px] text-rose-700">
+          실패: {result.message}
+        </div>
+      )}
+
+      {result.kind === 'done' && (
+        <div className="mt-4 space-y-2 rounded border border-green-200 bg-green-50 p-3 text-[12px] text-green-800">
+          <div className="font-medium">
+            생성 {result.created.length}건 · 건너뜀 {result.skipped.length}건 · 오류 {result.errors.length}건
+          </div>
+          {result.created.length > 0 && (
+            <ul className="list-disc pl-5 text-green-900/90">
+              {result.created.slice(0, 10).map((c) => (
+                <li key={c.id}>
+                  #{c.id} · <code className="font-mono">/welfare/{c.slug}</code>
+                </li>
+              ))}
+              {result.created.length > 10 && (
+                <li className="text-green-700">…외 {result.created.length - 10}건</li>
+              )}
+            </ul>
+          )}
+          {result.errors.length > 0 && (
+            <ul className="list-disc pl-5 text-rose-700">
+              {result.errors.map((e) => (
+                <li key={e.slug}>
+                  <code className="font-mono">{e.slug}</code>: {e.error}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>
