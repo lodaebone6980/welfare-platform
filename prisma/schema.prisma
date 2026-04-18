@@ -134,6 +134,40 @@ model FcmToken {
   createdAt DateTime @default(now())
 }
 
+// 유입/트래픽 추적 — 어드민 "유입 분석" 페이지의 데이터 소스
+model PageView {
+  id         BigInt   @id @default(autoincrement())
+  path       String                             // /welfare/<slug> 등 경로 (쿼리 제거)
+  fullPath   String?                            // 쿼리 포함 전체 경로
+  title      String?                            // document.title
+  referrer   String?                            // 원문 referrer URL
+  source     String                             // direct/google/naver/bing/daum/facebook/threads/x/instagram/kakao/other
+  medium     String?                            // organic/social/referral/direct 등
+  device     String                             // mobile/tablet/desktop
+  platform   String                             // web/app/app_ios/app_android (?src 또는 UA)
+  os         String?                            // iOS/Android/Windows/macOS/Linux/Other
+  browser    String?                            // Chrome/Safari/Firefox/Edge/Samsung/Naver 등
+  country    String?                            // 국가 코드 (optional, Vercel geo)
+  region     String?                            // 광역 (optional)
+  sessionId  String                             // 쿠키 기반 30분 롤링 세션
+  visitorId  String?                            // 쿠키 기반 방문자 식별자 (UV 계산)
+  userAgent  String?
+  utmSource  String?
+  utmMedium  String?
+  utmCampaign String?
+  utmTerm    String?
+  utmContent String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path, createdAt])
+  @@index([source, createdAt])
+  @@index([device, createdAt])
+  @@index([platform, createdAt])
+  @@index([sessionId])
+  @@index([visitorId])
+}
+
 enum PolicyStatus {
   DRAFT
   REVIEW

@@ -82,7 +82,7 @@ export function Sidebar() {
         <div className="px-4 py-3.5 border-b border-gray-100 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2" onClick={() => setOpen(false)}>
             <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
-            <span className="text-sm font-medium text-gray-800">정책자금넷 Admin</span>
+            <span className="text-sm font-medium text-gray-800">국민자료실 Admin</span>
           </Link>
           <button onClick={() => setOpen(false)} className="lg:hidden p-1 text-gray-400 hover:text-gray-600">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/prisma';
+import { SITE_URL } from '@/lib/env';
 
-const BASE_URL = 'https://welfare-platform-five.vercel.app';
+const BASE_URL = SITE_URL;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages

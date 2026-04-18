@@ -1,11 +1,24 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import { Suspense } from 'react';
 import './globals.css';
 import BottomNav from '@/components/layout/BottomNav';
 import MobileHeader from '@/components/layout/MobileHeader';
 import AppSmartBanner from '@/components/layout/AppSmartBanner';
 import SessionProvider from '@/components/auth/SessionProvider';
 import ChannelTalk from '@/components/layout/ChannelTalk';
+import Tracker from '@/components/analytics/Tracker';
+import GA4 from '@/components/analytics/GA4';
+import {
+  SITE_URL,
+  SITE_NAME,
+  SITE_DESC,
+  GA_ID,
+  GOOGLE_SITE_VERIFICATION,
+  NAVER_SITE_VERIFICATION,
+  BING_SITE_VERIFICATION,
+  INTERNAL_TRACKER_ENABLED,
+} from '@/lib/env';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 
@@ -14,25 +27,53 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: 'cover',
-  themeColor: '#2563eb',
+  themeColor: '#16a34a',
 };
 
 export const metadata: Metadata = {
   title: {
-    default: '\uC815\uCC45\uC9C0\uAE08 \u2013 \uB098\uC5D0\uAC8C \uB9DE\uB294 \uC815\uBD80 \uC9C0\uC6D0\uAE08 \uCC3E\uAE30',
-    template: '%s | \uC815\uCC45\uC9C0\uAE08',
+    default: `${SITE_NAME} – 2026 정부지원금·복지·보조금·환급금 안내`,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: '2025\uB144 \uCD5C\uC2E0 \uC815\uBD80 \uBCF5\uC9C0 \uC815\uCC45, \uC9C0\uC6D0\uAE08, \uBCF4\uC870\uAE08, \uD658\uAE09\uAE08 \uC815\uBCF4\uB97C \uD55C\uB208\uC5D0. \uB098\uC5D0\uAC8C \uB9DE\uB294 \uBCF5\uC9C0 \uC815\uCC45\uC744 AI\uAC00 \uCD94\uCC9C\uD574\uB4DC\uB9BD\uB2C8\uB2E4.',
-  keywords: ['\uC815\uBD80\uC9C0\uC6D0\uAE08', '\uBCF5\uC9C0\uC815\uCC45', '\uBCF4\uC870\uAE08', '\uD658\uAE09\uAE08', '\uCCAD\uB144\uC9C0\uC6D0\uAE08', '\uC544\uB3D9\uC218\uB2F9', '\uAE30\uCD08\uC0DD\uD65C\uC218\uAE09', '\uC8FC\uAC70\uC9C0\uC6D0', '\uAD50\uC721\uBCF4\uC870\uAE08'],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://welfare-platform-five.vercel.app'),
+  description: SITE_DESC,
+  keywords: [
+    '정부지원금',
+    '복지정책',
+    '보조금',
+    '환급금',
+    '청년지원금',
+    '아동수당',
+    '기초생활수급',
+    '주거지원',
+    '교육보조금',
+    '소상공인 지원',
+    '국민자료실',
+  ],
+  metadataBase: new URL(SITE_URL),
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
-    siteName: '\uC815\uCC45\uC9C0\uAE08',
+    siteName: SITE_NAME,
+    url: SITE_URL,
+    title: `${SITE_NAME} – 2026 정부지원금·복지 정보`,
+    description: SITE_DESC,
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${SITE_NAME}`,
+    description: SITE_DESC,
+    images: ['/og-image.png'],
   },
   robots: { index: true, follow: true },
   alternates: { canonical: '/' },
+  verification: {
+    google: GOOGLE_SITE_VERIFICATION || undefined,
+    other: {
+      ...(NAVER_SITE_VERIFICATION ? { 'naver-site-verification': NAVER_SITE_VERIFICATION } : {}),
+      ...(BING_SITE_VERIFICATION ? { 'msvalidate.01': BING_SITE_VERIFICATION } : {}),
+    },
+  },
 };
 
 // JSON-LD structured data
@@ -41,19 +82,21 @@ const jsonLd = {
   '@graph': [
     {
       '@type': 'WebSite',
-      name: '\uC815\uCC45\uC9C0\uAE08',
-      url: 'https://welfare-platform-five.vercel.app',
-      description: '\uB098\uC5D0\uAC8C \uB9DE\uB294 \uC815\uBD80 \uC9C0\uC6D0\uAE08\uC744 \uCC3E\uC544\uBCF4\uC138\uC694',
+      name: SITE_NAME,
+      url: SITE_URL,
+      description: SITE_DESC,
+      inLanguage: 'ko-KR',
       potentialAction: {
         '@type': 'SearchAction',
-        target: 'https://welfare-platform-five.vercel.app/welfare/search?q={search_term_string}',
+        target: `${SITE_URL}/welfare/search?q={search_term_string}`,
         'query-input': 'required name=search_term_string',
       },
     },
     {
       '@type': 'Organization',
-      name: '\uC815\uCC45\uC9C0\uAE08',
-      url: 'https://welfare-platform-five.vercel.app',
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: `${SITE_URL}/og-image.png`,
       sameAs: [],
     },
   ],
@@ -72,12 +115,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className}>
         <SessionProvider>
-            <AppSmartBanner />
-        <MobileHeader />
-        <main className="min-h-screen bg-gray-50"><div className="max-w-3xl mx-auto">{children}</div></main>
-        <BottomNav />
-            <ChannelTalk />
-          </SessionProvider>
+          <AppSmartBanner />
+          <MobileHeader />
+          <main className="min-h-screen bg-gray-50">
+            <div className="max-w-3xl mx-auto">{children}</div>
+          </main>
+          <BottomNav />
+          <ChannelTalk />
+        </SessionProvider>
+        <Suspense fallback={null}>
+          <Tracker enabled={INTERNAL_TRACKER_ENABLED} />
+          {GA_ID ? <GA4 gaId={GA_ID} /> : null}
+        </Suspense>
       </body>
     </html>
   );
