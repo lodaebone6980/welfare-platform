@@ -4,10 +4,17 @@
     {
       "path": "/api/cron/collect",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/notifications",
+      "schedule": "0 0 * * *"
     }
   ],
   "functions": {
     "app/api/cron/collect/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/notifications/route.ts": {
       "maxDuration": 60
     }
   }
