@@ -5,7 +5,7 @@ import CategoryIcon from '@/components/ui/CategoryIcon';
 
 export const metadata: Metadata = {
   title: '복지길잡이 - 나에게 맞는 정부 지원금 찾기',
-  description: '2024년 최신 정부 복지 정책, 지원금, 보조금 정보를 한눈에! 생활안정, 주거, 교육, 고용, 건강 등 맞춤형 복지 서비스를 찾아보세요.',
+  description: '2026년 최신 정부 복지 정책, 지원금, 보조금 정보를 한눈에! 생활안정, 주거, 교육, 고용, 건강 등 맞춤형 복지 서비스를 찾아보세요.',
   openGraph: {
     title: '복지길잡이 - 나에게 맞는 정부 지원금 찾기',
     description: '최신 정부 복지 정책과 지원금 정보를 한눈에 확인하세요.',
