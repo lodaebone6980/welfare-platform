@@ -219,3 +219,25 @@ model CollectionRun {
   @@index([sourceId, startedAt(sort: Desc)])
   @@index([startedAt(sort: Desc)])
 }
+
+// ───────────────────────────────────────────────────────────────
+// 알림 설정 (회원별 푸시 수신 선호)
+// - userId 에 대해 1:1, 비로그인 유저는 row 없음 (기본값 사용)
+// - quietStart / quietEnd 는 HH:MM 형식 문자열
+// - categorySlugs 가 빈 배열이면 전체 카테고리 구독으로 간주
+// ───────────────────────────────────────────────────────────────
+model NotificationPref {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  enabled        Boolean  @default(true)
+  dailyDigest    Boolean  @default(true)
+  categorySlugs  String[] @default([])
+  regionCodes    String[] @default([])
+  quietStart     String   @default("22:00")
+  quietEnd       String   @default("08:00")
+  locale         String   @default("ko-KR")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([enabled])
+}
