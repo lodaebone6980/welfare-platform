@@ -46,6 +46,13 @@ const NAV: NavItem[] = [
       { label: 'N 블로그',     href: '/marketing/naver-blog' },
     ],
   },
+  {
+    label: '\uACC4\uC815 · \uC2DC\uC2A4\uD15C',
+    children: [
+      { label: '\uD68C\uC6D0 \uAD00\uB9AC', href: '/members' },
+      { label: '\uC124\uC815', href: '/settings' },
+    ],
+  },
 ]
 
 export function Sidebar() {
