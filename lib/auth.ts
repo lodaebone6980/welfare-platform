@@ -2,6 +2,7 @@ import type { NextAuthOptions } from 'next-auth';
 import KakaoProvider from 'next-auth/providers/kakao';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
+import EmailProvider from 'next-auth/providers/email';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
@@ -32,6 +33,18 @@ export const authOptions: NextAuthOptions = {
             authorization: {
               params: { prompt: 'consent', access_type: 'offline', response_type: 'code' },
             },
+          }),
+        ]
+      : []),
+
+    // ── 이메일 링크 로그인 (ENV: EMAIL_SERVER / EMAIL_FROM) ──
+    // 설정 안 됐으면 방해 없는 비활성 스플릿 상태로 남음.
+    ...(process.env.EMAIL_SERVER && process.env.EMAIL_FROM
+      ? [
+          EmailProvider({
+            server: process.env.EMAIL_SERVER,
+            from: process.env.EMAIL_FROM,
+            maxAge: 24 * 60 * 60,
           }),
         ]
       : []),
