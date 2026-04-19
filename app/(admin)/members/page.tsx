@@ -1,32 +1,244 @@
-export const metadata = {
-  title: '\uD68C\uC6D0 \uAD00\uB9AC',
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+
+type MemberRow = {
+  id: string;
+  email: string | null;
+  name: string | null;
+  image: string | null;
+  role: string;
+  emailVerified: string | null;
+  createdAt: string;
+  providers: string[];
+};
+
+const PROVIDER_LABEL: Record<string, string> = {
+  kakao: '카카오',
+  google: '구글',
+  email: '이메일',
+  credentials: '관리자',
+  'admin-credentials': '관리자',
+};
+
+const ROLE_LABEL: Record<string, string> = {
+  USER: '일반',
+  ADMIN: '관리자',
+  BLOCKED: '차단',
 };
 
 export default function MembersPage() {
-  return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">\uD68C\uC6D0 \uAD00\uB9AC</h1>
-        <p className="text-xs text-gray-500 mt-1">\uAC00\uC785 \uD68C\uC6D0 \uBAA9\uB85D \u00B7 \uAC80\uC0C9 \u00B7 \uC0C1\uC138 \uC870\uD68C</p>
-      </div>
+  const [rows, setRows] = useState<MemberRow[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [q, setQ] = useState('');
+  const [provider, setProvider] = useState('');
+  const [saving, setSaving] = useState<string | null>(null);
 
-      <div className="p-5 rounded-xl border border-amber-200 bg-amber-50">
-        <div className="flex items-start gap-3">
-          <span className="text-lg" aria-hidden>\uD83D\uDEE0\uFE0F</span>
-          <div>
-            <h2 className="text-sm font-semibold text-amber-900">\uC900\uBE44 \uC911\uC785\uB2C8\uB2E4</h2>
-            <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-              \uD604\uC7AC \uD68C\uC6D0\uAC00\uC785 \uAE30\uB2A5\uC774 \uD65C\uC131\uD654\uB418\uC5B4 \uC788\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.
-              \uC774\uBA54\uC77C\u00B7\uAD6C\uAE00\u00B7\uCE74\uCE74\uC624 \uB85C\uADF8\uC778 \uC5F0\uB3D9 \uD6C4 \uC774 \uD398\uC774\uC9C0\uC5D0 \uD68C\uC6D0 \uBAA9\uB85D\uC774 \uD45C\uC2DC\uB429\uB2C8\uB2E4.
-            </p>
-            <ul className="text-xs text-amber-800 mt-3 list-disc pl-5 space-y-1">
-              <li>Prisma \uC2A4\uD0A4\uB9C8\uC5D0 <code className="bg-white px-1 rounded">User</code> / <code className="bg-white px-1 rounded">Account</code> / <code className="bg-white px-1 rounded">Session</code> \uBAA8\uB378 \uCD94\uAC00</li>
-              <li>NextAuth \uC5D0 <code className="bg-white px-1 rounded">PrismaAdapter</code> \uC5F0\uACB0</li>
-              <li>Google/Kakao OAuth \uD074\uB77C\uC774\uC5B8\uD2B8 ID/Secret \uBC1C\uAE09 \uBC0F \uD658\uACBD\uBCC0\uC218 \uB4F1\uB85D</li>
-              <li>\uC774\uBA54\uC77C \uB85C\uADF8\uC778 \uB9C1\uD06C \uC804\uC1A1 \uC2DC Resend(or Sendgrid) API \uD0A4 \uD544\uC694</li>
-            </ul>
-          </div>
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      if (q.trim()) params.set('q', q.trim());
+      if (provider) params.set('provider', provider);
+      params.set('limit', '200');
+      const res = await fetch('/api/admin/members?' + params.toString(), {
+        cache: 'no-store',
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || '회원 목록을 불러오지 못했습니다.');
+      }
+      const data = await res.json();
+      setRows(data.users || []);
+      setTotal(data.total ?? (data.users?.length || 0));
+    } catch (e: any) {
+      setError(e?.message || '오류가 발생했습니다.');
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function updateRole(id: string, role: string) {
+    setSaving(id);
+    try {
+      const res = await fetch('/api/admin/members', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, role }),
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(t);
+      }
+      setRows((prev) =>
+        (prev || []).map((u) => (u.id === id ? { ...u, role } : u))
+      );
+    } catch (e: any) {
+      alert('권한 변경 실패: ' + (e?.message || 'unknown'));
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  const providers = useMemo(() => {
+    const s = new Set<string>();
+    (rows || []).forEach((r) => r.providers.forEach((p) => s.add(p)));
+    return Array.from(s);
+  }, [rows]);
+
+  return (
+    <div className="space-y-6 p-6">
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">회원 관리</h1>
+          <p className="text-sm text-gray-500">
+            총 {total.toLocaleString()}명의 회원이 가입되어 있습니다.
+          </p>
         </div>
+      </header>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          load();
+        }}
+        className="flex flex-wrap items-center gap-2"
+      >
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="이메일 또는 이름 검색"
+          className="w-64 rounded-md border border-gray-300 px-3 py-2 text-sm"
+        />
+        <select
+          value={provider}
+          onChange={(e) => setProvider(e.target.value)}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option value="">전체 로그인 방식</option>
+          {providers.map((p) => (
+            <option key={p} value={p}>
+              {PROVIDER_LABEL[p] || p}
+            </option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          disabled={loading}
+        >
+          {loading ? '불러오는 중...' : '검색'}
+        </button>
+      </form>
+
+      {error && (
+        <div className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50 text-left text-xs font-semibold uppercase text-gray-500">
+            <tr>
+              <th className="px-4 py-3">회원</th>
+              <th className="px-4 py-3">이메일</th>
+              <th className="px-4 py-3">로그인</th>
+              <th className="px-4 py-3">가입일</th>
+              <th className="px-4 py-3">권한</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 bg-white">
+            {(rows || []).map((u) => (
+              <tr key={u.id}>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    {u.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={u.image}
+                        alt=""
+                        className="h-8 w-8 rounded-full"
+                      />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-600">
+                        {(u.name || u.email || '?').slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-medium">
+                        {u.name || '(이름 없음)'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {u.id.slice(0, 8)}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-gray-700">
+                  {u.email || '-'}
+                  {u.emailVerified && (
+                    <span className="ml-2 rounded bg-green-50 px-1.5 py-0.5 text-xs text-green-700">
+                      인증
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-1">
+                    {u.providers.length === 0 ? (
+                      <span className="text-xs text-gray-400">(없음)</span>
+                    ) : (
+                      u.providers.map((p) => (
+                        <span
+                          key={p}
+                          className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
+                        >
+                          {PROVIDER_LABEL[p] || p}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-gray-500">
+                  {new Date(u.createdAt).toLocaleDateString('ko-KR')}
+                </td>
+                <td className="px-4 py-3">
+                  <select
+                    value={u.role}
+                    onChange={(e) => updateRole(u.id, e.target.value)}
+                    disabled={saving === u.id}
+                    className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                  >
+                    {Object.keys(ROLE_LABEL).map((r) => (
+                      <option key={r} value={r}>
+                        {ROLE_LABEL[r]}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+              </tr>
+            ))}
+            {rows && rows.length === 0 && !loading && (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-4 py-12 text-center text-gray-400"
+                >
+                  아직 가입된 회원이 없습니다.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
