@@ -100,6 +100,8 @@ model ApiSource {
   totalCount   Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  runs         CollectionRun[]
 }
 
 model UrlMapping {
@@ -197,4 +199,23 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model CollectionRun {
+  id          Int       @id @default(autoincrement())
+  sourceId    Int
+  source      ApiSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  startedAt   DateTime  @default(now())
+  finishedAt  DateTime?
+  status      String    @default("running") // running | success | error | partial
+  fetched     Int       @default(0)
+  created     Int       @default(0)
+  updated     Int       @default(0)
+  skipped     Int       @default(0)
+  errorMsg    String?   @db.Text
+  durationMs  Int?
+  triggeredBy String    @default("manual")
+
+  @@index([sourceId, startedAt(sort: Desc)])
+  @@index([startedAt(sort: Desc)])
 }
