@@ -66,14 +66,14 @@ export default async function DashboardPage() {
   const done       = todayPosts >= DAILY_GOAL
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl">
-      <h1 className="text-lg font-medium text-gray-800 mb-5">대시보드</h1>
+    <div className="p-4 sm:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full">
+      <h1 className="text-xl lg:text-2xl xl:text-3xl font-semibold text-gray-800 mb-6 lg:mb-8">대시보드</h1>
 
       {/* 미션 + 스트릭 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-        <div className={`rounded-xl p-4 border ${done ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
-          <div className={`text-xs font-medium mb-2 ${done ? 'text-green-700' : 'text-gray-500'}`}>오늘의 미션</div>
-          <div className="text-2xl font-medium text-gray-800">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <div className={`rounded-xl p-4 lg:p-5 border ${done ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
+          <div className={`text-xs lg:text-sm font-medium mb-2 ${done ? 'text-green-700' : 'text-gray-500'}`}>오늘의 미션</div>
+          <div className="text-2xl lg:text-3xl xl:text-4xl font-medium text-gray-800">
             {todayPosts} <span className="text-sm font-normal text-gray-400">/ {DAILY_GOAL}건</span>
           </div>
           <div className="mt-3 h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -84,9 +84,9 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-xl p-4 border bg-amber-50 border-amber-200">
+        <div className="rounded-xl p-4 lg:p-5 border bg-amber-50 border-amber-200">
           <div className="text-xs font-medium text-amber-700 mb-2">발행 스트릭</div>
-          <div className="text-2xl font-medium text-gray-800">
+          <div className="text-2xl lg:text-3xl xl:text-4xl font-medium text-gray-800">
             {streak} <span className="text-sm font-normal text-amber-600">일 연속</span>
           </div>
           <div className="text-xs text-amber-600 mt-2">
@@ -96,7 +96,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* 메트릭 카드 */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
         {[
           { label: '발행된 정책', value: totalPolicies.toLocaleString(),  sub: '누적' },
           { label: '오늘 Threads', value: todayPosts,                     sub: '발행' },
