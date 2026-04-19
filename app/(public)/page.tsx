@@ -27,7 +27,7 @@ async function getFeaturedPolicies() {
     take: 6,
     select: {
       id: true, title: true, slug: true, excerpt: true,
-      geoRegion: true, viewCount: true, deadline: true,
+      geoRegion: true, deadline: true,
       category: { select: { name: true, slug: true, icon: true } },
     },
   });
@@ -38,10 +38,10 @@ async function getExpiringPolicies() {
     where: { status: 'PUBLISHED', deadline: { not: null } },
     select: {
       id: true, title: true, slug: true, excerpt: true,
-      geoRegion: true, viewCount: true, deadline: true,
+      geoRegion: true, deadline: true,
       category: { select: { name: true, slug: true, icon: true } },
     },
-    take: 100,
+    take: 30,
   });
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -64,7 +64,7 @@ async function getLatestPolicies() {
     take: 6,
     select: {
       id: true, title: true, slug: true, excerpt: true,
-      geoRegion: true, publishedAt: true, viewCount: true, deadline: true,
+      geoRegion: true, publishedAt: true, deadline: true,
       category: { select: { name: true, slug: true, icon: true } },
     },
   });
