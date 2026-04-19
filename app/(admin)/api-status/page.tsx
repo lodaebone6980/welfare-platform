@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import TriggerButton from '@/components/admin/TriggerButton';
+import ScheduleEditor from './_components/ScheduleEditor';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -35,11 +36,28 @@ export default async function ApiStatusPage() {
   let sources: any[] = [];
   let runs: any[] = [];
   let migrationNeeded = false;
+  let scheduleMigrationNeeded = false;
 
   try {
-    sources = await prisma.apiSource.findMany({
+    sources = await (prisma as any).apiSource.findMany({
       orderBy: { id: 'asc' },
     });
+  } catch (e: any) {
+    if (/column.*does not exist|unknown.*field/i.test(String(e?.message))) {
+      scheduleMigrationNeeded = true;
+      try {
+        sources = await prisma.$queryRawUnsafe<any[]>(
+          'SELECT id, name, type, status, "lastSuccess", "lastError", "todayCount", "totalCount" FROM "ApiSource" ORDER BY id ASC'
+        );
+      } catch {
+        sources = [];
+      }
+    } else {
+      throw e;
+    }
+  }
+
+  try {
     runs = await prisma.collectionRun.findMany({
       take: 20,
       orderBy: { startedAt: 'desc' },
@@ -48,11 +66,6 @@ export default async function ApiStatusPage() {
   } catch (e: any) {
     if (/CollectionRun|relation.*does not exist/i.test(String(e))) {
       migrationNeeded = true;
-      try {
-        sources = await prisma.apiSource.findMany({ orderBy: { id: 'asc' } });
-      } catch {
-        /* ignore */
-      }
     } else {
       throw e;
     }
@@ -78,9 +91,16 @@ export default async function ApiStatusPage() {
       </div>
 
       {migrationNeeded && (
-        <div className="mb-6 p-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm">
+        <div className="mb-4 p-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm">
           ⚠️ <strong>마이그레이션 필요</strong>: <code>CollectionRun</code> 테이블이 아직 생성되지 않았습니다.
           Supabase SQL 에디터에서 <code>prisma/migrations/20260419_collection_runs/migration.sql</code>을 실행하세요.
+        </div>
+      )}
+
+      {scheduleMigrationNeeded && (
+        <div className="mb-6 p-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm">
+          ⚠️ <strong>스케줄 컬럼 마이그레이션 필요</strong>: <code>ApiSource</code>에 <code>schedule</code>/<code>autoPublish</code> 컬럼�t씕 아직 없습니다.
+          Supabase SQL 에디터에서 <code>prisma/migrations/20260419_api_schedule/migration.sql</code>을 실행한 뒤 자동 수집 설정이 가능합니다.
         </div>
       )}
 
@@ -139,6 +159,15 @@ export default async function ApiStatusPage() {
               source={s.name === '복지로' ? 'bokjiro' : s.name}
               disabled={s.status !== 'active'}
             />
+            {!scheduleMigrationNeeded && (
+              <ScheduleEditor
+                id={s.id}
+                name={s.name}
+                schedule={s.schedule ?? null}
+                autoPublish={s.autoPublish ?? false}
+                lastScheduledRun={s.lastScheduledRun ?? null}
+              />
+            )}
           </div>
         ))}
       </div>
