@@ -15,8 +15,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: '\uC815\uCC45\uC9C0\uAE08 \u2013 \uB098\uC5D0\uAC8C \uB9DE\uB294 \uC815\uBD80 \uC9C0\uC6D0\uAE08 \uCC3E\uAE30',
-    template: '%s | \uC815\uCC45\uC9C0\uAE08',
+    default: '\uBCF5\uC9C0\uAE38\uC7A1\uC774 \u2013 \uB098\uC5D0\uAC8C \uB9DE\uB294 \uC815\uBD80 \uC9C0\uC6D0\uAE08 \uCC3E\uAE30',
+    template: '%s | \uBCF5\uC9C0\uAE38\uC7A1\uC774',
   },
   description: '2025\uB144 \uCD5C\uC2E0 \uC815\uBD80 \uBCF5\uC9C0 \uC815\uCC45, \uC9C0\uC6D0\uAE08, \uBCF4\uC870\uAE08, \uD658\uAE09\uAE08 \uC815\uBCF4\uB97C \uD55C\uB208\uC5D0. \uB098\uC5D0\uAC8C \uB9DE\uB294 \uBCF5\uC9C0 \uC815\uCC45\uC744 AI\uAC00 \uCD94\uCC9C\uD574\uB4DC\uB9BD\uB2C8\uB2E4.',
   keywords: ['\uC815\uBD80\uC9C0\uC6D0\uAE08', '\uBCF5\uC9C0\uC815\uCC45', '\uBCF4\uC870\uAE08', '\uD658\uAE09\uAE08', '\uCCAD\uB144\uC9C0\uC6D0\uAE08', '\uC544\uB3D9\uC218\uB2F9', '\uAE30\uCD08\uC0DD\uD65C\uC218\uAE09', '\uC8FC\uAC70\uC9C0\uC6D0', '\uAD50\uC721\uBCF4\uC870\uAE08'],
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
-    siteName: '\uC815\uCC45\uC9C0\uAE08',
+    siteName: '\uBCF5\uC9C0\uAE38\uC7A1\uC774',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
   robots: { index: true, follow: true },
@@ -37,7 +37,7 @@ const jsonLd = {
   '@graph': [
     {
       '@type': 'WebSite',
-      name: '\uC815\uCC45\uC9C0\uAE08',
+      name: '\uBCF5\uC9C0\uAE38\uC7A1\uC774',
       url: 'https://welfare-platform-five.vercel.app',
       description: '\uB098\uC5D0\uAC8C \uB9DE\uB294 \uC815\uBD80 \uC9C0\uC6D0\uAE08\uC744 \uCC3E\uC544\uBCF4\uC138\uC694',
       potentialAction: {
@@ -48,7 +48,7 @@ const jsonLd = {
     },
     {
       '@type': 'Organization',
-      name: '\uC815\uCC45\uC9C0\uAE08',
+      name: '\uBCF5\uC9C0\uAE38\uC7A1\uC774',
       url: 'https://welfare-platform-five.vercel.app',
       sameAs: [],
     },
