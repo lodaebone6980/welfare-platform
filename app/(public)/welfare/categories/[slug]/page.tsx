@@ -87,7 +87,7 @@ export default async function CategoryDetailPage({
 }) {
   const category = await prisma.category.findUnique({
     where: { slug: params.slug },
-    select: { id: true, name: true, slug: true, icon: true, description: true },
+    select: { id: true, name: true, slug: true, icon: true },
   });
   if (!category) notFound();
 
@@ -148,9 +148,6 @@ export default async function CategoryDetailPage({
             </p>
           </div>
         </div>
-        {category.description && (
-          <p className="text-white/90 text-xs mt-3 leading-relaxed">{category.description}</p>
-        )}
       </section>
 
       <div className="max-w-6xl mx-auto px-4 py-4">
