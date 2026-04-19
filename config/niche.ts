@@ -21,7 +21,7 @@ const CONFIGS: Record<NicheType, NicheConfig> = {
 
   // ✅ 현재 운영 중
   welfare: {
-    name: '정책자금넷',
+    name: '복지길잡이',
     domain: 'yourdomain.com',
     rssSources: [
       { name: '보건복지부', url: 'https://www.mohw.go.kr/react/rss/rss.jsp' },

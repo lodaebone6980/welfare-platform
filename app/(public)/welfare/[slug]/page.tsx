@@ -85,7 +85,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
   const ogData = generatePolicyOgData(seoData);
   return {
-    title: `${policy.title} | 정책지금`,
+    title: `${policy.title} | 복지길잡이`,
     description: generatePolicyMetaDescription(seoData),
     openGraph: { title: ogData.title, description: ogData.description, type: 'article' },
   };

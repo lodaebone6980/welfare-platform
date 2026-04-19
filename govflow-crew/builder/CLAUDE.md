@@ -99,7 +99,7 @@ const NAV = [
 ]
 
 // active 판정: pathname === href 또는 pathname.startsWith(href) (단 /admin 제외)
-// 로고: 왼쪽 초록 점 + "정책자금넷 Admin"
+// 로고: 왼쪽 초록 점 + "복지길잡이 Admin"
 // 하단: "↗ 사이트로 이동" (target="_blank")
 ```
 
