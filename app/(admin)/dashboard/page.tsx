@@ -111,9 +111,8 @@ export default async function DashboardPage() {
       <div className="flex items-end justify-between mb-6 lg:mb-8">
         <div>
           <h1 className="text-xl lg:text-2xl xl:text-3xl font-semibold text-gray-800">대시보드</h1>
-          <p className="text-xs text-gray-500 mt-1">콘텐츠 · API 수집 · 유입 핵심 지표 요약</p>
+          <p className="text-xs text-gray-500 mt-1">콘텐츠 · API 수집 핵심 지표 요약</p>
         </div>
-        <Link href="/analytics" className="text-xs text-blue-600 hover:underline">유입 분석 →</Link>
       </div>
 
       {/* KPI 6개 */}
@@ -213,7 +212,6 @@ export default async function DashboardPage() {
                   <tr className="text-gray-400 border-b border-gray-100">
                     <th className="text-left py-1.5 font-normal">정책명</th>
                     <th className="text-left py-1.5 font-normal hidden sm:table-cell">카테고리</th>
-                    <th className="text-right py-1.5 font-normal">조회</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -223,7 +221,6 @@ export default async function DashboardPage() {
                         <Link href={`/content/policy/${p.id}/edit`} className="hover:text-blue-600">{p.title}</Link>
                       </td>
                       <td className="py-2 text-gray-400 hidden sm:table-cell">{p.category?.name ?? '-'}</td>
-                      <td className="py-2 text-right text-gray-500">{(p.viewCount ?? 0).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
