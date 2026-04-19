@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { nanoid } from 'nanoid';
+import { enrichPolicyInput, mergeEnrich } from './enrich';
 
 const API_KEY = process.env.DATA_GO_KR_KEY ?? '';
 const API_URL =
@@ -206,4 +207,37 @@ export async function collectBokjiro(
   }
 
   return { fetched, created, updated, skipped };
+}
+
+
+/**
+ * Bokjiro 수집기 결과를 DB 에 쓰기 직전에 호출하는 enrich 래퍼.
+ * - resolveCategoryAndRegion 기반 categoryId / geoRegion 보강
+ * - 이미 지정된 값이 있으면 덮어쓰지 않음
+ *
+ * 사용 예:
+ *   const enriched = await enrichBokjiroPayload(payload);
+ *   await prisma.policy.create({ data: enriched });
+ */
+export async function enrichBokjiroPayload<
+  T extends {
+    title?: string | null;
+    description?: string | null;
+    excerpt?: string | null;
+    eligibility?: string | null;
+    focusKeyword?: string | null;
+    categoryId?: number | null;
+    geoRegion?: string | null;
+  },
+>(payload: T): Promise<T> {
+  const e = await enrichPolicyInput({
+    title: payload.title,
+    description: payload.description,
+    excerpt: payload.excerpt,
+    eligibility: payload.eligibility,
+    focusKeyword: payload.focusKeyword,
+    categoryId: payload.categoryId ?? undefined,
+    geoRegion: payload.geoRegion ?? undefined,
+  });
+  return mergeEnrich(payload, e);
 }
