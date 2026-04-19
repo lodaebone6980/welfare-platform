@@ -35,7 +35,7 @@ export default function NotificationsPage() {
           <div>
             <p className="text-sm font-medium text-gray-800">복지길잡이 서비스 안내</p>
             <p className="text-xs text-gray-500 mt-0.5">복지길잡이은 정부 및 지자체의 다양한 복지 정책, 지원금, 보조금 정보를 한곳에서 확인할 수 있는 서비스입니다.</p>
-            <p className="text-xs text-gray-400 mt-1">2025.04.05</p>
+            <p className="text-xs text-gray-400 mt-1">2026.04.19</p>
           </div>
         </div>
       </div>
