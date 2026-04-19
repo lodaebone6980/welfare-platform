@@ -72,3 +72,18 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: e?.message ?? 'lookup failed' }, { status: 500 })
   }
 }
+
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  const deny = await assertAdmin(); if (deny) return deny
+  const id = Number(params.id)
+  if (!Number.isFinite(id)) return NextResponse.json({ ok: false, error: 'invalid id' }, { status: 400 })
+  try {
+    await (prisma as any).apiSource.delete({ where: { id } })
+    return NextResponse.json({ ok: true })
+  } catch (e: any) {
+    if (/Record to delete does not exist/i.test(String(e?.message ?? ''))) {
+      return NextResponse.json({ ok: false, error: 'not found' }, { status: 404 })
+    }
+    return NextResponse.json({ ok: false, error: e?.message ?? 'delete failed' }, { status: 400 })
+  }
+}
