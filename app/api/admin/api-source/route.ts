@@ -1,14 +1,24 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+async function assertAdmin() {
+  const session = await getServerSession(authOptions as any);
+  const role = (session as any)?.user?.role;
+  if (role !== 'ADMIN' && role !== 'admin') {
+    return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 });
+  }
+  return null;
+}
+
 // GET: List all API sources
 export async function GET() {
+  const deny = await assertAdmin(); if (deny) return deny;
   try {
-    const sources = await prisma.apiSource.findMany({
-      orderBy: { id: 'asc' },
-    });
+    const sources = await prisma.apiSource.findMany({ orderBy: { id: 'asc' } });
     return NextResponse.json({ ok: true, sources });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message ?? 'unknown' }, { status: 500 });
@@ -17,6 +27,7 @@ export async function GET() {
 
 // POST: Create a new API source
 export async function POST(req: Request) {
+  const deny = await assertAdmin(); if (deny) return deny;
   try {
     const body = await req.json();
     const { name, url, type, status } = body ?? {};
