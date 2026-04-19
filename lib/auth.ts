@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from 'next-auth';
 import KakaoProvider from 'next-auth/providers/kakao';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
@@ -21,6 +22,19 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.KAKAO_CLIENT_ID || '',
       clientSecret: process.env.KAKAO_CLIENT_SECRET || '',
     }),
+
+    // ── 일반 유저: 구글 (ENV: GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET) ──
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            authorization: {
+              params: { prompt: 'consent', access_type: 'offline', response_type: 'code' },
+            },
+          }),
+        ]
+      : []),
 
     // ── 관리자 전용: ID + 비밀번호 ─────────────────────
     // 공개 /login 에는 노출 X. /access/admin 에서만 signIn('admin-credentials', ...)
