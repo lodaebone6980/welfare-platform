@@ -1,73 +1,75 @@
-import { MetadataRoute } from 'next'
-import { SITE_URL } from '@/lib/env'
+import { MetadataRoute } from 'next';
 
+const BASE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  'https://welfare-platform-five.vercel.app';
+
+/**
+ * robots.txt
+ *
+ * 한국 환경에서 필수:
+ *  - Yeti (네이버)
+ *  - Daumoa (다음/카카오)
+ *  - Googlebot (구글)
+ *  - bingbot (빙, Edge)
+ *
+ * sitemap 선언은 index 파일 1개면 충분. index가 각 서브 sitemap 참조.
+ */
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = SITE_URL
-
   return {
     rules: [
       {
         userAgent: '*',
         allow: '/',
-        disallow: [
-          '/admin/',
-          '/api/',
-          '/_next/',
-          '/dashboard',
-          '/content/',
-          '/api-status',
-          '/traffic',
-          '/trending',
-          '/marketing/',
-        ],
+        disallow: ['/admin/', '/api/', '/_next/', '/dashboard/', '/mypage'],
       },
       {
         userAgent: 'Googlebot',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/_next/'],
+        disallow: ['/admin/', '/api/', '/_next/', '/dashboard/'],
       },
       {
-        userAgent: 'Googlebot-Image',
+        userAgent: 'Yeti', // 네이버
         allow: '/',
+        disallow: ['/admin/', '/api/', '/_next/', '/dashboard/'],
+      },
+      {
+        userAgent: 'Daumoa', // 다음/카카오
+        allow: '/',
+        disallow: ['/admin/', '/api/', '/_next/', '/dashboard/'],
       },
       {
         userAgent: 'bingbot',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/_next/'],
+        disallow: ['/admin/', '/api/', '/_next/', '/dashboard/'],
+      },
+      // AI 크롤러 (허용하면 GEO 노출 확률↑. 원치 않으면 disallow)
+      {
+        userAgent: 'GPTBot',
+        allow: '/',
       },
       {
-        userAgent: 'Yeti', // Naver
+        userAgent: 'ChatGPT-User',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/_next/'],
       },
       {
-        userAgent: 'NaverBot',
+        userAgent: 'Google-Extended',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/_next/'],
       },
       {
-        userAgent: 'Daumoa', // Daum / Kakao
+        userAgent: 'PerplexityBot',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/_next/'],
       },
       {
-        userAgent: 'DuckDuckBot',
+        userAgent: 'ClaudeBot',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/_next/'],
       },
-      // AI 크롤러 — 수익/저작권 보호 관점에서 차단
-      { userAgent: 'GPTBot', disallow: '/' },
-      { userAgent: 'OAI-SearchBot', allow: '/' },
-      { userAgent: 'ChatGPT-User', disallow: '/' },
-      { userAgent: 'anthropic-ai', disallow: '/' },
-      { userAgent: 'Claude-Web', disallow: '/' },
-      { userAgent: 'ClaudeBot', allow: '/' },
-      { userAgent: 'CCBot', disallow: '/' },
-      { userAgent: 'Google-Extended', disallow: '/' },
-      { userAgent: 'PerplexityBot', allow: '/' },
-      { userAgent: 'Bytespider', disallow: '/' },
     ],
-    sitemap: baseUrl + '/sitemap.xml',
-    host: baseUrl,
-  }
+    sitemap: [
+      BASE_URL + '/sitemap.xml',
+      BASE_URL + '/rss.xml',
+      BASE_URL + '/feed.xml',
+    ],
+    host: BASE_URL,
+  };
 }
