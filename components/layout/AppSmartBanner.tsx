@@ -23,7 +23,7 @@ export default function AppSmartBanner() {
         <span className="text-blue-600 font-bold text-xs">\uC815\uCC45</span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">\uC815\uCC45\uC9C0\uAE08 \uC571\uC73C\uB85C \uB354 \uD3B8\uD558\uAC8C!</p>
+        <p className="text-sm font-medium truncate">\uBCF5\uC9C0\uAE38\uC7A1\uC774 \uC571\uC73C\uB85C \uB354 \uD3B8\uD558\uAC8C!</p>
         <p className="text-xs text-white/70">\uB9DE\uCDA4 \uC54C\uB9BC \u00B7 \uBE60\uB978 \uAC80\uC0C9 \u00B7 \uC624\uD504\uB77C\uC778 \uC9C0\uC6D0</p>
       </div>
       <a href="#" className="bg-white text-blue-600 px-3 py-1.5 rounded-full text-xs font-bold shrink-0 hover:bg-blue-50 transition-colors">
