@@ -57,6 +57,58 @@ export const getCachedCategoriesByPolicyCount = unstable_cache(
 );
 
 // ──────────────────────────────────────────────────────────────────
+// 카테고리 단건 조회 (slug) — category/[slug] 페이지 공용
+// ──────────────────────────────────────────────────────────────────
+export const getCachedCategoryBySlug = unstable_cache(
+  async (slug: string) =>
+    prisma.category.findUnique({
+      where: { slug },
+      select: { id: true, name: true, slug: true, icon: true },
+    }),
+  ['category:by-slug'],
+  { revalidate: 1800, tags: ['categories'] }
+);
+
+// ──────────────────────────────────────────────────────────────────
+// 카테고리별 정책 리스트 (pagination + sort) — 인자별 자동 키잉
+// ──────────────────────────────────────────────────────────────────
+export const getCachedCategoryPolicies = unstable_cache(
+  async (
+    categoryId: string,
+    page: number,
+    sortBy: 'latest' | 'popular',
+    take: number
+  ) =>
+    prisma.policy.findMany({
+      where: { status: 'PUBLISHED', categoryId },
+      orderBy:
+        sortBy === 'popular'
+          ? { viewCount: 'desc' }
+          : { publishedAt: 'desc' },
+      skip: (page - 1) * take,
+      take,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        geoRegion: true,
+        deadline: true,
+        publishedAt: true,
+      },
+    }),
+  ['category:policies'],
+  { revalidate: 600, tags: ['policies'] }
+);
+
+export const getCachedCategoryPolicyCount = unstable_cache(
+  async (categoryId: string) =>
+    prisma.policy.count({ where: { status: 'PUBLISHED', categoryId } }),
+  ['category:policy-count'],
+  { revalidate: 600, tags: ['policies'] }
+);
+
+// ──────────────────────────────────────────────────────────────────
 // 홈에 노출되는 featured / latest / expiring 정책
 // ──────────────────────────────────────────────────────────────────
 export const getCachedFeaturedPolicies = unstable_cache(
@@ -117,6 +169,32 @@ export const getCachedExpiringRaw = unstable_cache(
     }),
   ['policies:expiring-raw'],
   { revalidate: 600, tags: ['policies', 'policies:expiring'] }
+);
+
+// ──────────────────────────────────────────────────────────────────
+// 검색 기본 뷰 (필터 없음, page=1, sort=latest) — 초기 진입 캐싱
+// ──────────────────────────────────────────────────────────────────
+export const getCachedSearchDefault = unstable_cache(
+  async (take: number) =>
+    prisma.policy.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { publishedAt: 'desc' },
+      skip: 0,
+      take,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        geoRegion: true,
+        viewCount: true,
+        deadline: true,
+        publishedAt: true,
+        category: { select: { name: true, slug: true, icon: true } },
+      },
+    }),
+  ['search:default-latest'],
+  { revalidate: 600, tags: ['policies'] }
 );
 
 // ──────────────────────────────────────────────────────────────────
