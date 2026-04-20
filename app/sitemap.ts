@@ -50,6 +50,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // 1-1) 법적/소개 페이지 (AdSense, SEO 신뢰도용)
+  const LEGAL_SLUGS = ['about', 'terms', 'privacy-policy', 'contact'] as const;
+  let legalPages: MetadataRoute.Sitemap = LEGAL_SLUGS.map((slug) => ({
+    url: `${BASE_URL}/${slug}`,
+    lastModified: now,
+    changeFrequency: 'monthly' as const,
+    priority: slug === 'about' ? 0.6 : 0.4,
+  }));
+  try {
+    const rows = await prisma.sitePage.findMany({
+      where: { slug: { in: [...LEGAL_SLUGS] } },
+      select: { slug: true, updatedAt: true },
+    });
+    const map = new Map(rows.map((r) => [r.slug, r.updatedAt]));
+    legalPages = legalPages.map((p) => {
+      const slug = p.url.split('/').pop() ?? '';
+      const updated = map.get(slug);
+      return updated ? { ...p, lastModified: updated } : p;
+    });
+  } catch (error) {
+    console.error('[sitemap] sitePage fetch error:', error);
+  }
+
   // 2) 카테고리 상세 페이지
   let categoryPages: MetadataRoute.Sitemap = [];
   try {
@@ -90,5 +113,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('[sitemap] policy fetch error:', error);
   }
 
-  return [...staticPages, ...categoryPages, ...policyPages];
+  return [...staticPages, ...legalPages, ...categoryPages, ...policyPages];
 }
