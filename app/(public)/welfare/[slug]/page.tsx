@@ -81,7 +81,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${policy.title} | 복지길잡이`,
     description: generatePolicyMetaDescription(seoData),
-    openGraph: { title: ogData.title, description: ogData.description, type: 'article' },
+    alternates: { canonical: `/welfare/${params.slug}` },
+    openGraph: { title: ogData.title, description: ogData.description, type: 'article', url: `/welfare/${params.slug}` },
   };
 }
 
