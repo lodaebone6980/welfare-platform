@@ -5,6 +5,9 @@ import SessionProvider from '@/components/auth/SessionProvider';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 
+// SEO/GEO/AEO: 운영 도메인 단일 소스 (구 Vercel preview 폐기)
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.govmate.co.kr';
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -15,41 +18,60 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: '\uBCF5\uC9C0\uAE38\uC7A1\uC774 \u2013 \uB098\uC5D0\uAC8C \uB9DE\uB294 \uC815\uBD80 \uC9C0\uC6D0\uAE08 \uCC3E\uAE30',
-    template: '%s | \uBCF5\uC9C0\uAE38\uC7A1\uC774',
+    default: '복지길잡이 – 나에게 맞는 정부 지원금 찾기',
+    template: '%s | 복지길잡이',
   },
-  description: '2026\uB144 \uCD5C\uC2E0 \uC815\uBD80 \uBCF5\uC9C0 \uC815\uCC45, \uC9C0\uC6D0\uAE08, \uBCF4\uC870\uAE08, \uD658\uAE09\uAE08 \uC815\uBCF4\uB97C \uD55C\uB208\uC5D0. \uB098\uC5D0\uAC8C \uB9DE\uB294 \uBCF5\uC9C0 \uC815\uCC45\uC744 AI\uAC00 \uCD94\uCC9C\uD574\uB4DC\uB9BD\uB2C8\uB2E4.',
-  keywords: ['\uC815\uBD80\uC9C0\uC6D0\uAE08', '\uBCF5\uC9C0\uC815\uCC45', '\uBCF4\uC870\uAE08', '\uD658\uAE09\uAE08', '\uCCAD\uB144\uC9C0\uC6D0\uAE08', '\uC544\uB3D9\uC218\uB2F9', '\uAE30\uCD08\uC0DD\uD65C\uC218\uAE09', '\uC8FC\uAC70\uC9C0\uC6D0', '\uAD50\uC721\uBCF4\uC870\uAE08'],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://welfare-platform-five.vercel.app'),
+  description:
+    '2026년 최신 정부 복지 정책, 지원금, 보조금, 환급금 정보를 한눈에. 나에게 맞는 복지 정책을 AI가 추천해드립니다.',
+  keywords: [
+    '정부지원금',
+    '복지정책',
+    '보조금',
+    '환급금',
+    '청년지원금',
+    '아동수당',
+    '기초생활수급',
+    '주거지원',
+    '교육보조금',
+  ],
+  metadataBase: new URL(SITE_URL),
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
-    siteName: '\uBCF5\uC9C0\uAE38\uC7A1\uC774',
+    siteName: '복지길잡이',
+    url: SITE_URL,
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
   robots: { index: true, follow: true },
   alternates: { canonical: '/' },
+  // 검색엔진 사이트 소유확인 메타태그
+  verification: {
+    other: {
+      'naver-site-verification': 'b8e25342861cc0030a76dbc99c6d2a5525a0693e',
+    },
+  },
 };
 
-// JSON-LD structured data
+// JSON-LD structured data (운영 도메인으로 일관성)
 const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
     {
       '@type': 'WebSite',
-      name: '\uBCF5\uC9C0\uAE38\uC7A1\uC774',
-      url: 'https://welfare-platform-five.vercel.app',
-      description: '\uB098\uC5D0\uAC8C \uB9DE\uB294 \uC815\uBD80 \uC9C0\uC6D0\uAE08\uC744 \uCC3E\uC544\uBCF4\uC138\uC694',
+      name: '복지길잡이',
+      url: SITE_URL,
+      description: '나에게 맞는 정부 지원금을 찾아보세요',
+      inLanguage: 'ko-KR',
       potentialAction: {
         '@type': 'SearchAction',
-        target: 'https://welfare-platform-five.vercel.app/welfare/search?q={search_term_string}',
+        target: `${SITE_URL}/welfare/search?q={search_term_string}`,
         'query-input': 'required name=search_term_string',
       },
     },
     {
       '@type': 'Organization',
-      name: '\uBCF5\uC9C0\uAE38\uC7A1\uC774',
-      url: 'https://welfare-platform-five.vercel.app',
+      name: '복지길잡이',
+      url: SITE_URL,
       sameAs: [],
     },
   ],
@@ -64,7 +86,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://aws-1-ap-south-1.pooler.supabase.com" />
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         {process.env.NEXT_PUBLIC_ADSENSE_CLIENT && (
           <script
             async
