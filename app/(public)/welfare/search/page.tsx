@@ -1,12 +1,18 @@
-import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { Metadata } from 'next';
+import { prisma } from '@/lib/prisma';
+import {
+  getCachedCategoriesByPolicyCount,
+  getCachedSearchDefault,
+} from '@/lib/queries';
 
 export const metadata: Metadata = {
   title: '정책 검색',
-  description: '나에게 맞는 정부 지원금을 검색하세요. 카테고리, 지역, 키워드로 필터링할 수 있습니다.',
+  description:
+    '나에게 맞는 정부 지원금을 검색하세요. 카테고리, 지역, 키워드로 필터링할 수 있습니다.',
 };
 
+// 필터 조합이 다양하므로 force-static 은 안 씀. 각 쿼리는 자체적으로 캐싱.
 export const revalidate = 300;
 
 const ITEMS_PER_PAGE = 20;
@@ -24,28 +30,52 @@ function parseKoreanDate(str: string | null): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-function getDday(deadline: string | null): { text: string; urgent: boolean; color: string } | null {
+function getDday(
+  deadline: string | null
+): { text: string; urgent: boolean; color: string } | null {
   if (!deadline) return null;
-  if (deadline.includes('상시') || deadline.includes('수시')) return { text: '상시', urgent: false, color: 'bg-gray-100 text-gray-600' };
+  if (deadline.includes('상시') || deadline.includes('수시'))
+    return { text: '상시', urgent: false, color: 'bg-gray-100 text-gray-600' };
   const deadlineDate = parseKoreanDate(deadline);
   if (!deadlineDate) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   deadlineDate.setHours(0, 0, 0, 0);
-  const diff = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const diff = Math.ceil(
+    (deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+  );
   if (diff < 0) return null;
   if (diff === 0) return { text: 'D-DAY', urgent: true, color: 'bg-red-100 text-red-700' };
   if (diff <= 7) return { text: `D-${diff}`, urgent: true, color: 'bg-red-100 text-red-600' };
-  if (diff <= 30) return { text: `D-${diff}`, urgent: false, color: 'bg-orange-100 text-orange-600' };
+  if (diff <= 30)
+    return { text: `D-${diff}`, urgent: false, color: 'bg-orange-100 text-orange-600' };
   return { text: `D-${diff}`, urgent: false, color: 'bg-blue-100 text-blue-600' };
 }
 
-export default async function SearchPage({ searchParams }: { searchParams: { q?: string; category?: string; region?: string; sort?: string; page?: string } }) {
-  const query = searchParams.q || '';
-  const categoryFilter = searchParams.category || '';
-  const regionFilter = searchParams.region || '';
-  const sortBy = searchParams.sort || 'latest';
-  const currentPage = parseInt(searchParams.page || '1');
+function cleanTitle(title: string): string {
+  return title.replace(/^\[.*?\]\s*/, '');
+}
+
+type SearchPolicy = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  geoRegion: string | null;
+  viewCount: number | null;
+  deadline: string | null;
+  publishedAt: Date | null;
+  category: { name: string; slug: string; icon: string | null } | null;
+};
+
+async function fetchFilteredPolicies(args: {
+  query: string;
+  categoryFilter: string;
+  regionFilter: string;
+  sortBy: 'latest' | 'popular';
+  currentPage: number;
+}): Promise<{ policies: SearchPolicy[]; totalCount: number }> {
+  const { query, categoryFilter, regionFilter, sortBy, currentPage } = args;
 
   const where: any = { status: 'PUBLISHED' };
   if (query) {
@@ -54,46 +84,88 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
       { excerpt: { contains: query, mode: 'insensitive' } },
     ];
   }
-  if (categoryFilter) {
-    where.category = { slug: categoryFilter };
-  }
-  if (regionFilter) {
-    where.geoRegion = { contains: regionFilter };
-  }
+  if (categoryFilter) where.category = { slug: categoryFilter };
+  if (regionFilter) where.geoRegion = { contains: regionFilter };
 
-  const orderBy: any = sortBy === 'popular' ? { viewCount: 'desc' } : { publishedAt: 'desc' };
+  const orderBy: any =
+    sortBy === 'popular' ? { viewCount: 'desc' } : { publishedAt: 'desc' };
 
-  const [policies, totalCount, categories] = await Promise.all([
+  const [policies, totalCount] = await Promise.all([
     prisma.policy.findMany({
       where,
       orderBy,
       skip: (currentPage - 1) * ITEMS_PER_PAGE,
       take: ITEMS_PER_PAGE,
       select: {
-        id: true, title: true, slug: true, excerpt: true,
-        geoRegion: true, viewCount: true, deadline: true,
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        geoRegion: true,
+        viewCount: true,
+        deadline: true,
         publishedAt: true,
         category: { select: { name: true, slug: true, icon: true } },
       },
-    }),
+    }) as Promise<SearchPolicy[]>,
     prisma.policy.count({ where }),
-    prisma.category.findMany({
-      select: { name: true, slug: true, _count: { select: { policies: true } } },
-      orderBy: { policies: { _count: 'desc' } },
-    }),
   ]);
 
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  return { policies, totalCount };
+}
 
-  function cleanTitle(title: string): string {
-    return title.replace(/^\[.*?\]\s*/, '');
-  }
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: {
+    q?: string;
+    category?: string;
+    region?: string;
+    sort?: string;
+    page?: string;
+  };
+}) {
+  const query = searchParams.q || '';
+  const categoryFilter = searchParams.category || '';
+  const regionFilter = searchParams.region || '';
+  const sortBy: 'latest' | 'popular' =
+    searchParams.sort === 'popular' ? 'popular' : 'latest';
+  const currentPage = Math.max(1, parseInt(searchParams.page || '1'));
+
+  // 필터가 전혀 없는 기본 진입(/welfare/search)은 캐싱된 기본 뷰를 사용.
+  const isDefaultView =
+    !query && !categoryFilter && !regionFilter && sortBy === 'latest' && currentPage === 1;
+
+  const [policyResult, categories] = await Promise.all([
+    isDefaultView
+      ? (async () => {
+          const [policies, totalCount] = await Promise.all([
+            getCachedSearchDefault(ITEMS_PER_PAGE) as Promise<SearchPolicy[]>,
+            // 기본 뷰의 총 건수도 캐싱
+            (await import('@/lib/queries')).getCachedTotalPolicies(),
+          ]);
+          return { policies, totalCount };
+        })()
+      : fetchFilteredPolicies({
+          query,
+          categoryFilter,
+          regionFilter,
+          sortBy,
+          currentPage,
+        }),
+    getCachedCategoriesByPolicyCount(),
+  ]);
+
+  const { policies, totalCount } = policyResult;
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   function buildUrl(params: Record<string, string>) {
     const sp = new URLSearchParams();
     if (params.q || query) sp.set('q', params.q ?? query);
-    if (params.category ?? categoryFilter) sp.set('category', params.category ?? categoryFilter);
-    if (params.region ?? regionFilter) sp.set('region', params.region ?? regionFilter);
+    if (params.category ?? categoryFilter)
+      sp.set('category', params.category ?? categoryFilter);
+    if (params.region ?? regionFilter)
+      sp.set('region', params.region ?? regionFilter);
     if (params.sort ?? sortBy) sp.set('sort', params.sort ?? sortBy);
     if (params.page) sp.set('page', params.page);
     const str = sp.toString();
@@ -106,11 +178,19 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
       <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-6">
         <h1 className="text-white text-lg font-bold mb-3">정책 검색</h1>
         <form action="/welfare/search" method="get" className="relative">
-          <input type="text" name="q" defaultValue={query}
+          <input
+            type="text"
+            name="q"
+            defaultValue={query}
             placeholder="정책명, 키워드로 검색..."
             className="w-full px-4 py-3 pl-10 rounded-xl text-sm bg-white/95 focus:outline-none focus:ring-2 focus:ring-white"
           />
-          <svg className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="absolute left-3 top-3.5 w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           {categoryFilter && <input type="hidden" name="category" value={categoryFilter} />}
@@ -122,13 +202,23 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
       <div className="max-w-6xl mx-auto px-4 py-4">
         {/* Category Chips */}
         <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
-          <Link href={buildUrl({ category: '', page: '1' })}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition ${!categoryFilter ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}>
+          <Link
+            href={buildUrl({ category: '', page: '1' })}
+            prefetch={false}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition ${!categoryFilter ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
+          >
             전체
           </Link>
-          {categories.map(cat => (
-            <Link key={cat.slug} href={buildUrl({ category: cat.slug === categoryFilter ? '' : cat.slug, page: '1' })}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition ${categoryFilter === cat.slug ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}>
+          {categories.map((cat) => (
+            <Link
+              key={cat.slug}
+              href={buildUrl({
+                category: cat.slug === categoryFilter ? '' : cat.slug,
+                page: '1',
+              })}
+              prefetch={false}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition ${categoryFilter === cat.slug ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
+            >
               {cat.name} ({cat._count.policies})
             </Link>
           ))}
@@ -137,46 +227,71 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
         {/* Region Filter + Sort */}
         <div className="flex items-center justify-between mb-4 gap-2">
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-            <Link href={buildUrl({ region: '', page: '1' })}
-              className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-xs transition ${!regionFilter ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+            <Link
+              href={buildUrl({ region: '', page: '1' })}
+              prefetch={false}
+              className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-xs transition ${!regionFilter ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+            >
               전국
             </Link>
-            {REGIONS.map(r => (
-              <Link key={r} href={buildUrl({ region: r === regionFilter ? '' : r, page: '1' })}
-                className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-xs transition ${regionFilter === r ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+            {REGIONS.map((r) => (
+              <Link
+                key={r}
+                href={buildUrl({ region: r === regionFilter ? '' : r, page: '1' })}
+                prefetch={false}
+                className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-xs transition ${regionFilter === r ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+              >
                 {r}
               </Link>
             ))}
           </div>
           <div className="flex-shrink-0 flex gap-1">
-            <Link href={buildUrl({ sort: 'latest', page: '1' })}
-              className={`px-2.5 py-1 rounded-lg text-xs ${sortBy === 'latest' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+            <Link
+              href={buildUrl({ sort: 'latest', page: '1' })}
+              prefetch={false}
+              className={`px-2.5 py-1 rounded-lg text-xs ${sortBy === 'latest' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}
+            >
               최신순
             </Link>
-            <Link href={buildUrl({ sort: 'popular', page: '1' })}
-              className={`px-2.5 py-1 rounded-lg text-xs ${sortBy === 'popular' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+            <Link
+              href={buildUrl({ sort: 'popular', page: '1' })}
+              prefetch={false}
+              className={`px-2.5 py-1 rounded-lg text-xs ${sortBy === 'popular' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}
+            >
               인기순
             </Link>
           </div>
         </div>
 
         {/* Results count */}
-        <p className="text-sm text-gray-500 mb-4">총 <span className="font-semibold text-blue-600">{totalCount.toLocaleString()}</span>건{query && <> &middot; &quot;{query}&quot; 검색결과</>}</p>
+        <p className="text-sm text-gray-500 mb-4">
+          총 <span className="font-semibold text-blue-600">{totalCount.toLocaleString()}</span>건
+          {query && <> &middot; &quot;{query}&quot; 검색결과</>}
+        </p>
 
         {/* Policy Cards Grid */}
         {policies.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-4xl mb-3">🔍</div>
             <p className="text-gray-500 text-sm">검색 결과가 없습니다</p>
-            <Link href="/welfare/search" className="text-blue-600 text-sm mt-2 inline-block hover:underline">전체 정책 보기</Link>
+            <Link
+              href="/welfare/search"
+              className="text-blue-600 text-sm mt-2 inline-block hover:underline"
+            >
+              전체 정책 보기
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {policies.map((policy) => {
               const dday = getDday(policy.deadline);
               return (
-                <Link key={policy.id} href={`/welfare/${policy.slug}`}
-                  className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md hover:border-blue-200 transition group">
+                <Link
+                  key={policy.id}
+                  href={`/welfare/${policy.slug}`}
+                  prefetch={false}
+                  className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md hover:border-blue-200 transition group"
+                >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {policy.category && (
@@ -186,7 +301,9 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
                       )}
                       {policy.geoRegion && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-50 text-gray-500 flex items-center gap-0.5">
-                          <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/></svg>
+                          <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                          </svg>
                           {policy.geoRegion}
                         </span>
                       )}
@@ -205,7 +322,10 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
                   )}
                   <div className="flex items-center gap-2 text-[10px] text-gray-400">
                     <span className="flex items-center gap-0.5">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/></svg>
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                      </svg>
                       {policy.viewCount || 0}
                     </span>
                   </div>
@@ -219,8 +339,11 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-1 mt-8">
             {currentPage > 1 && (
-              <Link href={buildUrl({ page: String(currentPage - 1) })}
-                className="px-3 py-2 rounded-lg text-sm bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">
+              <Link
+                href={buildUrl({ page: String(currentPage - 1) })}
+                prefetch={false}
+                className="px-3 py-2 rounded-lg text-sm bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+              >
                 이전
               </Link>
             )}
@@ -229,15 +352,22 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
               const pageNum = startPage + i;
               if (pageNum > totalPages) return null;
               return (
-                <Link key={pageNum} href={buildUrl({ page: String(pageNum) })}
-                  className={`px-3 py-2 rounded-lg text-sm transition ${pageNum === currentPage ? 'bg-blue-600 text-white font-medium' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                <Link
+                  key={pageNum}
+                  href={buildUrl({ page: String(pageNum) })}
+                  prefetch={false}
+                  className={`px-3 py-2 rounded-lg text-sm transition ${pageNum === currentPage ? 'bg-blue-600 text-white font-medium' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                >
                   {pageNum}
                 </Link>
               );
             })}
             {currentPage < totalPages && (
-              <Link href={buildUrl({ page: String(currentPage + 1) })}
-                className="px-3 py-2 rounded-lg text-sm bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">
+              <Link
+                href={buildUrl({ page: String(currentPage + 1) })}
+                prefetch={false}
+                className="px-3 py-2 rounded-lg text-sm bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+              >
                 다음
               </Link>
             )}
