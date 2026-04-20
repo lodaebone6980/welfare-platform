@@ -1,7 +1,13 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { prisma } from '@/lib/prisma';
 import CategoryIcon from '@/components/ui/CategoryIcon';
+import {
+  getCachedTotalPolicies,
+  getCachedCategoriesWithCount,
+  getCachedFeaturedPolicies,
+  getCachedLatestPolicies,
+  getCachedExpiringRaw,
+} from '@/lib/queries';
 
 export const metadata: Metadata = {
   title: '복지길잡이 - 나에게 맞는 정부 지원금 찾기',
@@ -14,69 +20,6 @@ export const metadata: Metadata = {
 };
 
 export const revalidate = 300;
-
-async function getStats() {
-  const totalPolicies = await prisma.policy.count({ where: { status: 'PUBLISHED' } });
-  return { totalPolicies };
-}
-
-async function getFeaturedPolicies() {
-  return prisma.policy.findMany({
-    where: { status: 'PUBLISHED', featured: true },
-    orderBy: { featuredOrder: 'asc' },
-    take: 6,
-    select: {
-      id: true, title: true, slug: true, excerpt: true,
-      geoRegion: true, deadline: true,
-      category: { select: { name: true, slug: true, icon: true } },
-    },
-  });
-}
-
-async function getExpiringPolicies() {
-  const policies = await prisma.policy.findMany({
-    where: { status: 'PUBLISHED', deadline: { not: null } },
-    select: {
-      id: true, title: true, slug: true, excerpt: true,
-      geoRegion: true, deadline: true,
-      category: { select: { name: true, slug: true, icon: true } },
-    },
-    take: 30,
-  });
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return policies
-    .filter((p) => {
-      const d = parseKoreanDate(p.deadline);
-      return d && d.getTime() >= today.getTime();
-    })
-    .sort((a, b) => {
-      const da = parseKoreanDate(a.deadline)!;
-      const db = parseKoreanDate(b.deadline)!;
-      return da.getTime() - db.getTime();
-    })
-    .slice(0, 5);
-}
-async function getLatestPolicies() {
-  return prisma.policy.findMany({
-    where: { status: 'PUBLISHED' },
-    orderBy: { publishedAt: 'desc' },
-    take: 6,
-    select: {
-      id: true, title: true, slug: true, excerpt: true,
-      geoRegion: true, publishedAt: true, deadline: true,
-      category: { select: { name: true, slug: true, icon: true } },
-    },
-  });
-}
-
-async function getCategories() {
-  return prisma.category.findMany({
-    orderBy: { displayOrder: 'asc' },
-    include: { _count: { select: { policies: true } } },
-  });
-}
-
 
 function parseKoreanDate(str: string | null): Date | null {
   if (!str) return null;
@@ -99,24 +42,35 @@ function getDday(deadline: string | null): { text: string; urgent: boolean } | n
   if (diff === 0) return { text: 'D-DAY', urgent: true };
   return { text: `D-${diff}`, urgent: diff <= 7 };
 }
+
 function cleanTitle(title: string) {
   return title.replace(/^\[.*?\]\s*/, '');
 }
 
-function formatViewCount(count: number): string {
-  if (count >= 10000) return (count / 10000).toFixed(1) + '만';
-  if (count >= 1000) return (count / 1000).toFixed(1) + '천';
-  return count.toLocaleString();
+async function getExpiringPolicies() {
+  const policies = await getCachedExpiringRaw();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return policies
+    .filter((p) => {
+      const d = parseKoreanDate(p.deadline);
+      return d && d.getTime() >= today.getTime();
+    })
+    .sort((a, b) => {
+      const da = parseKoreanDate(a.deadline)!;
+      const db = parseKoreanDate(b.deadline)!;
+      return da.getTime() - db.getTime();
+    })
+    .slice(0, 5);
 }
 
-
 export default async function HomePage() {
-  const [stats, featuredPolicies, expiringPolicies, latestPolicies, categories] = await Promise.all([
-    getStats(),
-    getFeaturedPolicies(),
+  const [totalPolicies, featuredPolicies, expiringPolicies, latestPolicies, categories] = await Promise.all([
+    getCachedTotalPolicies(),
+    getCachedFeaturedPolicies(),
     getExpiringPolicies(),
-    getLatestPolicies(),
-    getCategories(),
+    getCachedLatestPolicies(),
+    getCachedCategoriesWithCount(),
   ]);
 
   return (
@@ -124,9 +78,10 @@ export default async function HomePage() {
       {/* Compact Hero */}
       <section className="bg-gradient-to-br from-blue-600 to-indigo-700 px-4 pt-8 pb-6">
         <h1 className="text-white text-xl font-bold mb-1">나에게 맞는 지원금 찾기</h1>
-        <p className="text-blue-200 text-sm mb-4">{stats.totalPolicies.toLocaleString()}개의 정책 정보</p>
+        <p className="text-blue-200 text-sm mb-4">{totalPolicies.toLocaleString()}개의 정책 정보</p>
         <Link
           href="/welfare/search"
+          prefetch={true}
           className="flex items-center gap-2 bg-white rounded-xl px-4 py-3 text-gray-400 text-sm shadow-lg"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,6 +98,7 @@ export default async function HomePage() {
             <Link
               key={cat.id}
               href={'/welfare/categories/' + cat.slug}
+              prefetch={true}
               className="flex flex-col items-center gap-1.5 min-w-[56px]"
             >
               <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center">
@@ -155,7 +111,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      
+
         {/* CTA Banner - bokjiking style */}
         <section className="px-4 py-3">
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 flex items-center justify-between">
@@ -192,7 +148,6 @@ export default async function HomePage() {
                   <p className="text-sm font-medium text-gray-900 truncate">{cleanTitle(policy.title)}</p>
                     {policy.category && <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">{policy.category.name}</span>}
                   <div className="flex items-center gap-2 mt-0.5">
-                    {/* viewCount hidden */}
                     {dday && (
                       <span className={'text-[11px] font-semibold ' + (dday.urgent ? 'text-red-500' : 'text-orange-500')}>
                         {dday.text}
@@ -232,7 +187,6 @@ export default async function HomePage() {
                     <p className="text-sm font-medium text-gray-900 truncate">{cleanTitle(policy.title)}</p>
                     {policy.category && <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">{policy.category.name}</span>}
                     <div className="flex items-center gap-2 mt-0.5">
-                      {/* viewCount hidden */}
                       <span className="text-[11px] text-gray-400">{policy.geoRegion || '전국'}</span>
                     </div>
                   </div>
@@ -289,7 +243,6 @@ export default async function HomePage() {
                   <p className="text-xs text-gray-500 line-clamp-1 mb-2">{policy.excerpt}</p>
                 )}
                 <div className="flex items-center justify-between text-[11px] text-gray-400">
-                  {/* viewCount hidden */}
                   {policy.publishedAt && (
                     <span>{new Date(policy.publishedAt).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}</span>
                   )}
