@@ -71,7 +71,7 @@ Disallow: /dashboard/
 Disallow: /login/
 Disallow: /account/
 
-#DaumWebMasterTool:46685ba240bc5b572108d42c094c51aad90258bb4d5d8672ddebc105d86ac778:lnJIfW6J3SEu/tDeE4/ZJg==
+#DaumWebMasterTool:1d1c83a6a81ba6a42a7262cae8562baa06f19ae2517989e7da365193f33e786d:lnJIfW6J3SEu/tDeE4/ZJg==
 
 Host: ${SITE_URL}
 Sitemap: ${SITE_URL}/sitemap.xml
