@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import SessionProvider from '@/components/auth/SessionProvider';
 
+const ADSENSE_CLIENT = 'ca-pub-4731195254556734';
+
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 
 // SEO/GEO/AEO: 운영 도메인 단일 소스 (구 Vercel preview 폐기)
@@ -44,10 +46,11 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   alternates: { canonical: '/' },
-  // 검색엔진 사이트 소유확인 메타태그
+  // 검색엔진 사이트 소유확인 메타태그 (네이버 + Google AdSense)
   verification: {
     other: {
       'naver-site-verification': 'e569c621bed9159f7d70c51735e397d2818f8413',
+      'google-adsense-account': 'ca-pub-4731195254556734',
     },
   },
 };
@@ -90,13 +93,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        {process.env.NEXT_PUBLIC_ADSENSE_CLIENT && (
-          <script
-            async
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT}`}
-            crossOrigin="anonymous"
-          />
-        )}
+        <script
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+          crossOrigin="anonymous"
+        />
       </head>
       <body className={inter.className}>
         <SessionProvider>{children}</SessionProvider>
