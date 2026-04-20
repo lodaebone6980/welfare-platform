@@ -7,7 +7,7 @@
 //   body: { urls: string[] }
 //
 // 인증: 헤더 X-IndexNow-Secret 이 INDEXNOW_SHARED_SECRET 와 일치해야 함.
-// secret 은 비워두면 (기본) GET 으로 단건 ping 만 허용하고 POST는 거부.
+// secret 은 비워두면 (기본) GET 으로 단건 ping 만 허용하고 POST는 거부. 
 
 import { NextResponse } from 'next/server';
 
