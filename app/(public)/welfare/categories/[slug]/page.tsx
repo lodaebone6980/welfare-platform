@@ -1,10 +1,15 @@
-import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import CategoryIcon from '@/components/ui/CategoryIcon';
+import { prisma } from '@/lib/prisma';
+import {
+  getCachedCategoryBySlug,
+  getCachedCategoryPolicies,
+  getCachedCategoryPolicyCount,
+} from '@/lib/queries';
 
-export const revalidate = 300;
+export const revalidate = 600;
 export const dynamicParams = true;
 
 const ITEMS_PER_PAGE = 20;
@@ -61,11 +66,12 @@ export async function generateStaticParams() {
   }
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const cat = await prisma.category.findUnique({
-    where: { slug: params.slug },
-    select: { name: true },
-  });
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const cat = await getCachedCategoryBySlug(params.slug);
   if (!cat) return { title: '카테고리를 찾을 수 없습니다' };
   return {
     title: `${cat.name} 정책 - 복지길잡이`,
@@ -85,33 +91,16 @@ export default async function CategoryDetailPage({
   params: { slug: string };
   searchParams: { page?: string; sort?: string };
 }) {
-  const category = await prisma.category.findUnique({
-    where: { slug: params.slug },
-    select: { id: true, name: true, slug: true, icon: true },
-  });
+  const category = await getCachedCategoryBySlug(params.slug);
   if (!category) notFound();
 
   const currentPage = Math.max(1, parseInt(searchParams.page || '1'));
-  const sortBy = searchParams.sort === 'popular' ? 'popular' : 'latest';
-  const orderBy: any = sortBy === 'popular' ? { viewCount: 'desc' } : { publishedAt: 'desc' };
+  const sortBy: 'latest' | 'popular' =
+    searchParams.sort === 'popular' ? 'popular' : 'latest';
 
   const [policies, totalCount] = await Promise.all([
-    prisma.policy.findMany({
-      where: { status: 'PUBLISHED', categoryId: category.id },
-      orderBy,
-      skip: (currentPage - 1) * ITEMS_PER_PAGE,
-      take: ITEMS_PER_PAGE,
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        excerpt: true,
-        geoRegion: true,
-        deadline: true,
-        publishedAt: true,
-      },
-    }),
-    prisma.policy.count({ where: { status: 'PUBLISHED', categoryId: category.id } }),
+    getCachedCategoryPolicies(category.id, currentPage, sortBy, ITEMS_PER_PAGE),
+    getCachedCategoryPolicyCount(category.id),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
@@ -159,12 +148,14 @@ export default async function CategoryDetailPage({
           <div className="flex gap-1">
             <Link
               href={buildUrl({ sort: 'latest', page: 1 })}
+              prefetch={false}
               className={`px-2.5 py-1 rounded-lg text-xs ${sortBy === 'latest' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
             >
               최신순
             </Link>
             <Link
               href={buildUrl({ sort: 'popular', page: 1 })}
+              prefetch={false}
               className={`px-2.5 py-1 rounded-lg text-xs ${sortBy === 'popular' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
             >
               인기순
@@ -192,6 +183,7 @@ export default async function CategoryDetailPage({
                 <Link
                   key={policy.id}
                   href={`/welfare/${encodeURIComponent(policy.slug)}`}
+                  prefetch={false}
                   className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md hover:border-blue-200 transition group"
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -229,6 +221,7 @@ export default async function CategoryDetailPage({
             {currentPage > 1 && (
               <Link
                 href={buildUrl({ page: currentPage - 1 })}
+                prefetch={false}
                 className="px-3 py-2 rounded-lg text-sm bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
               >
                 이전
@@ -242,6 +235,7 @@ export default async function CategoryDetailPage({
                 <Link
                   key={pageNum}
                   href={buildUrl({ page: pageNum })}
+                  prefetch={false}
                   className={`px-3 py-2 rounded-lg text-sm transition ${pageNum === currentPage ? 'bg-blue-600 text-white font-medium' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                 >
                   {pageNum}
@@ -251,6 +245,7 @@ export default async function CategoryDetailPage({
             {currentPage < totalPages && (
               <Link
                 href={buildUrl({ page: currentPage + 1 })}
+                prefetch={false}
                 className="px-3 py-2 rounded-lg text-sm bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
               >
                 다음
