@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import { getPolicyBySlug, getCachedTopPolicySlugs } from '@/lib/queries';
 import {
   generatePolicyJsonLd,
   generateFaqJsonLd,
@@ -14,25 +15,18 @@ interface Props {
   params: { slug: string };
 }
 
-function decodeSlug(slug: string): string {
-  try {
-    return decodeURIComponent(slug);
-  } catch (e) {
-    return slug;
-  }
-}
+// ────────────────────────────────────────────────────────────────
+// 캐싱 / ISR / 정적 사전생성
+// ────────────────────────────────────────────────────────────────
+export const revalidate = 600;          // 10분
+export const dynamicParams = true;      // 사전생성 안 된 슬러그는 on-demand
 
-async function getPolicy(slug: string) {
+export async function generateStaticParams() {
   try {
-    const decoded = decodeSlug(slug);
-    const policy = await prisma.policy.findFirst({
-      where: { slug: decoded, status: 'PUBLISHED' },
-      include: { category: true, faqs: true },
-    });
-    return policy;
-  } catch (e) {
-    console.error('getPolicy error:', e);
-    return null;
+    const slugs = await getCachedTopPolicySlugs(200);
+    return slugs.map((p) => ({ slug: p.slug }));
+  } catch {
+    return [];
   }
 }
 
@@ -71,7 +65,7 @@ function getDday(
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const policy = await getPolicy(params.slug);
+  const policy = await getPolicyBySlug(params.slug);
   if (!policy) {
     return { title: '정책을 찾을 수 없습니다' };
   }
@@ -92,26 +86,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PolicyDetailPage({ params }: Props) {
-  const policy = await getPolicy(params.slug);
+  const policy = await getPolicyBySlug(params.slug);   // ← React.cache 로 metadata 와 동일 호출 dedupe
   if (!policy) notFound();
   const dday = getDday(policy.deadline);
 
-  try {
-    await prisma.policy.update({
-      where: { id: policy.id },
-      data: { viewCount: { increment: 1 } },
-    });
-  } catch (e) {}
+  // 조회수 업데이트는 렌더와 무관 → fire-and-forget (TTFB 영향 X)
+  void prisma.policy
+    .update({ where: { id: policy.id }, data: { viewCount: { increment: 1 } } })
+    .catch(() => {});
 
+  // 관련 정책은 작은 select 만 — 같은 카테고리 인기순 4개
   let relatedPolicies: any[] = [];
-  try {
-    relatedPolicies = await prisma.policy.findMany({
-      where: { categoryId: policy.categoryId, id: { not: policy.id }, status: 'PUBLISHED' },
-      take: 4,
-      orderBy: { viewCount: 'desc' },
-      select: { id: true, title: true, slug: true, geoRegion: true, excerpt: true, category: { select: { name: true, slug: true } } },
-    });
-  } catch (e) {}
+  if (policy.categoryId) {
+    try {
+      relatedPolicies = await prisma.policy.findMany({
+        where: { categoryId: policy.categoryId, id: { not: policy.id }, status: 'PUBLISHED' },
+        take: 4,
+        orderBy: { viewCount: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          geoRegion: true,
+          excerpt: true,
+          category: { select: { name: true, slug: true } },
+        },
+      });
+    } catch (e) {}
+  }
 
   const jsonLd = generatePolicyJsonLd({
     title: policy.title,
@@ -154,7 +156,7 @@ export default async function PolicyDetailPage({ params }: Props) {
           <span>/</span>
           {policy.category && (
             <>
-              <Link href={`/welfare/search?category=${policy.category.slug}`} className="hover:text-blue-600">{policy.category.name}</Link>
+              <Link href={`/welfare/categories/${policy.category.slug}`} className="hover:text-blue-600">{policy.category.name}</Link>
               <span>/</span>
             </>
           )}
