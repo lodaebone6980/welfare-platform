@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   // 검색엔진 사이트 소유확인 메타태그
   verification: {
     other: {
-      'naver-site-verification': 'b8e25342861cc0030a76dbc99c6d2a5525a0693e',
+      'naver-site-verification': 'e569c621bed9159f7d70c51735e397d2818f8413',
     },
   },
 };
