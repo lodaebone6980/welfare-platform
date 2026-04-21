@@ -266,3 +266,45 @@ model SiteSetting {
   value     Json
   updatedAt DateTime @updatedAt
 }
+
+// ============================================================
+// 인덱싱 로그 — 어떤 URL 이 어느 엔진에 언제 제출됐는지 기록
+// ============================================================
+model IndexingLog {
+  id          String            @id @default(cuid())
+  triggerType IndexingTrigger                     // 수동/크론/훅
+  engine      IndexingEngine                      // 엔진 구분
+  urlCount    Int                                 // 제출된 URL 수
+  sampleUrls  String[]                            // 최대 10개만 저장 (디버깅용)
+  status      IndexingStatus                      // success / partial / failed
+  httpStatus  Int?                                // 외부 API 응답 코드
+  errorMsg    String?           @db.Text          // 에러 메시지
+  durationMs  Int                                 // 소요 시간 (ms)
+  meta        Json?                               // 자유 필드
+  createdAt   DateTime          @default(now())
+
+  @@index([createdAt])
+  @@index([engine, createdAt])
+  @@index([triggerType, createdAt])
+  @@map("indexing_log")
+}
+
+enum IndexingTrigger {
+  MANUAL_ALL        // Admin UI: 전체 재푸시
+  MANUAL_URL        // Admin UI: 단일 URL
+  CRON_DAILY        // 매일 04:00 KST 크론
+  PUBLISH_HOOK      // 정책 저장 직후 훅
+}
+
+enum IndexingEngine {
+  INDEXNOW          // Bing + Yandex + Seznam + 기타
+  GOOGLE_API        // Google Indexing API
+  SITEMAP_PING      // Sitemap ping 방식 (Google, Bing)
+  NAVER_MANUAL      // Naver 는 API 없음, 수기 클릭 기록용
+}
+
+enum IndexingStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
