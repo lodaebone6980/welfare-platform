@@ -10,6 +10,7 @@ type FilterConditions = {
   region: string;
   employment: string;
   interests: string[];
+  applyType: '' | 'always' | 'deadline';
 };
 
 type Policy = {
@@ -20,8 +21,19 @@ type Policy = {
   eligibility: string | null;
   applicationMethod: string | null;
   geoRegion: string | null;
+  deadline: string | null;
   category: { name: string; slug: string } | null;
 };
+
+// 중간점(·) 표시용 치환
+function displayCategoryName(name?: string | null): string {
+  return (name || '').replace(/·/g, ' ');
+}
+// 상시신청 여부 판별
+function isAlwaysOpen(deadline?: string | null): boolean {
+  const d = (deadline || '').trim();
+  return !d || /상시|수시|연중|상시모집|상시접수/.test(d);
+}
 
 const REGIONS = [
   '전체', '서울', '경기', '인천', '부산', '대구', '대전', '광주',
@@ -50,6 +62,7 @@ export default function RecommendPage() {
     region: '전체',
     employment: '',
     interests: [],
+    applyType: '',
   });
   const [results, setResults] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(false);
@@ -75,6 +88,7 @@ export default function RecommendPage() {
       if (conditions.region && conditions.region !== '전체') params.set('region', conditions.region);
       if (conditions.employment) params.set('employment', conditions.employment);
       if (conditions.interests.length > 0) params.set('interests', conditions.interests.join(','));
+      if (conditions.applyType) params.set('applyType', conditions.applyType);
 
       const resp = await fetch(`/api/recommend?${params.toString()}`);
       const data = await resp.json();
@@ -254,6 +268,27 @@ export default function RecommendPage() {
                   ))}
                 </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">신청 유형</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: '전체', value: '' as const },
+                    { label: '⏰ 마감기한', value: 'deadline' as const },
+                    { label: '🔁 상시신청', value: 'always' as const },
+                  ].map(t => (
+                    <button
+                      key={t.label}
+                      onClick={() => setConditions(prev => ({ ...prev, applyType: t.value }))}
+                      className={`p-3 rounded-xl text-sm font-medium border-2 transition-all ${
+                        conditions.applyType === t.value
+                          ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >{t.label}</button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="mt-8 flex gap-3">
@@ -300,8 +335,10 @@ export default function RecommendPage() {
 
                 <div className="space-y-4">
                   {results.map((policy) => {
-                    const catName = policy.category?.name || '복지';
-                    const color = CATEGORY_COLORS[catName] || 'bg-gray-100 text-gray-800 border-gray-200';
+                    const catName = displayCategoryName(policy.category?.name || '복지');
+                    const rawName = policy.category?.name || '복지';
+                    const color = CATEGORY_COLORS[rawName] || CATEGORY_COLORS[catName] || 'bg-gray-100 text-gray-800 border-gray-200';
+                    const always = isAlwaysOpen(policy.deadline);
                     return (
                       <Link
                         key={policy.id}
@@ -309,9 +346,20 @@ export default function RecommendPage() {
                         className="block bg-white rounded-2xl shadow-sm p-5 hover:shadow-md transition-all border border-gray-100"
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${color}`}>
-                            {catName}
-                          </span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${color}`}>
+                              {catName}
+                            </span>
+                            {always ? (
+                              <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                🔁 상시신청
+                              </span>
+                            ) : (
+                              <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
+                                ⏰ {policy.deadline}
+                              </span>
+                            )}
+                          </div>
                           {policy.geoRegion && (
                             <span className="text-xs text-gray-500">📍 {policy.geoRegion}</span>
                           )}

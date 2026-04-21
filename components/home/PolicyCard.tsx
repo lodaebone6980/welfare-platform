@@ -12,6 +12,8 @@ interface PolicyCardProps {
     tags?: string | null;
     /** 외부 신청 URL — 있으면 카드 하단에 카테고리별 CTA 버튼 노출 (같은 창, rel=nofollow) */
     applyUrl?: string | null;
+    /** 마감일 문자열 — 없거나 "상시/수시/연중"이면 상시신청 뱃지 */
+    deadline?: string | null;
   };
   variant?: 'default' | 'compact' | 'horizontal';
   /** 카드 하단에 "자료: 정부24·복지로" 출처 한 줄 노출 (default 기준 true) */
@@ -54,6 +56,12 @@ function ctaLabel(categoryName?: string | null, hasApply?: boolean | null): stri
 /** 카테고리명 표시용 — 중간점(·) 공백 치환 */
 function displayCategoryName(name?: string | null): string {
   return (name || '').replace(/·/g, ' ');
+}
+
+/** 상시신청 여부 판별 — deadline이 없거나 상시/수시/연중이면 true */
+function isAlwaysOpen(deadline?: string | null): boolean {
+  const d = (deadline || '').trim();
+  return !d || /상시|수시|연중|상시모집|상시접수/.test(d);
 }
 
 export default function PolicyCard({ policy, variant = 'default', showSource = true }: PolicyCardProps) {
@@ -144,11 +152,22 @@ export default function PolicyCard({ policy, variant = 'default', showSource = t
       />
 
       <div className="relative z-10 pointer-events-none">
-        {policy.category && (
-          <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${categoryColor}`}>
-            {policy.category.name}
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {policy.category && (
+            <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${categoryColor}`}>
+              {displayCategoryName(policy.category.name)}
+            </span>
+          )}
+          {isAlwaysOpen(policy.deadline) ? (
+            <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+              🔁 상시
+            </span>
+          ) : (
+            <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-700 border border-orange-200">
+              ⏰ 마감
+            </span>
+          )}
+        </div>
         <h3 className="mt-2 text-base font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
           {policy.title}
         </h3>

@@ -78,6 +78,30 @@ async function getExpiringPolicies() {
     .slice(0, 5);
 }
 
+/** 상시신청 지원금 — deadline이 없거나 '상시/수시/연중' 포함 */
+async function getAlwaysOpenPolicies() {
+  const policies = await prisma.policy.findMany({
+    where: {
+      status: 'PUBLISHED',
+      OR: [
+        { deadline: null },
+        { deadline: '' },
+        { deadline: { contains: '상시' } },
+        { deadline: { contains: '수시' } },
+        { deadline: { contains: '연중' } },
+      ],
+    },
+    orderBy: [{ viewCount: 'desc' }, { publishedAt: 'desc' }],
+    take: 5,
+    select: {
+      id: true, title: true, slug: true, excerpt: true,
+      geoRegion: true, viewCount: true, deadline: true,
+      category: { select: { name: true, slug: true, icon: true } },
+    },
+  });
+  return policies;
+}
+
 async function getLatestPolicies() {
   return prisma.policy.findMany({
     where: { status: 'PUBLISHED' },
@@ -125,10 +149,11 @@ function cleanTitle(title: string) {
 }
 
 export default async function HomePage() {
-  const [stats, popularPolicies, expiringPolicies, featuredPolicies, latestPolicies, categories] = await Promise.all([
+  const [stats, popularPolicies, expiringPolicies, alwaysOpenPolicies, featuredPolicies, latestPolicies, categories] = await Promise.all([
     getStats(),
     getPopularPolicies(),
     getExpiringPolicies(),
+    getAlwaysOpenPolicies(),
     getFeaturedPolicies(),
     getLatestPolicies(),
     getCategories(),
@@ -230,6 +255,42 @@ export default async function HomePage() {
                 </Link>
               );
             })}
+          </div>
+        </section>
+      )}
+
+      {/* 🔁 상시신청 지원금 — 마감 걱정 없이 언제든 신청 가능 */}
+      {alwaysOpenPolicies.length > 0 && (
+        <section className="px-4 pt-5 pb-2">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
+              <span className="text-lg">🔁</span> 상시신청 지원금
+            </h2>
+            <Link href="/welfare/search?apply=always" className="text-xs text-blue-600">더보기</Link>
+          </div>
+          <div className="space-y-0 bg-white rounded-2xl border overflow-hidden">
+            {alwaysOpenPolicies.map((policy) => (
+              <Link
+                key={policy.id}
+                href={'/welfare/' + encodeURIComponent(policy.slug)}
+                className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b last:border-b-0"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{cleanTitle(policy.title)}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {policy.category && (
+                      <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
+                        {displayCategoryName(policy.category.name)}
+                      </span>
+                    )}
+                    <span className="text-[11px] text-gray-400">{policy.geoRegion || '전국'}</span>
+                  </div>
+                </div>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-lg whitespace-nowrap bg-emerald-50 text-emerald-700">
+                  🔁 상시
+                </span>
+              </Link>
+            ))}
           </div>
         </section>
       )}

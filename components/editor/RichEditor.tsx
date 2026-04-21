@@ -36,7 +36,7 @@ export function RichEditor({ content, onChange }: Props) {
 
   const insertCTA = useCallback(() => {
     editor?.chain().focus().insertContent(
-      `<p><a href="" class="cta-button" target="_blank" rel="noopener">지금 신청하기 →</a></p>`
+      `<p><a href="" class="cta-button" rel="nofollow">지금 신청하기 →</a></p>`
     ).run()
   }, [editor])
 

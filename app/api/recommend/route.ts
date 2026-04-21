@@ -11,6 +11,7 @@ export async function GET(request: Request) {
   const region = url.searchParams.get('region') || '';
   const employment = url.searchParams.get('employment') || '';
   const interests = url.searchParams.get('interests')?.split(',').filter(Boolean) || [];
+  const applyType = url.searchParams.get('applyType') || ''; // '' | 'always' | 'deadline'
 
   try {
     // Build where clause
@@ -46,11 +47,25 @@ export async function GET(request: Request) {
       take: 100,
     });
 
+    // Apply-type filter (상시/마감)
+    if (applyType === 'always') {
+      policies = policies.filter(p => {
+        const d = (p.deadline || '').trim();
+        return !d || /상시|수시|연중|상시모집|상시접수/.test(d);
+      });
+    } else if (applyType === 'deadline') {
+      policies = policies.filter(p => {
+        const d = (p.deadline || '').trim();
+        return d && !/상시|수시|연중|상시모집|상시접수/.test(d);
+      });
+    }
+
     // Apply text-based filtering for age, income, household, employment
     // These are matched against eligibility text
+    // 완화된 매칭: 하나라도 매칭되면 포함 (score > 0), 매칭이 없으면 뒤로
     if (age || income || household || employment) {
-      policies = policies.filter(policy => {
-        const eligText = (policy.eligibility || '').toLowerCase() + ' ' + (policy.title || '').toLowerCase() + ' ' + (policy.content || '').toLowerCase();
+      policies = policies.map(policy => {
+        const eligText = (policy.eligibility || '').toLowerCase() + ' ' + (policy.title || '').toLowerCase() + ' ' + (policy.content || '').toLowerCase() + ' ' + (policy.excerpt || '').toLowerCase();
         let score = 0;
         let maxScore = 0;
 
@@ -111,15 +126,19 @@ export async function GET(request: Request) {
           if (keywords.length === 0 || keywords.some(k => eligText.includes(k))) score++;
         }
 
-        // If no text filters applied, include all
-        if (maxScore === 0) return true;
-        // Include if at least 1 condition matches (lenient), or if "no restriction" options selected
-        return score > 0;
-      });
+        // 매칭 점수 계산: 점수가 있으면 가점, 없어도 포함 (관대한 매칭)
+        return { policy, score, maxScore };
+      }).sort((a, b) => {
+        // 점수 우선, 그 다음 조회수
+        if (b.score !== a.score) return b.score - a.score;
+        return (b.policy.viewCount || 0) - (a.policy.viewCount || 0);
+      }).map(x => x.policy);
     }
 
-    // Sort by relevance (matching policies first)
-    policies.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
+    // Sort by relevance (matching policies first) - only when no text filter applied
+    if (!(age || income || household || employment)) {
+      policies.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
+    }
 
     return NextResponse.json({
       success: true,
@@ -132,6 +151,7 @@ export async function GET(request: Request) {
         eligibility: p.eligibility,
         applicationMethod: p.applicationMethod,
         geoRegion: p.geoRegion,
+        deadline: p.deadline,
         category: p.category ? { name: p.category.name, slug: p.category.slug } : null,
       })),
     });

@@ -40,11 +40,12 @@ function getDday(deadline: string | null): { text: string; urgent: boolean; colo
   return { text: `D-${diff}`, urgent: false, color: 'bg-blue-100 text-blue-600' };
 }
 
-export default async function SearchPage({ searchParams }: { searchParams: { q?: string; category?: string; region?: string; sort?: string; page?: string } }) {
+export default async function SearchPage({ searchParams }: { searchParams: { q?: string; category?: string; region?: string; sort?: string; page?: string; apply?: string } }) {
   const query = searchParams.q || '';
   const categoryFilter = searchParams.category || '';
   const regionFilter = searchParams.region || '';
   const sortBy = searchParams.sort || 'latest';
+  const applyFilter = searchParams.apply || ''; // '' | 'always' | 'deadline'
   const currentPage = parseInt(searchParams.page || '1');
 
   const where: any = { status: 'PUBLISHED' };
@@ -59,6 +60,30 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
   }
   if (regionFilter) {
     where.geoRegion = { contains: regionFilter };
+  }
+  // 상시/마감 신청 유형 필터
+  if (applyFilter === 'always') {
+    where.AND = [
+      ...(where.AND || []),
+      {
+        OR: [
+          { deadline: null },
+          { deadline: '' },
+          { deadline: { contains: '상시' } },
+          { deadline: { contains: '수시' } },
+          { deadline: { contains: '연중' } },
+        ],
+      },
+    ];
+  } else if (applyFilter === 'deadline') {
+    where.AND = [
+      ...(where.AND || []),
+      { deadline: { not: null } },
+      { deadline: { not: '' } },
+      { NOT: { deadline: { contains: '상시' } } },
+      { NOT: { deadline: { contains: '수시' } } },
+      { NOT: { deadline: { contains: '연중' } } },
+    ];
   }
 
   const orderBy: any = sortBy === 'popular' ? { viewCount: 'desc' } : { publishedAt: 'desc' };
@@ -95,6 +120,8 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
     if (params.category ?? categoryFilter) sp.set('category', params.category ?? categoryFilter);
     if (params.region ?? regionFilter) sp.set('region', params.region ?? regionFilter);
     if (params.sort ?? sortBy) sp.set('sort', params.sort ?? sortBy);
+    const applyVal = params.apply ?? applyFilter;
+    if (applyVal) sp.set('apply', applyVal);
     if (params.page) sp.set('page', params.page);
     const str = sp.toString();
     return '/welfare/search' + (str ? '?' + str : '');
@@ -129,7 +156,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
           {categories.map(cat => (
             <Link key={cat.slug} href={buildUrl({ category: cat.slug === categoryFilter ? '' : cat.slug, page: '1' })}
               className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition ${categoryFilter === cat.slug ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}>
-              {cat.name} ({cat._count.policies})
+              {cat.name.replace(/·/g, ' ')} ({cat._count.policies})
             </Link>
           ))}
         </div>
@@ -160,6 +187,22 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
           </div>
         </div>
 
+        {/* 상시/마감 신청 유형 토글 */}
+        <div className="flex gap-1.5 mb-4">
+          <Link href={buildUrl({ apply: '', page: '1' })}
+            className={`px-3 py-1 rounded-full text-xs font-medium ${!applyFilter ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200'}`}>
+            전체
+          </Link>
+          <Link href={buildUrl({ apply: applyFilter === 'always' ? '' : 'always', page: '1' })}
+            className={`px-3 py-1 rounded-full text-xs font-medium ${applyFilter === 'always' ? 'bg-emerald-600 text-white' : 'bg-white text-emerald-700 border border-emerald-200'}`}>
+            🔁 상시신청
+          </Link>
+          <Link href={buildUrl({ apply: applyFilter === 'deadline' ? '' : 'deadline', page: '1' })}
+            className={`px-3 py-1 rounded-full text-xs font-medium ${applyFilter === 'deadline' ? 'bg-orange-600 text-white' : 'bg-white text-orange-700 border border-orange-200'}`}>
+            ⏰ 마감기한
+          </Link>
+        </div>
+
         {/* Results count */}
         <p className="text-sm text-gray-500 mb-4">총 <span className="font-semibold text-blue-600">{totalCount.toLocaleString()}</span>건{query && <> &middot; &quot;{query}&quot; 검색결과</>}</p>
 
@@ -181,7 +224,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {policy.category && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium">
-                          {policy.category.name}
+                          {policy.category.name.replace(/·/g, ' ')}
                         </span>
                       )}
                       {policy.geoRegion && (

@@ -150,8 +150,7 @@ function PolicyCard({ policy }: { policy: Policy }) {
         {policy.applyUrl ? (
           <a
             href={policy.applyUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            rel="nofollow"
             className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             신청하기
