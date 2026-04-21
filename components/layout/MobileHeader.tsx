@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
+const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || '국민자료실';
+
 export default function MobileHeader() {
   const pathname = usePathname();
   const [showSearch, setShowSearch] = useState(false);
@@ -14,10 +16,10 @@ export default function MobileHeader() {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-gray-100 ">
       <div className="flex items-center justify-between h-14 px-4 max-w-3xl mx-auto">
-        <Link href="/" className="flex items-center gap-1.5">
+        <Link href="/" className="flex items-center gap-1.5" aria-label={SITE_NAME + ' 홈'}>
           <span className="text-xl">💰</span>
           <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            정책지금
+            {SITE_NAME}
           </span>
         </Link>
         

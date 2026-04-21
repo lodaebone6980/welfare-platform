@@ -10,7 +10,7 @@ interface PolicyCardProps {
     viewCount?: number;
     publishedAt?: Date | string | null;
     tags?: string | null;
-    /** 외부 신청 URL — 있으면 카드 하단에 "신청하기" 버튼 노출 (같은 창, rel=nofollow) */
+    /** 외부 신청 URL — 있으면 카드 하단에 카테고리별 CTA 버튼 노출 (같은 창, rel=nofollow) */
     applyUrl?: string | null;
   };
   variant?: 'default' | 'compact' | 'horizontal';
@@ -31,15 +31,37 @@ const CATEGORY_COLORS: Record<string, string> = {
   '농림·축산·어업': 'bg-lime-50 text-lime-700',
 };
 
+/** 카테고리별 CTA 라벨 — gg24/복지킹/govhelp 스타일처럼 카드마다 다른 액션 문구 노출 */
+const CATEGORY_CTA: Record<string, string> = {
+  '생활안정': '생계지원 신청',
+  '주거·자립': '주거지원 신청',
+  '보육·교육': '교육비 신청',
+  '고용·창업': '일자리 신청',
+  '건강·의료': '의료비 신청',
+  '행정·안전': '민원 바로가기',
+  '임신·출산': '출산혜택 신청',
+  '보호·돌봄': '돌봄 신청',
+  '문화·환경': '문화혜택 신청',
+  '농림·축산·어업': '농어촌 지원',
+};
+
+function ctaLabel(categoryName?: string | null, hasApply?: boolean | null): string {
+  if (!hasApply) return '자세히 보기';
+  if (!categoryName) return '신청하기';
+  return CATEGORY_CTA[categoryName] ?? '신청하기';
+}
+
 export default function PolicyCard({ policy, variant = 'default', showSource = true }: PolicyCardProps) {
   const categoryColor = CATEGORY_COLORS[policy.category?.name || ''] || 'bg-gray-50 text-gray-700';
   const publishDate = policy.publishedAt
     ? new Date(policy.publishedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
     : '';
+  const detailHref = `/welfare/${policy.slug}`;
+  const cta = ctaLabel(policy.category?.name, !!policy.applyUrl);
 
   if (variant === 'compact') {
     return (
-      <Link href={`/welfare/${policy.slug}`} className="block p-3 rounded-xl hover:bg-gray-50 transition-colors">
+      <Link href={detailHref} className="block p-3 rounded-xl hover:bg-gray-50 transition-colors">
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">{policy.title}</h3>
@@ -61,19 +83,23 @@ export default function PolicyCard({ policy, variant = 'default', showSource = t
 
   if (variant === 'horizontal') {
     return (
-      <article className="flex gap-4 p-4 rounded-2xl bg-white border border-gray-100 hover:shadow-md transition-all min-h-[124px]">
-        <div className="flex-1 min-w-0 flex flex-col">
-          <Link href={`/welfare/${policy.slug}`} className="min-w-0">
-            {policy.category && (
-              <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium mb-2 ${categoryColor}`}>
-                {policy.category.name}
-              </span>
-            )}
-            <h3 className="text-base font-bold text-gray-900 line-clamp-2 leading-tight">{policy.title}</h3>
-            <p className="mt-1.5 text-sm text-gray-500 line-clamp-2 min-h-[2.5rem]">
-              {policy.excerpt ?? ' '}
-            </p>
-          </Link>
+      <article className="relative group flex gap-4 p-4 rounded-2xl bg-white border border-gray-100 hover:shadow-md transition-all min-h-[124px]">
+        {/* 전체 블록 클릭 가능 — 아래 absolute overlay */}
+        <Link
+          href={detailHref}
+          aria-label={policy.title}
+          className="absolute inset-0 z-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-200"
+        />
+        <div className="relative z-10 flex-1 min-w-0 flex flex-col pointer-events-none">
+          {policy.category && (
+            <span className={`inline-flex w-fit px-2 py-0.5 rounded-full text-[11px] font-medium mb-2 ${categoryColor}`}>
+              {policy.category.name}
+            </span>
+          )}
+          <h3 className="text-base font-bold text-gray-900 line-clamp-2 leading-tight">{policy.title}</h3>
+          <p className="mt-1.5 text-sm text-gray-500 line-clamp-2 min-h-[2.5rem]">
+            {policy.excerpt ?? ' '}
+          </p>
           <div className="mt-auto pt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">
               {policy.geoRegion && (
@@ -83,14 +109,18 @@ export default function PolicyCard({ policy, variant = 'default', showSource = t
                 <span className="text-xs text-gray-400">{publishDate}</span>
               )}
             </div>
-            {policy.applyUrl && (
+            {policy.applyUrl ? (
               <a
                 href={policy.applyUrl}
                 rel="nofollow"
-                className="shrink-0 rounded border border-gray-200 px-2 py-0.5 text-[11px] text-gray-600 hover:bg-gray-50"
+                className="pointer-events-auto relative z-20 shrink-0 rounded border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700 hover:bg-blue-100"
               >
-                신청하기
+                {cta}
               </a>
+            ) : (
+              <span className="shrink-0 rounded border border-gray-200 px-2.5 py-1 text-[11px] text-gray-600">
+                {cta}
+              </span>
             )}
           </div>
         </div>
@@ -98,10 +128,17 @@ export default function PolicyCard({ policy, variant = 'default', showSource = t
     );
   }
 
-  // Default card — 높이 균일화 + 출처 + (있으면) 외부 신청 버튼
+  // Default card — 전체 블록 클릭 + 카테고리별 CTA + 출처 라인
   return (
-    <article className="group flex flex-col justify-between min-h-[196px] p-4 rounded-2xl bg-white border border-gray-100 hover:shadow-lg hover:border-blue-100 transition-all">
-      <Link href={`/welfare/${policy.slug}`} className="block min-w-0">
+    <article className="relative group flex flex-col justify-between min-h-[196px] p-4 rounded-2xl bg-white border border-gray-100 hover:shadow-lg hover:border-blue-100 transition-all">
+      {/* 전체 블록 클릭 — overlay Link */}
+      <Link
+        href={detailHref}
+        aria-label={policy.title}
+        className="absolute inset-0 z-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-200"
+      />
+
+      <div className="relative z-10 pointer-events-none">
         {policy.category && (
           <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${categoryColor}`}>
             {policy.category.name}
@@ -113,9 +150,9 @@ export default function PolicyCard({ policy, variant = 'default', showSource = t
         <p className="mt-2 text-sm text-gray-500 line-clamp-2 leading-relaxed min-h-[2.5rem]">
           {policy.excerpt ?? ' '}
         </p>
-      </Link>
+      </div>
 
-      <div className="mt-3 pt-3 border-t border-gray-50 space-y-1.5">
+      <div className="relative z-10 mt-3 pt-3 border-t border-gray-50 space-y-1.5 pointer-events-none">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             {policy.geoRegion && (
@@ -128,14 +165,18 @@ export default function PolicyCard({ policy, variant = 'default', showSource = t
               <span className="text-xs text-gray-400">{publishDate}</span>
             )}
           </div>
-          {policy.applyUrl && (
+          {policy.applyUrl ? (
             <a
               href={policy.applyUrl}
               rel="nofollow"
-              className="shrink-0 rounded border border-gray-200 px-2 py-0.5 text-[11px] text-gray-600 hover:bg-gray-50"
+              className="pointer-events-auto relative z-20 shrink-0 rounded border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700 hover:bg-blue-100"
             >
-              신청하기
+              {cta}
             </a>
+          ) : (
+            <span className="shrink-0 rounded border border-gray-200 px-2.5 py-1 text-[11px] text-gray-600">
+              {cta}
+            </span>
           )}
         </div>
 

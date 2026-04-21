@@ -2,12 +2,13 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import CategoryIcon from '@/components/ui/CategoryIcon';
+import { SITE_NAME, SITE_DESC } from '@/lib/env';
 
 export const metadata: Metadata = {
-  title: '정책지금 - 나에게 맞는 정부 지원금 찾기',
-  description: '2024년 최신 정부 복지 정책, 지원금, 보조금 정보를 한눈에! 생활안정, 주거, 교육, 고용, 건강 등 맞춤형 복지 서비스를 찾아보세요.',
+  title: `${SITE_NAME} - 나에게 맞는 정부 지원금 찾기`,
+  description: SITE_DESC,
   openGraph: {
-    title: '정책지금 - 나에게 맞는 정부 지원금 찾기',
+    title: `${SITE_NAME} - 나에게 맞는 정부 지원금 찾기`,
     description: '최신 정부 복지 정책과 지원금 정보를 한눈에 확인하세요.',
     type: 'website',
   },

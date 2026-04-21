@@ -2,25 +2,29 @@ import { prisma } from '@/lib/prisma';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import CategoryIcon from '@/components/ui/CategoryIcon';
+import { SITE_NAME } from '@/lib/env';
 
 export const metadata: Metadata = {
-  title: '카테고리별 정책',
-  description: '분야별로 나에게 맞는 정부 지원금을 찾아보세요.',
+  title: `분야별 정부 지원금 전체보기 | ${SITE_NAME}`,
+  description:
+    '생활안정·주거·보육교육·고용·의료·행정·임신출산·돌봄·문화·농어업 등 10대 분야의 정부·지자체 지원 제도를 한곳에서 확인하세요.',
+  alternates: { canonical: '/welfare/categories' },
 };
 
 export const revalidate = 300;
 
+// 실제 DB 의 10개 카테고리명에 맞춘 그라디언트 매핑
 const categoryColors: Record<string, string> = {
-  '환급금': 'from-orange-500 to-amber-500',
-  '바우처': 'from-purple-500 to-indigo-500',
-  '지원금': 'from-blue-500 to-cyan-500',
-  '대출': 'from-green-500 to-emerald-500',
-  '보조금': 'from-pink-500 to-rose-500',
-  '교육': 'from-yellow-500 to-orange-500',
-  '주거': 'from-teal-500 to-green-500',
-  '의료': 'from-red-500 to-pink-500',
-  '고용': 'from-indigo-500 to-blue-500',
-  '문화': 'from-fuchsia-500 to-purple-500',
+  '생활안정': 'from-blue-500 to-cyan-500',
+  '주거·자립': 'from-green-500 to-emerald-500',
+  '보육·교육': 'from-yellow-500 to-orange-500',
+  '고용·창업': 'from-purple-500 to-indigo-500',
+  '건강·의료': 'from-red-500 to-pink-500',
+  '행정·안전': 'from-gray-500 to-slate-600',
+  '임신·출산': 'from-pink-500 to-rose-500',
+  '보호·돌봄': 'from-orange-500 to-amber-500',
+  '문화·환경': 'from-teal-500 to-cyan-500',
+  '농림·축산·어업': 'from-lime-500 to-green-500',
 };
 
 export default async function CategoriesPage() {
@@ -52,7 +56,7 @@ export default async function CategoriesPage() {
             <div key={cat.id} className="bg-white rounded-2xl border overflow-hidden">
               {/* Category Header */}
               <Link
-                href={'/welfare/search?category=' + cat.slug}
+                href={'/welfare/categories/' + cat.slug}
                 className={"flex items-center justify-between p-4 bg-gradient-to-r text-white " + (categoryColors[cat.name] || 'from-gray-500 to-gray-600')}
               >
                 <div className="flex items-center gap-3">
