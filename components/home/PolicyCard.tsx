@@ -51,6 +51,11 @@ function ctaLabel(categoryName?: string | null, hasApply?: boolean | null): stri
   return CATEGORY_CTA[categoryName] ?? '신청하기';
 }
 
+/** 카테고리명 표시용 — 중간점(·) 공백 치환 */
+function displayCategoryName(name?: string | null): string {
+  return (name || '').replace(/·/g, ' ');
+}
+
 export default function PolicyCard({ policy, variant = 'default', showSource = true }: PolicyCardProps) {
   const categoryColor = CATEGORY_COLORS[policy.category?.name || ''] || 'bg-gray-50 text-gray-700';
   const publishDate = policy.publishedAt
@@ -68,7 +73,7 @@ export default function PolicyCard({ policy, variant = 'default', showSource = t
             <div className="flex items-center gap-2 mt-1.5">
               {policy.category && (
                 <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium ${categoryColor}`}>
-                  {policy.category.name}
+                  {displayCategoryName(policy.category.name)}
                 </span>
               )}
               {policy.geoRegion && (
@@ -93,7 +98,7 @@ export default function PolicyCard({ policy, variant = 'default', showSource = t
         <div className="relative z-10 flex-1 min-w-0 flex flex-col pointer-events-none">
           {policy.category && (
             <span className={`inline-flex w-fit px-2 py-0.5 rounded-full text-[11px] font-medium mb-2 ${categoryColor}`}>
-              {policy.category.name}
+              {displayCategoryName(policy.category.name)}
             </span>
           )}
           <h3 className="text-base font-bold text-gray-900 line-clamp-2 leading-tight">{policy.title}</h3>

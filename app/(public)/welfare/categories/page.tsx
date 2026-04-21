@@ -62,7 +62,7 @@ export default async function CategoriesPage() {
                 <div className="flex items-center gap-3">
                   <CategoryIcon slug={cat.slug} size={28} />
                   <div>
-                    <h2 className="font-bold text-base">{cat.name}</h2>
+                    <h2 className="font-bold text-base">{cat.name.replace(/·/g, ' ')}</h2>
                     <p className="text-white/80 text-xs">{cat._count.policies}개 정책</p>
                   </div>
                 </div>

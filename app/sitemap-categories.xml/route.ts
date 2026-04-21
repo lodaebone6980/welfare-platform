@@ -23,8 +23,17 @@ export async function GET() {
     })
     .join('\n');
 
+  // 카테고리 인덱스 자체 포함
+  const indexUrl = `  <url>
+    <loc>${BASE_URL}/welfare/categories</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${indexUrl}
 ${urls}
 </urlset>`;
 

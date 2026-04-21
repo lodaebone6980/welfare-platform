@@ -125,7 +125,7 @@ export default async function CategoryDetailPage({ params }: Props) {
             <CategoryIcon slug={cat.slug} size={28} />
           </div>
           <div>
-            <h1 className="text-white text-xl font-bold">{cat.name} 지원금</h1>
+            <h1 className="text-white text-xl font-bold">{cat.name.replace(/·/g, ' ')} 지원금</h1>
             {meta?.subtitle && (
               <p className="text-blue-200 text-xs mt-0.5">{meta.subtitle}</p>
             )}
@@ -145,7 +145,7 @@ export default async function CategoryDetailPage({ params }: Props) {
         <span>›</span>
         <Link href="/welfare/categories" className="hover:text-blue-600">카테고리</Link>
         <span>›</span>
-        <span className="text-gray-800">{cat.name}</span>
+        <span className="text-gray-800">{cat.name.replace(/·/g, ' ')}</span>
       </nav>
 
       {/* Policy Cards Grid */}
