@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    staticPageGenerationTimeout: 600,
   async redirects() {
     return [
       // /admin → 어드민 대시보드
