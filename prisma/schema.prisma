@@ -49,6 +49,12 @@ model Policy {
   @@index([geoRegion])
   @@index([status, categoryId])
   @@index([externalId])
+
+  // Admin list / category filter performance (added by optimization)
+  @@index([createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([categoryId, createdAt(sort: Desc)])
+  @@index([geoRegion, createdAt(sort: Desc)])
 }
 
 model ThreadsPost {
