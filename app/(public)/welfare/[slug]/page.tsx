@@ -23,7 +23,7 @@ export const dynamicParams = true;      // 사전생성 안 된 슬러그는 on-
 
 export async function generateStaticParams() {
   try {
-    const slugs = await getCachedTopPolicySlugs(200);
+    const slugs = await getCachedTopPolicySlugs(20);
     return slugs.map((p) => ({ slug: p.slug }));
   } catch {
     return [];
