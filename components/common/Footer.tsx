@@ -45,45 +45,41 @@ export default function Footer() {
           </Link>
         </nav>
 
-        {/* 사업자 정보 */}
-        <dl className="mt-4 grid grid-cols-1 gap-y-1 text-xs leading-relaxed sm:grid-cols-2 sm:gap-x-6">
-          <div className="flex">
-            <dt className="w-24 shrink-0 text-gray-500">서비스명</dt>
-            <dd className="text-gray-800">{service}</dd>
-          </div>
-          <div className="flex">
-            <dt className="w-24 shrink-0 text-gray-500">운영사</dt>
-            <dd className="text-gray-800">{company}</dd>
-          </div>
-          <div className="flex sm:col-span-2">
-            <dt className="w-24 shrink-0 text-gray-500">주소</dt>
-            <dd className="text-gray-800">{address}</dd>
-          </div>
-          {bizNo && (
-            <div className="flex">
-              <dt className="w-24 shrink-0 text-gray-500">사업자등록번호</dt>
-              <dd className="text-gray-800">{bizNo}</dd>
-            </div>
-          )}
-          {representative && (
-            <div className="flex">
-              <dt className="w-24 shrink-0 text-gray-500">대표</dt>
-              <dd className="text-gray-800">{representative}</dd>
-            </div>
-          )}
-          <div className="flex sm:col-span-2">
-            <dt className="w-24 shrink-0 text-gray-500">문의</dt>
-            <dd className="text-gray-800">
-              <a
-                href={`mailto:${email}`}
-                rel="nofollow"
-                className="hover:underline"
-              >
+        {/* 사업자 정보 — | 구분자 인라인 포맷 */}
+        <div className="mt-4 text-xs leading-relaxed text-gray-700">
+          <div className="font-semibold text-gray-900 mb-1">{service} · {company}</div>
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-gray-600">
+            <span>
+              <span className="text-gray-500">문의</span>{' '}
+              <a href={`mailto:${email}`} rel="nofollow" className="hover:underline text-gray-800">
                 {email}
               </a>
-            </dd>
+            </span>
+            {representative && (
+              <>
+                <span className="text-gray-300">|</span>
+                <span>
+                  <span className="text-gray-500">대표</span>{' '}
+                  <span className="text-gray-800">{representative}</span>
+                </span>
+              </>
+            )}
+            {bizNo && (
+              <>
+                <span className="text-gray-300">|</span>
+                <span>
+                  <span className="text-gray-500">사업자등록번호</span>{' '}
+                  <span className="text-gray-800">{bizNo}</span>
+                </span>
+              </>
+            )}
+            <span className="text-gray-300">|</span>
+            <span>
+              <span className="text-gray-500">주소</span>{' '}
+              <span className="text-gray-800">{address}</span>
+            </span>
           </div>
-        </dl>
+        </div>
 
         {/* 출처/면책 */}
         <div className="mt-4 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[11px] leading-relaxed text-gray-500">

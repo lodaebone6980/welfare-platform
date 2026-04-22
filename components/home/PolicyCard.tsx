@@ -142,71 +142,57 @@ export default function PolicyCard({ policy, variant = 'default', showSource = t
     );
   }
 
-  // Default card — 전체 블록 클릭 + 카테고리별 CTA + 출처 라인
+  // Default card — 전체 블록 클릭 + 컴팩트 높이 (gg24 스타일)
   return (
-    <article className="relative group flex flex-col justify-between min-h-[196px] p-4 rounded-2xl bg-white border border-gray-100 hover:shadow-lg hover:border-blue-100 transition-all">
+    <article className="relative group flex flex-col justify-between p-3 rounded-xl bg-white border border-gray-100 hover:shadow-md hover:border-blue-100 transition-all">
       {/* 전체 블록 클릭 — overlay Link */}
       <Link
         href={detailHref}
         aria-label={policy.title}
-        className="absolute inset-0 z-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-200"
+        className="absolute inset-0 z-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200"
       />
 
       <div className="relative z-10 pointer-events-none">
         <div className="flex items-center gap-1.5 flex-wrap">
           {policy.category && (
-            <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${categoryColor}`}>
+            <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium ${categoryColor}`}>
               {displayCategoryName(policy.category.name)}
             </span>
           )}
           {isAlwaysOpen(policy.deadline) ? (
-            <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700">
               🔁 상시
             </span>
           ) : (
-            <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-700 border border-orange-200">
+            <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-50 text-orange-700">
               ⏰ 마감
             </span>
           )}
         </div>
-        <h3 className="mt-2 text-base font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
+        <h3 className="mt-1.5 text-sm font-bold text-gray-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
           {policy.title}
         </h3>
-        <p className="mt-2 text-sm text-gray-500 line-clamp-2 leading-relaxed min-h-[2.5rem]">
-          {policy.excerpt ?? ' '}
-        </p>
       </div>
 
-      <div className="relative z-10 mt-3 pt-3 border-t border-gray-50 space-y-1.5 pointer-events-none">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            {policy.geoRegion && (
-              <span className="text-xs text-gray-400 truncate">📍 {policy.geoRegion}</span>
-            )}
-            {policy.viewCount !== undefined && policy.viewCount > 0 && (
-              <span className="text-xs text-gray-400">👁 {policy.viewCount.toLocaleString()}</span>
-            )}
-            {publishDate && (
-              <span className="text-xs text-gray-400">{publishDate}</span>
-            )}
-          </div>
-          {policy.applyUrl ? (
-            <a
-              href={policy.applyUrl}
-              rel="nofollow"
-              className="pointer-events-auto relative z-20 shrink-0 rounded border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700 hover:bg-blue-100"
-            >
-              {cta}
-            </a>
-          ) : (
-            <span className="shrink-0 rounded border border-gray-200 px-2.5 py-1 text-[11px] text-gray-600">
-              {cta}
-            </span>
+      <div className="relative z-10 mt-2 pt-2 border-t border-gray-50 flex items-center justify-between gap-2 pointer-events-none">
+        <div className="flex items-center gap-2 min-w-0 text-[11px] text-gray-400">
+          {policy.geoRegion && (
+            <span className="truncate">📍 {policy.geoRegion}</span>
+          )}
+          {policy.viewCount !== undefined && policy.viewCount > 0 && (
+            <span>👁 {policy.viewCount.toLocaleString()}</span>
           )}
         </div>
-
-        {showSource && (
-          <p className="text-[10px] text-gray-400">자료: 정부24·복지로 · 일부 내용 AI 요약</p>
+        {policy.applyUrl ? (
+          <a
+            href={policy.applyUrl}
+            rel="nofollow"
+            className="pointer-events-auto relative z-20 shrink-0 rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 hover:bg-blue-100"
+          >
+            {cta}
+          </a>
+        ) : (
+          <span className="shrink-0 text-[10px] text-gray-500">{cta}</span>
         )}
       </div>
     </article>
