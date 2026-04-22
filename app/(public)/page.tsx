@@ -55,14 +55,27 @@ async function getFeaturedPolicies() {
 }
 
 async function getExpiringPolicies() {
+  // DB에서 1차로 deadline 존재하는 것 중 신규순 30건만 가져와 JS로 파싱·정렬·필터 (100→30으로 축소)
+  // (deadline 컬럼이 문자열 형식이라 DB-level 날짜 비교가 어려워 앱 레이어 필터 불가피.
+  //  캐시 revalidate=300 으로 비용 분산)
   const policies = await prisma.policy.findMany({
-    where: { status: 'PUBLISHED', deadline: { not: null } },
+    where: {
+      status: 'PUBLISHED',
+      deadline: { not: null },
+      NOT: [
+        { deadline: '' },
+        { deadline: { contains: '상시' } },
+        { deadline: { contains: '수시' } },
+        { deadline: { contains: '연중' } },
+      ],
+    },
+    orderBy: { publishedAt: 'desc' },
     select: {
       id: true, title: true, slug: true, excerpt: true,
       geoRegion: true, viewCount: true, deadline: true,
       category: { select: { name: true, slug: true, icon: true } },
     },
-    take: 100,
+    take: 30,
   });
   const today = new Date();
   today.setHours(0, 0, 0, 0);

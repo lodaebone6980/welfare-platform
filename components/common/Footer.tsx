@@ -5,7 +5,7 @@ import { SITE_NAME } from '@/lib/env';
  * 공통 Footer — 모든 공개 페이지에 사용
  * - 서비스/운영사 정보(블루엣지)
  * - 주소, 문의
- * - 이용약관 · 개인정보처리방침 · 사이트맵
+ * - 이용약관 · 개인정보처리방침
  * - 자료 출처(공공누리 1유형)
  *
  * 외부 링크는 모두 rel="nofollow" + 같은 창(요청 사항).
@@ -13,12 +13,12 @@ import { SITE_NAME } from '@/lib/env';
 export default function Footer() {
   const year = new Date().getFullYear();
 
-  const service = SITE_NAME || '국민자료실';
+  const service = SITE_NAME || '복지길잡이';
   const company = '블루엣지';
   const address = '충청남도 천안시 동남구 청수9로 47, 5층 535호';
-  const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'contact@govmate.co.kr';
+  const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'adenly659@gmail.com';
   const bizNo = process.env.NEXT_PUBLIC_BIZ_NO || '';
-  const representative = process.env.NEXT_PUBLIC_REPRESENTATIVE || '';
+  const representative = process.env.NEXT_PUBLIC_REPRESENTATIVE || '이재호';
 
   return (
     <footer
@@ -42,10 +42,6 @@ export default function Footer() {
           <span className="text-gray-300">·</span>
           <Link href="/privacy" className="font-semibold text-gray-900 hover:underline">
             개인정보처리방침
-          </Link>
-          <span className="text-gray-300">·</span>
-          <Link href="/sitemap.xml" className="hover:text-gray-900">
-            사이트맵
           </Link>
         </nav>
 

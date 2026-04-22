@@ -3,6 +3,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { isValidCategorySlug, policyHref } from '@/lib/categories';
+import { SITE_NAME } from '@/lib/env';
 import {
   generatePolicyJsonLd,
   generateFaqJsonLd,
@@ -104,7 +105,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? `/${policy.category.slug}/${encodeURIComponent(policy.slug)}`
     : `/welfare/${encodeURIComponent(policy.slug)}`;
   return {
-    title: `${policy.title} | 국민자료실`,
+    title: `${policy.title} | ${SITE_NAME}`,
     description: generatePolicyMetaDescription(seoData),
     openGraph: { title: ogData.title, description: ogData.description, type: 'article' },
     alternates: { canonical: canonicalPath },

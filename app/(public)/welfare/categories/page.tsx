@@ -6,9 +6,9 @@ import { SITE_NAME } from '@/lib/env';
 import { policyHref } from '@/lib/categories';
 
 export const metadata: Metadata = {
-  title: `분야별 정부 지원금 전체보기 | ${SITE_NAME}`,
+  title: `분야별·유형별 정부 지원금 전체보기 | ${SITE_NAME}`,
   description:
-    '생활안정·주거·보육교육·고용·의료·행정·임신출산·돌봄·문화·농어업 등 10대 분야의 정부·지자체 지원 제도를 한곳에서 확인하세요.',
+    '생활안정·주거·보육교육·고용·의료·행정 등 10대 분야와 환급금·바우처·지원금·대출·보조금 등 지원 유형별로 정부·지자체 제도를 한곳에서 확인하세요.',
   alternates: { canonical: '/welfare/categories' },
 };
 
@@ -27,6 +27,20 @@ const categoryColors: Record<string, string> = {
   '문화·환경': 'from-teal-500 to-cyan-500',
   '농림·축산·어업': 'from-lime-500 to-green-500',
 };
+
+// 지원 유형별 — 검색 키워드 기반으로 링크. 사용자가 익숙한 10대 유형.
+const policyTypes: { name: string; icon: string; keyword: string; gradient: string }[] = [
+  { name: '환급금',  icon: '💰', keyword: '환급',    gradient: 'from-orange-500 to-amber-500' },
+  { name: '바우처',  icon: '🎫', keyword: '바우처',   gradient: 'from-purple-500 to-indigo-500' },
+  { name: '지원금',  icon: '💵', keyword: '지원금',   gradient: 'from-blue-500 to-cyan-500' },
+  { name: '대출',    icon: '🏦', keyword: '대출',    gradient: 'from-green-500 to-emerald-500' },
+  { name: '보조금',  icon: '🪙', keyword: '보조금',   gradient: 'from-pink-500 to-rose-500' },
+  { name: '교육',    icon: '📚', keyword: '교육',    gradient: 'from-yellow-500 to-orange-500' },
+  { name: '주거',    icon: '🏠', keyword: '주거',    gradient: 'from-teal-500 to-green-500' },
+  { name: '의료',    icon: '🩺', keyword: '의료',    gradient: 'from-red-500 to-pink-500' },
+  { name: '고용',    icon: '💼', keyword: '고용',    gradient: 'from-indigo-500 to-blue-500' },
+  { name: '문화',    icon: '🎨', keyword: '문화',    gradient: 'from-fuchsia-500 to-purple-500' },
+];
 
 export default async function CategoriesPage() {
   const categories = await prisma.category.findMany({
@@ -47,11 +61,32 @@ export default async function CategoriesPage() {
       {/* Hero */}
       <section className="bg-gradient-to-br from-blue-600 to-indigo-700 px-4 pt-8 pb-6">
         <h1 className="text-white text-xl font-bold">카테고리별 정책</h1>
-        <p className="text-blue-200 text-sm mt-1">분야별로 나에게 맞는 지원금을 찾아보세요</p>
+        <p className="text-blue-200 text-sm mt-1">분야별 · 지원 유형별로 빠르게 찾아보세요</p>
       </section>
 
-      {/* Category Grid */}
-      <section className="px-4 py-4">
+      {/* 지원 유형별 — 타입 그리드 (환급금/바우처/지원금/대출/보조금 등) */}
+      <section className="px-4 pt-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-bold text-gray-900">지원 유형별로 찾기</h2>
+          <span className="text-[11px] text-gray-400">키워드 검색 기반</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          {policyTypes.map((t) => (
+            <Link
+              key={t.name}
+              href={'/welfare/search?q=' + encodeURIComponent(t.keyword)}
+              className={"flex flex-col items-center justify-center py-3 rounded-xl bg-gradient-to-br text-white shadow-sm hover:shadow-md transition " + t.gradient}
+            >
+              <span className="text-xl">{t.icon}</span>
+              <span className="text-[12px] font-semibold mt-0.5">{t.name}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* 분야별 — 기존 카테고리 그리드 */}
+      <section className="px-4 pt-6">
+        <h2 className="text-base font-bold text-gray-900 mb-3">분야별로 찾기</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {categories.map((cat) => (
             <div key={cat.id} className="bg-white rounded-2xl border overflow-hidden">

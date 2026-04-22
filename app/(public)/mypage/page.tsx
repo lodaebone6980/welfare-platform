@@ -91,8 +91,8 @@ export default function MyPage() {
 
         {/* Info */}
         <div className="text-center py-4">
-          <p className="text-[11px] text-gray-400">국민자료실 v2.0</p>
-          <p className="text-[10px] text-gray-300 mt-1">© 2025 국민자료실. All rights reserved.</p>
+          <p className="text-[11px] text-gray-400">복지길잡이 v2.0</p>
+          <p className="text-[10px] text-gray-300 mt-1">© {new Date().getFullYear()} 복지길잡이. All rights reserved.</p>
         </div>
       </div>
     </div>

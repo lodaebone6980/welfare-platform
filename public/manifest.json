@@ -1,6 +1,6 @@
 {
-  "name": "국민자료실",
-  "short_name": "국민자료실",
+  "name": "복지길잡이",
+  "short_name": "복지길잡이",
   "description": "나에게 맞는 정부 지원금 찾기",
   "start_url": "/",
   "display": "standalone",

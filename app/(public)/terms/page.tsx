@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default function TermsPage() {
-  const service = SITE_NAME || '국민자료실';
+  const service = SITE_NAME || '복지길잡이';
   return (
     <article className="prose prose-sm px-4 py-6 sm:prose-base">
       <h1>이용약관</h1>

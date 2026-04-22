@@ -4,7 +4,7 @@ const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   'https://welfare-platform-five.vercel.app';
 
-const SITE_TITLE = '국민자료실';
+const SITE_TITLE = process.env.NEXT_PUBLIC_SITE_NAME || '복지길잡이';
 const SITE_SUBTITLE = '정부 지원금·환급금·보조금 통합검색';
 
 export const revalidate = 1800;
@@ -44,7 +44,7 @@ export async function GET() {
     <updated>${updated}</updated>
     <published>${published}</published>
     <summary>${summary}</summary>
-    <author><name>국민자료실 편집부</name></author>
+    <author><name>${SITE_TITLE} 편집부</name></author>
     <category term="${escapeXml(p.category?.slug || 'welfare')}" label="${escapeXml(p.category?.name || '복지')}"/>
   </entry>`;
     })
