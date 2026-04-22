@@ -74,6 +74,76 @@ export async function computeNaverPopularity(title: string | null | undefined): 
 }
 
 /**
+ * 외부 인기도 배치 동기화 실행 (Cron/Admin 버튼 공통).
+ * @returns 처리 개수 + 실제 업데이트 수 + 경과시간
+ */
+export async function runPopularitySync(options: {
+  batchLimit?: number;
+  concurrency?: number;
+} = {}): Promise<{
+  ok: boolean;
+  processed: number;
+  updated: number;
+  durationMs: number;
+  error?: string;
+}> {
+  const { prisma } = await import('@/lib/prisma');
+  const hasKey =
+    !!process.env.NAVER_CLIENT_ID && !!process.env.NAVER_CLIENT_SECRET;
+  if (!hasKey) {
+    return {
+      ok: false,
+      processed: 0,
+      updated: 0,
+      durationMs: 0,
+      error: 'NAVER_CLIENT_ID/SECRET not set',
+    };
+  }
+
+  const batchLimit = options.batchLimit ?? 300;
+  const started = Date.now();
+
+  const policies = await prisma.policy.findMany({
+    where: { status: 'PUBLISHED' },
+    select: { id: true, title: true },
+    orderBy: [{ externalSyncedAt: 'asc' }],
+    take: batchLimit,
+  });
+  if (policies.length === 0) {
+    return { ok: true, processed: 0, updated: 0, durationMs: 0 };
+  }
+
+  const scores = await computeBatchPopularity(policies, options.concurrency ?? 3);
+
+  const now = new Date();
+  const entries = Array.from(scores.entries());
+  let updated = 0;
+  for (let i = 0; i < entries.length; i += 50) {
+    const chunk = entries.slice(i, i + 50);
+    await Promise.all(
+      chunk.map(([id, score]) =>
+        prisma.policy
+          .update({
+            where: { id },
+            data: { externalScore: score, externalSyncedAt: now },
+          })
+          .then(() => {
+            updated++;
+          })
+          .catch(() => {}),
+      ),
+    );
+  }
+
+  return {
+    ok: true,
+    processed: policies.length,
+    updated,
+    durationMs: Date.now() - started,
+  };
+}
+
+/**
  * 여러 정책을 배치로 처리 (Naver API rate limit 고려, 병렬 제한).
  * @param policies title + id 쌍의 배열
  * @param concurrency 동시 호출 수 (기본 3)

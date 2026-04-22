@@ -13,6 +13,15 @@ interface Props {
 }
 
 /**
+ * 빌드 시점에 모든 카테고리 slug 를 정적으로 생성.
+ * → 첫 방문에도 프리렌더된 HTML 이 즉시 응답됨 (TTFB ↓)
+ */
+export async function generateStaticParams() {
+  const cats = await prisma.category.findMany({ select: { slug: true } });
+  return cats.map((c) => ({ slug: c.slug }));
+}
+
+/**
  * 카테고리별 상세 리스트 페이지 (/welfare/categories/{slug})
  *
  * 기존: 홈에서 카테고리 아이콘 클릭 → 이 경로로 이동하지만 파일이 없어서 404

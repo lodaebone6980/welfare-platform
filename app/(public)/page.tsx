@@ -179,7 +179,29 @@ export default async function HomePage() {
         </Link>
       </section>
 
-      {/* CTA Banner — 맞춤 설정 (검색 바로 아래 복원) */}
+      {/* Category Scroll — 사용자 요청: 검색 바로 아래 (맞춤 CTA 위) */}
+      <section className="px-4 py-4 border-b bg-white">
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-1">
+          {categories.map((cat) => (
+            <Link
+              key={cat.id}
+              href={'/welfare/categories/' + cat.slug}
+              prefetch
+              className="flex flex-col items-center gap-1.5 min-w-[56px]"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center">
+                <CategoryIcon slug={cat.slug} size={28} />
+              </div>
+              <span className="text-[11px] text-gray-600 whitespace-nowrap">
+                {displayCategoryName(cat.name)}
+              </span>
+              <span className="text-[9px] text-gray-400">{cat._count.policies}건</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA Banner — 맞춤 설정 (카테고리 바로 아래) */}
       <section className="px-4 pt-3">
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 flex items-center justify-between">
           <div>
@@ -195,27 +217,6 @@ export default async function HomePage() {
       {/* 🎯 내게 맞는 지원금 (recommend 조건 저장돼있을 때만 노출) */}
       <PersonalizedSection />
 
-      {/* Category Scroll — 검색 바로 아래 복원 */}
-      <section className="px-4 py-4 border-b bg-white">
-        <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-1">
-          {categories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={'/welfare/categories/' + cat.slug}
-              className="flex flex-col items-center gap-1.5 min-w-[56px]"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center">
-                <CategoryIcon slug={cat.slug} size={28} />
-              </div>
-              <span className="text-[11px] text-gray-600 whitespace-nowrap">
-                {displayCategoryName(cat.name)}
-              </span>
-              <span className="text-[9px] text-gray-400">{cat._count.policies}건</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
       {/* 🔥 인기 지원금 (조회수 TOP) — gg24 스타일 */}
       <section className="px-4 pt-5 pb-2">
         <div className="flex items-center justify-between mb-3">
@@ -228,34 +229,44 @@ export default async function HomePage() {
         <div className="space-y-0 bg-white rounded-2xl border overflow-hidden">
           {popularPolicies.map((policy, idx) => {
             const dday = getDday(policy.deadline);
+            const excerpt = (policy.excerpt || '').trim();
             return (
               <Link
                 key={policy.id}
                 href={policyHref({ categorySlug: policy.category?.slug, slug: policy.slug })}
-                className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b last:border-b-0"
+                prefetch
+                className="flex items-start gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b last:border-b-0"
               >
-                <span className="text-sm font-bold text-red-500 w-5">{idx + 1}</span>
+                <span className="text-sm font-bold text-red-500 w-5 pt-0.5">{idx + 1}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{cleanTitle(policy.title)}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{cleanTitle(policy.title)}</p>
+                  {excerpt.length > 0 && (
+                    <p className="text-[11px] text-gray-500 mt-1 line-clamp-2 leading-snug">
+                      {excerpt.length > 80 ? excerpt.slice(0, 80) + '…' : excerpt}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                     {policy.category && (
                       <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
                         {displayCategoryName(policy.category.name)}
                       </span>
                     )}
+                    <span className="text-[10px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded">
+                      📍 {policy.geoRegion || '전국'}
+                    </span>
                     {typeof policy.viewCount === 'number' && policy.viewCount > 0 && (
-                      <span className="text-[10px] text-gray-500">
-                        👀 {policy.viewCount.toLocaleString()}
+                      <span className="text-[10px] text-gray-400">
+                        조회 {policy.viewCount.toLocaleString()}
                       </span>
                     )}
                     {dday && (
-                      <span className={'text-[11px] font-semibold ' + (dday.urgent ? 'text-red-500' : 'text-orange-500')}>
+                      <span className={'text-[10px] font-semibold px-1.5 py-0.5 rounded ' + (dday.always ? 'bg-emerald-50 text-emerald-600' : dday.urgent ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600')}>
                         {dday.text}
                       </span>
                     )}
                   </div>
                 </div>
-                <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2.5 py-1 rounded-lg whitespace-nowrap">
+                <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2.5 py-1 rounded-lg whitespace-nowrap mt-0.5">
                   자세히
                 </span>
               </Link>
@@ -277,25 +288,32 @@ export default async function HomePage() {
           <div className="space-y-0 bg-white rounded-2xl border overflow-hidden">
             {expiringPolicies.map((policy) => {
               const dday = getDday(policy.deadline);
+              const excerpt = (policy.excerpt || '').trim();
               return (
                 <Link
                   key={policy.id}
                   href={policyHref({ categorySlug: policy.category?.slug, slug: policy.slug })}
-                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b last:border-b-0"
+                  prefetch
+                  className="flex items-start gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b last:border-b-0"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{cleanTitle(policy.title)}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{cleanTitle(policy.title)}</p>
+                    {excerpt.length > 0 && (
+                      <p className="text-[11px] text-gray-500 mt-1 line-clamp-2 leading-snug">
+                        {excerpt.length > 80 ? excerpt.slice(0, 80) + '…' : excerpt}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                       {policy.category && (
                         <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
                           {displayCategoryName(policy.category.name)}
                         </span>
                       )}
-                      <span className="text-[11px] text-gray-400">{policy.geoRegion || '전국'}</span>
+                      <span className="text-[10px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded">📍 {policy.geoRegion || '전국'}</span>
                     </div>
                   </div>
                   {dday && (
-                    <span className={'text-xs font-bold px-2.5 py-1 rounded-lg whitespace-nowrap ' + (dday.urgent ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600')}>
+                    <span className={'text-xs font-bold px-2.5 py-1 rounded-lg whitespace-nowrap mt-0.5 ' + (dday.urgent ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600')}>
                       {dday.text}
                     </span>
                   )}

@@ -7,6 +7,7 @@ import { SITE_NAME } from '@/lib/env';
 import {
   generatePolicyJsonLd,
   generateFaqJsonLd,
+  generateBreadcrumbJsonLd,
   generatePolicyMetaDescription,
   generatePolicyOgData,
   PolicySeoData,
@@ -85,9 +86,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   const seoData: PolicySeoData = {
     title: policy.title,
+    slug: policy.slug,
     description: policy.excerpt || policy.content?.substring(0, 160) || '',
     category: policy.category?.name || '',
-    region: policy.geoRegion || '',
+    geoRegion: policy.geoRegion || '',
     deadline: policy.deadline || undefined,
     applicationMethod: policy.applicationMethod || undefined,
   };
@@ -140,18 +142,25 @@ export default async function PolicyDetailPage({ params }: Props) {
     });
   } catch (e) {}
 
-  const jsonLd = generatePolicyJsonLd({
+  const seoData: PolicySeoData = {
     title: policy.title,
-    description: policy.excerpt || policy.content?.substring(0, 160) || '',
+    slug: policy.slug,
+    description: policy.content?.substring(0, 160) || '',
+    excerpt: policy.excerpt || '',
     category: policy.category?.name || '',
-    region: policy.geoRegion || '',
+    categorySlug: policy.category?.slug || '',
+    geoRegion: policy.geoRegion || '',
+    eligibility: policy.eligibility || '',
+    applicationMethod: policy.applicationMethod || '',
+    requiredDocuments: policy.requiredDocuments || '',
+    applyUrl: policy.applyUrl || '',
+    publishedAt: policy.publishedAt || undefined,
+    updatedAt: policy.updatedAt || undefined,
     deadline: policy.deadline || undefined,
-    applicationMethod: policy.applicationMethod || undefined,
-  });
-
-  const faqJsonLd = policy.faqs && policy.faqs.length > 0
-    ? generateFaqJsonLd(policy.faqs.map((faq: any) => ({ question: faq.question, answer: faq.answer })))
-    : null;
+  };
+  const jsonLd = generatePolicyJsonLd(seoData);
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd(seoData);
+  const faqJsonLd = generateFaqJsonLd(seoData);
 
   const catName = policy.category?.name || '';
   const categoryColor: Record<string, string> = {
@@ -171,7 +180,9 @@ export default async function PolicyDetailPage({ params }: Props) {
 
   return (
     <>
+      {/* JSON-LD: SEO(GovernmentService) + GEO(BreadcrumbList) + AEO(FAQPage) */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
 
       <div className="max-w-3xl mx-auto px-4 pb-24">
