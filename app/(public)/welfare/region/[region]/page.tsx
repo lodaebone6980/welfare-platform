@@ -9,6 +9,7 @@ import {
   regionAliasContainsFilter,
 } from '@/lib/regions'
 import { generateRegionLandingJsonLd } from '@/lib/seo-extras'
+import { policyHref } from '@/lib/categories'
 
 export const dynamic = 'force-static'
 export const revalidate = 60 * 60 // 1h ISR
@@ -46,6 +47,7 @@ type Row = {
   title: string
   excerpt: string | null
   categoryName: string | null
+  categorySlug: string | null
   updatedAt: Date
 }
 
@@ -66,7 +68,7 @@ async function getPolicies(regionSlug: string): Promise<Row[]> {
         title: true,
         excerpt: true,
         updatedAt: true,
-        category: { select: { name: true } },
+        category: { select: { name: true, slug: true } },
       },
     })
     return rows.map((r) => ({
@@ -75,6 +77,7 @@ async function getPolicies(regionSlug: string): Promise<Row[]> {
       title: r.title,
       excerpt: r.excerpt,
       categoryName: r.category?.name ?? null,
+      categorySlug: r.category?.slug ?? null,
       updatedAt: r.updatedAt,
     }))
   } catch {
@@ -150,7 +153,7 @@ export default async function RegionLanding({ params }: PageProps) {
         <ul className="divide-y divide-gray-100 rounded-lg border border-gray-100 bg-white">
           {items.map((p) => (
             <li key={p.id} className="p-4 hover:bg-gray-50">
-              <Link href={`/welfare/${encodeURIComponent(p.slug)}`} className="block">
+              <Link href={policyHref({ categorySlug: p.categorySlug, slug: p.slug })} className="block">
                 <div className="flex items-center gap-2 text-[11px] text-gray-400">
                   {p.categoryName && <span className="rounded bg-gray-100 px-2 py-0.5">{p.categoryName}</span>}
                   <span>{p.updatedAt.toISOString().slice(0, 10)}</span>

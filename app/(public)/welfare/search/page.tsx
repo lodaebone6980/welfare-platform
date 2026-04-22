@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { Metadata } from 'next';
+import { policyHref } from '@/lib/categories';
 
 export const metadata: Metadata = {
   title: '정책 검색',
@@ -218,7 +219,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
             {policies.map((policy) => {
               const dday = getDday(policy.deadline);
               return (
-                <Link key={policy.id} href={`/welfare/${policy.slug}`}
+                <Link key={policy.id} href={policyHref({ categorySlug: policy.category?.slug, slug: policy.slug })}
                   className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md hover:border-blue-200 transition group">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-1.5 flex-wrap">

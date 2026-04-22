@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { policyHref } from '@/lib/categories';
 
 type FilterConditions = {
   age: string;
@@ -342,7 +343,7 @@ export default function RecommendPage() {
                     return (
                       <Link
                         key={policy.id}
-                        href={`/welfare/${policy.slug}`}
+                        href={policyHref({ categorySlug: policy.category?.slug, slug: policy.slug })}
                         className="block bg-white rounded-2xl shadow-sm p-5 hover:shadow-md transition-all border border-gray-100"
                       >
                         <div className="flex items-start justify-between mb-2">

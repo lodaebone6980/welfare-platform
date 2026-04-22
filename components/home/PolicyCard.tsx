@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { policyHref } from '@/lib/categories';
 
 interface PolicyCardProps {
   policy: {
@@ -69,7 +70,7 @@ export default function PolicyCard({ policy, variant = 'default', showSource = t
   const publishDate = policy.publishedAt
     ? new Date(policy.publishedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
     : '';
-  const detailHref = `/welfare/${policy.slug}`;
+  const detailHref = policyHref({ categorySlug: policy.category?.slug, slug: policy.slug });
   const cta = ctaLabel(policy.category?.name, !!policy.applyUrl);
 
   if (variant === 'compact') {

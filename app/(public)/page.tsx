@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import CategoryIcon from '@/components/ui/CategoryIcon';
 import { SITE_NAME, SITE_DESC } from '@/lib/env';
+import { policyHref } from '@/lib/categories';
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} - 나에게 맞는 정부 지원금 찾기`,
@@ -190,7 +191,7 @@ export default async function HomePage() {
             return (
               <Link
                 key={policy.id}
-                href={'/welfare/' + encodeURIComponent(policy.slug)}
+                href={policyHref({ categorySlug: policy.category?.slug, slug: policy.slug })}
                 className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b last:border-b-0"
               >
                 <span className="text-sm font-bold text-red-500 w-5">{idx + 1}</span>
@@ -233,7 +234,7 @@ export default async function HomePage() {
               return (
                 <Link
                   key={policy.id}
-                  href={'/welfare/' + encodeURIComponent(policy.slug)}
+                  href={policyHref({ categorySlug: policy.category?.slug, slug: policy.slug })}
                   className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b last:border-b-0"
                 >
                   <div className="flex-1 min-w-0">
@@ -272,7 +273,7 @@ export default async function HomePage() {
             {alwaysOpenPolicies.map((policy) => (
               <Link
                 key={policy.id}
-                href={'/welfare/' + encodeURIComponent(policy.slug)}
+                href={policyHref({ categorySlug: policy.category?.slug, slug: policy.slug })}
                 className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b last:border-b-0"
               >
                 <div className="flex-1 min-w-0">
@@ -344,7 +345,7 @@ export default async function HomePage() {
               return (
                 <Link
                   key={policy.id}
-                  href={'/welfare/' + encodeURIComponent(policy.slug)}
+                  href={policyHref({ categorySlug: policy.category?.slug, slug: policy.slug })}
                   className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b last:border-b-0"
                 >
                   <span className="text-sm font-bold text-blue-600 w-5">{idx + 1}</span>
@@ -387,7 +388,7 @@ export default async function HomePage() {
             return (
               <Link
                 key={policy.id}
-                href={'/welfare/' + encodeURIComponent(policy.slug)}
+                href={policyHref({ categorySlug: policy.category?.slug, slug: policy.slug })}
                 className="block bg-white rounded-xl border p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center gap-2 mb-2">

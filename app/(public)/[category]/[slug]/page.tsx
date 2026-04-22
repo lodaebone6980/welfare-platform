@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { isValidCategorySlug } from '@/lib/categories';
+import { isValidCategorySlug, policyHref } from '@/lib/categories';
 import {
   generatePolicyJsonLd,
   generateFaqJsonLd,
@@ -11,8 +11,20 @@ import {
   PolicySeoData,
 } from '@/lib/seo';
 
+/**
+ * 새 Canonical URL: /:category/:slug
+ * ---------------------------------------------------------------
+ * 동작:
+ *   1) params.category가 화이트리스트에 없으면 404
+ *   2) slug로 Policy 조회 (PUBLISHED) → 없으면 404
+ *   3) policy.category.slug !== params.category 이면 올바른 URL로 301 리다이렉트
+ *   4) 모두 일치하면 상세 페이지 렌더
+ *
+ * 기존 /welfare/:slug 는 여전히 작동하나 이 URL 을 점진적으로 canonical 로 삼음.
+ */
+
 interface Props {
-  params: { slug: string };
+  params: { category: string; slug: string };
 }
 
 function decodeSlug(slug: string): string {
@@ -72,6 +84,9 @@ function getDday(
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  if (!isValidCategorySlug(params.category)) {
+    return { title: '정책을 찾을 수 없습니다' };
+  }
   const policy = await getPolicy(params.slug);
   if (!policy) {
     return { title: '정책을 찾을 수 없습니다' };
@@ -85,21 +100,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     applicationMethod: policy.applicationMethod || undefined,
   };
   const ogData = generatePolicyOgData(seoData);
+  const canonicalPath = policy.category?.slug
+    ? `/${policy.category.slug}/${encodeURIComponent(policy.slug)}`
+    : `/welfare/${encodeURIComponent(policy.slug)}`;
   return {
     title: `${policy.title} | 국민자료실`,
     description: generatePolicyMetaDescription(seoData),
     openGraph: { title: ogData.title, description: ogData.description, type: 'article' },
+    alternates: { canonical: canonicalPath },
   };
 }
 
-export default async function PolicyDetailPage({ params }: Props) {
+export default async function CategoryPolicyDetailPage({ params }: Props) {
+  // 1) 화이트리스트 체크
+  if (!isValidCategorySlug(params.category)) notFound();
+
+  // 2) Policy 조회
   const policy = await getPolicy(params.slug);
   if (!policy) notFound();
 
-  // 카테고리가 유효하면 새 canonical URL (/:category/:slug) 로 301 리다이렉트
-  const catSlug = policy.category?.slug;
-  if (catSlug && isValidCategorySlug(catSlug)) {
-    permanentRedirect(`/${catSlug}/${encodeURIComponent(policy.slug)}`);
+  // 3) 카테고리 불일치 → canonical URL 로 301 리다이렉트
+  const actualCategorySlug = policy.category?.slug;
+  if (!actualCategorySlug || actualCategorySlug !== params.category) {
+    if (actualCategorySlug && isValidCategorySlug(actualCategorySlug)) {
+      permanentRedirect(policyHref({ categorySlug: actualCategorySlug, slug: policy.slug }));
+    }
+    // 카테고리 매핑 실패시 old URL 로 fallback
+    permanentRedirect(`/welfare/${encodeURIComponent(policy.slug)}`);
   }
 
   const dday = getDday(policy.deadline);
@@ -333,16 +360,21 @@ export default async function PolicyDetailPage({ params }: Props) {
           <section className="mb-8">
             <h2 className="text-lg font-bold mb-4">관련 정책</h2>
             <div className="space-y-3">
-              {relatedPolicies.map((rp: any) => (
-                <Link key={rp.id} href={`/welfare/${encodeURIComponent(rp.slug)}`} className="block bg-white rounded-xl border p-4 hover:border-blue-300 hover:shadow-sm transition-all">
-                  <div className="flex items-center gap-2 mb-1">
-                    {rp.category?.name && <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-gray-600">{rp.category.name}</span>}
-                    {rp.geoRegion && <span className="text-xs text-gray-400">{rp.geoRegion}</span>}
-                  </div>
-                  <p className="font-medium text-gray-900">{rp.title}</p>
-                  {rp.excerpt && <p className="text-sm text-gray-500 mt-1 line-clamp-1">{rp.excerpt}</p>}
-                </Link>
-              ))}
+              {relatedPolicies.map((rp: any) => {
+                const relHref = rp.category?.slug && isValidCategorySlug(rp.category.slug)
+                  ? `/${rp.category.slug}/${encodeURIComponent(rp.slug)}`
+                  : `/welfare/${encodeURIComponent(rp.slug)}`;
+                return (
+                  <Link key={rp.id} href={relHref} className="block bg-white rounded-xl border p-4 hover:border-blue-300 hover:shadow-sm transition-all">
+                    <div className="flex items-center gap-2 mb-1">
+                      {rp.category?.name && <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-gray-600">{rp.category.name}</span>}
+                      {rp.geoRegion && <span className="text-xs text-gray-400">{rp.geoRegion}</span>}
+                    </div>
+                    <p className="font-medium text-gray-900">{rp.title}</p>
+                    {rp.excerpt && <p className="text-sm text-gray-500 mt-1 line-clamp-1">{rp.excerpt}</p>}
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}

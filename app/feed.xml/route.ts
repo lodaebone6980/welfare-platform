@@ -26,7 +26,11 @@ export async function GET() {
 
   const entries = policies
     .map((p) => {
-      const url = `${BASE_URL}/welfare/${encodeURIComponent(p.slug)}`;
+      // 새 canonical URL: /:category/:slug (카테고리 없으면 /welfare/:slug fallback)
+      const path = p.category?.slug
+        ? `/${p.category.slug}/${encodeURIComponent(p.slug)}`
+        : `/welfare/${encodeURIComponent(p.slug)}`;
+      const url = `${BASE_URL}${path}`;
       const updated = (p.updatedAt || p.publishedAt || new Date()).toISOString();
       const published = (p.publishedAt || p.updatedAt || new Date()).toISOString();
       const title = escapeXml(p.title.replace(/^\[.*?\]\s*/, ''));

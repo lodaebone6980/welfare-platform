@@ -24,20 +24,29 @@ export async function GET(
 
   const policies = await prisma.policy.findMany({
     where: { status: 'PUBLISHED' },
-    select: { slug: true, updatedAt: true, viewCount: true },
+    select: {
+      slug: true,
+      updatedAt: true,
+      viewCount: true,
+      category: { select: { slug: true } },
+    },
     orderBy: { updatedAt: 'desc' },
     skip,
     take: BATCH_SIZE,
   });
 
+  // 새 canonical URL: /:category/:slug (카테고리 없으면 /welfare/:slug fallback)
   const urls = policies
     .map((p) => {
       const priority = Math.min(
         0.9,
         0.5 + (p.viewCount || 0) * 0.001
       ).toFixed(2);
+      const path = p.category?.slug
+        ? `/${p.category.slug}/${encodeURIComponent(p.slug)}`
+        : `/welfare/${encodeURIComponent(p.slug)}`;
       return `  <url>
-    <loc>${BASE_URL}/welfare/${encodeURIComponent(p.slug)}</loc>
+    <loc>${BASE_URL}${path}</loc>
     <lastmod>${p.updatedAt.toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>${priority}</priority>

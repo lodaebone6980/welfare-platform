@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import CategoryIcon from '@/components/ui/CategoryIcon';
 import { SITE_NAME } from '@/lib/env';
+import { policyHref } from '@/lib/categories';
 
 export const metadata: Metadata = {
   title: `분야별 정부 지원금 전체보기 | ${SITE_NAME}`,
@@ -76,7 +77,7 @@ export default async function CategoriesPage() {
                 {cat.policies.map((policy, idx) => (
                   <Link
                     key={policy.id}
-                    href={'/welfare/' + encodeURIComponent(policy.slug)}
+                    href={policyHref({ categorySlug: cat.slug, slug: policy.slug })}
                     className="flex items-center gap-2 py-2 border-b last:border-b-0 text-sm hover:bg-gray-50"
                   >
                     <span className="text-gray-400 w-5 text-center">{idx + 1}</span>
