@@ -17,7 +17,7 @@ export default function MobileHeader() {
     <header className="sticky top-0 z-40 bg-white border-b border-gray-100 ">
       <div className="flex items-center justify-between h-14 px-4 max-w-3xl mx-auto">
         <Link href="/" className="flex items-center gap-1.5" aria-label={SITE_NAME + ' 홈'}>
-          <span className="text-xl">💰</span>
+          <span className="text-xl">🧭</span>
           <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             {SITE_NAME}
           </span>

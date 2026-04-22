@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import CategoryIcon from '@/components/ui/CategoryIcon';
 import { SITE_NAME, SITE_DESC } from '@/lib/env';
 import { policyHref } from '@/lib/categories';
+import { getTrendingPolicies } from '@/lib/trending';
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} - 나에게 맞는 정부 지원금 찾기`,
@@ -27,18 +28,13 @@ async function getStats() {
   return { totalPolicies };
 }
 
-/** 조회수 기준 인기 지원금 (gg24 스타일) */
+/**
+ * 지금 가장 많이 보는 지원금 (gg24 스타일)
+ * - 기존: lifetime viewCount DESC → 최근 급등 이슈(유가 피해보상금 등) 반영 불가
+ * - 변경: 최근 7일 PageView * 5 + lifetime viewCount 가중합 (lib/trending.ts)
+ */
 async function getPopularPolicies() {
-  return prisma.policy.findMany({
-    where: { status: 'PUBLISHED' },
-    orderBy: [{ viewCount: 'desc' }, { publishedAt: 'desc' }],
-    take: 6,
-    select: {
-      id: true, title: true, slug: true, excerpt: true,
-      geoRegion: true, viewCount: true, deadline: true,
-      category: { select: { name: true, slug: true, icon: true } },
-    },
-  });
+  return getTrendingPolicies(6);
 }
 
 async function getFeaturedPolicies() {
