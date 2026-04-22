@@ -16,7 +16,7 @@ function LoginInner() {
           로그인
         </h1>
         <p className="text-sm text-gray-500 text-center mb-8">
-          govmate 에서 내 맞춤 혜택을 확인하세요
+          복지길잡이에서 내 맞춤 혜택을 확인하세요
         </p>
 
         {error && (
