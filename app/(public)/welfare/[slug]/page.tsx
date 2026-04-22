@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { getPolicyBySlug, getCachedTopPolicySlugs } from '@/lib/queries';
+import { isValidCategorySlug } from '@/lib/categories';
 import {
   generatePolicyJsonLd,
   generateFaqJsonLd,
@@ -15,18 +15,25 @@ interface Props {
   params: { slug: string };
 }
 
-// ────────────────────────────────────────────────────────────────
-// 캐싱 / ISR / 정적 사전생성
-// ────────────────────────────────────────────────────────────────
-export const revalidate = 600;          // 10분
-export const dynamicParams = true;      // 사전생성 안 된 슬러그는 on-demand
-
-export async function generateStaticParams() {
+function decodeSlug(slug: string): string {
   try {
-    const slugs = await getCachedTopPolicySlugs(20);
-    return slugs.map((p) => ({ slug: p.slug }));
-  } catch {
-    return [];
+    return decodeURIComponent(slug);
+  } catch (e) {
+    return slug;
+  }
+}
+
+async function getPolicy(slug: string) {
+  try {
+    const decoded = decodeSlug(slug);
+    const policy = await prisma.policy.findFirst({
+      where: { slug: decoded, status: 'PUBLISHED' },
+      include: { category: true, faqs: true },
+    });
+    return policy;
+  } catch (e) {
+    console.error('getPolicy error:', e);
+    return null;
   }
 }
 
@@ -65,7 +72,7 @@ function getDday(
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const policy = await getPolicyBySlug(params.slug);
+  const policy = await getPolicy(params.slug);
   if (!policy) {
     return { title: '정책을 찾을 수 없습니다' };
   }
@@ -79,42 +86,40 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
   const ogData = generatePolicyOgData(seoData);
   return {
-    title: `${policy.title} | 복지길잡이`,
+    title: `${policy.title} | 국민자료실`,
     description: generatePolicyMetaDescription(seoData),
-    alternates: { canonical: `/welfare/${params.slug}` },
-    openGraph: { title: ogData.title, description: ogData.description, type: 'article', url: `/welfare/${params.slug}` },
+    openGraph: { title: ogData.title, description: ogData.description, type: 'article' },
   };
 }
 
 export default async function PolicyDetailPage({ params }: Props) {
-  const policy = await getPolicyBySlug(params.slug);   // ← React.cache 로 metadata 와 동일 호출 dedupe
+  const policy = await getPolicy(params.slug);
   if (!policy) notFound();
+
+  // 카테고리가 유효하면 새 canonical URL (/:category/:slug) 로 301 리다이렉트
+  const catSlug = policy.category?.slug;
+  if (catSlug && isValidCategorySlug(catSlug)) {
+    permanentRedirect(`/${catSlug}/${encodeURIComponent(policy.slug)}`);
+  }
+
   const dday = getDday(policy.deadline);
 
-  // 조회수 업데이트는 렌더와 무관 → fire-and-forget (TTFB 영향 X)
-  void prisma.policy
-    .update({ where: { id: policy.id }, data: { viewCount: { increment: 1 } } })
-    .catch(() => {});
+  try {
+    await prisma.policy.update({
+      where: { id: policy.id },
+      data: { viewCount: { increment: 1 } },
+    });
+  } catch (e) {}
 
-  // 관련 정책은 작은 select 만 — 같은 카테고리 인기순 4개
   let relatedPolicies: any[] = [];
-  if (policy.categoryId) {
-    try {
-      relatedPolicies = await prisma.policy.findMany({
-        where: { categoryId: policy.categoryId, id: { not: policy.id }, status: 'PUBLISHED' },
-        take: 4,
-        orderBy: { viewCount: 'desc' },
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          geoRegion: true,
-          excerpt: true,
-          category: { select: { name: true, slug: true } },
-        },
-      });
-    } catch (e) {}
-  }
+  try {
+    relatedPolicies = await prisma.policy.findMany({
+      where: { categoryId: policy.categoryId, id: { not: policy.id }, status: 'PUBLISHED' },
+      take: 4,
+      orderBy: { viewCount: 'desc' },
+      select: { id: true, title: true, slug: true, geoRegion: true, excerpt: true, category: { select: { name: true, slug: true } } },
+    });
+  } catch (e) {}
 
   const jsonLd = generatePolicyJsonLd({
     title: policy.title,
@@ -157,7 +162,7 @@ export default async function PolicyDetailPage({ params }: Props) {
           <span>/</span>
           {policy.category && (
             <>
-              <Link href={`/welfare/categories/${policy.category.slug}`} className="hover:text-blue-600">{policy.category.name}</Link>
+              <Link href={`/welfare/search?category=${policy.category.slug}`} className="hover:text-blue-600">{policy.category.name}</Link>
               <span>/</span>
             </>
           )}
@@ -167,9 +172,13 @@ export default async function PolicyDetailPage({ params }: Props) {
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${catBadgeClass}`}>{catName || '기타'}</span>
+            <span className={`px-3 py-1 rounded-full text-xs font-medium ${catBadgeClass}`}>{(catName || '기타').replace(/·/g, ' ')}</span>
             {policy.geoRegion && <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{policy.geoRegion}</span>}
-            {dday && <span className={`px-3 py-1 rounded-full text-xs font-bold ${dday.urgent ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{dday.text}</span>}
+            {dday ? (
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${dday.urgent ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{dday.text}</span>
+            ) : (
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">🔁 상시신청</span>
+            )}
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">{policy.title}</h1>
           {policy.excerpt && <p className="text-gray-600 leading-relaxed">{policy.excerpt}</p>}
@@ -243,7 +252,7 @@ export default async function PolicyDetailPage({ params }: Props) {
         {/* CTA */}
         {policy.applyUrl && (
           <div className="mb-8 text-center">
-            <Link href={policy.applyUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-lg">
+            <Link href={policy.applyUrl} rel="nofollow" className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-lg">
               신청하기
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
             </Link>
@@ -342,11 +351,11 @@ export default async function PolicyDetailPage({ params }: Props) {
         <div className="fixed bottom-16 left-0 right-0 bg-white border-t shadow-lg px-4 py-3 z-20">
           <div className="max-w-3xl mx-auto flex gap-3">
             {policy.applyUrl ? (
-              <Link href={policy.applyUrl} target="_blank" rel="noopener noreferrer" className="flex-1 bg-blue-600 text-white text-center py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors">
+              <Link href={policy.applyUrl} rel="nofollow" className="flex-1 bg-blue-600 text-white text-center py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors">
                 신청하기
               </Link>
             ) : (
-              <Link href="https://www.bokjiro.go.kr" target="_blank" rel="noopener noreferrer" className="flex-1 bg-blue-600 text-white text-center py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors">
+              <Link href="https://www.bokjiro.go.kr" rel="nofollow" className="flex-1 bg-blue-600 text-white text-center py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors">
                 복지로 바로가기
               </Link>
             )}

@@ -33,9 +33,9 @@ export default function NotificationsPage() {
         <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-start gap-3">
           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-sm shrink-0">📢</div>
           <div>
-            <p className="text-sm font-medium text-gray-800">복지길잡이 서비스 안내</p>
-            <p className="text-xs text-gray-500 mt-0.5">복지길잡이은 정부 및 지자체의 다양한 복지 정책, 지원금, 보조금 정보를 한곳에서 확인할 수 있는 서비스입니다.</p>
-            <p className="text-xs text-gray-400 mt-1">2026.04.19</p>
+            <p className="text-sm font-medium text-gray-800">국민자료실 서비스 안내</p>
+            <p className="text-xs text-gray-500 mt-0.5">국민자료실은 정부 및 지자체의 다양한 복지 정책, 지원금, 보조금 정보를 한곳에서 확인할 수 있는 서비스입니다.</p>
+            <p className="text-xs text-gray-400 mt-1">2025.04.05</p>
           </div>
         </div>
       </div>

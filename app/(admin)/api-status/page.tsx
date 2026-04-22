@@ -1,227 +1,162 @@
-import { prisma } from '@/lib/prisma';
-import TriggerButton from '@/components/admin/TriggerButton';
-import ScheduleEditor from './_components/ScheduleEditor';
+import { prisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-function relativeTime(date: Date | null): string {
-  if (!date) return '—';
-  const diff = Date.now() - new Date(date).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return '방금';
-  if (m < 60) return `${m}분 전`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}시간 전`;
-  const d = Math.floor(h / 24);
-  return `${d}일 전`;
+type ApiSourceRow = {
+  id: number
+  name: string
+  url: string
+  type: string
+  status: string
+  lastSuccess: Date | null
+  lastError: Date | null
+  todayCount: number
+  totalCount: number
+  createdAt: Date
+  updatedAt: Date
 }
 
-function statusBadge(status: string) {
-  const map: Record<string, { bg: string; fg: string; label: string }> = {
-    success: { bg: 'bg-emerald-50', fg: 'text-emerald-700', label: '성공' },
-    error: { bg: 'bg-rose-50', fg: 'text-rose-700', label: '실패' },
-    running: { bg: 'bg-amber-50', fg: 'text-amber-700', label: '진행중' },
-    partial: { bg: 'bg-sky-50', fg: 'text-sky-700', label: '일부' },
-  };
-  const s = map[status] ?? { bg: 'bg-gray-50', fg: 'text-gray-600', label: status };
+async function getApiSources(): Promise<ApiSourceRow[]> {
+  try {
+    return (await prisma.apiSource.findMany({
+      orderBy: [{ status: 'asc' }, { name: 'asc' }],
+    })) as ApiSourceRow[]
+  } catch {
+    return []
+  }
+}
+
+/** 기본 공공데이터 API 카탈로그 (DB에 아직 등록 전일 때 안내용) */
+const DEFAULT_CATALOG = [
+  { name: '복지로 정책 API',            host: 'apis.data.go.kr/B554287',                        note: '정부 복지 서비스 통합 목록/상세' },
+  { name: '정부24 민원/정책 API',       host: 'apis.data.go.kr/1741000',                        note: '생애주기·대상별 서비스 안내' },
+  { name: '청년정책 통합 API (온통청년)', host: 'www.youthcenter.go.kr/opi/youthPlcyList.do',     note: '청년정책 DB' },
+  { name: '소상공인24/중기부',          host: 'apis.data.go.kr/B552735',                        note: '소상공인 지원사업' },
+  { name: '주택도시보증공사 청약 정보',  host: 'apis.data.go.kr/B552555',                        note: '주거 지원' },
+  { name: '교육부 장학금/학자금 API',   host: 'apis.data.go.kr/B551014',                        note: '교육 지원' },
+  { name: '통계청 KOSIS',              host: 'kosis.kr/openapi',                               note: '통계 지표 보조' },
+  { name: '고용노동부 고용24',          host: 'apis.data.go.kr/1490000',                        note: '구직·직업훈련' },
+]
+
+function StatusBadge({ status }: { status: string }) {
+  const style =
+    status === 'active'
+      ? 'bg-green-50 text-green-700 border-green-200'
+      : status === 'warn'
+      ? 'bg-amber-50 text-amber-700 border-amber-200'
+      : 'bg-red-50 text-red-600 border-red-200'
+  const label = status === 'active' ? '정상' : status === 'warn' ? '경고' : '오류'
   return (
-    <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${s.bg} ${s.fg}`}>
-      {s.label}
+    <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border ${style}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${status === 'active' ? 'bg-green-500' : status === 'warn' ? 'bg-amber-500' : 'bg-red-500'}`} />
+      {label}
     </span>
-  );
+  )
+}
+
+function fmt(d: Date | null | undefined) {
+  if (!d) return '-'
+  const dt = new Date(d)
+  const now = Date.now()
+  const diff = now - dt.getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return '방금'
+  if (m < 60) return `${m}분 전`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}시간 전`
+  const day = Math.floor(h / 24)
+  return `${day}일 전`
 }
 
 export default async function ApiStatusPage() {
-  let sources: any[] = [];
-  let runs: any[] = [];
-  let migrationNeeded = false;
-  let scheduleMigrationNeeded = false;
-
-  try {
-    sources = await (prisma as any).apiSource.findMany({
-      orderBy: { id: 'asc' },
-    });
-  } catch (e: any) {
-    if (/column.*does not exist|unknown.*field/i.test(String(e?.message))) {
-      scheduleMigrationNeeded = true;
-      try {
-        sources = await prisma.$queryRawUnsafe<any[]>(
-          'SELECT id, name, type, status, "lastSuccess", "lastError", "todayCount", "totalCount" FROM "ApiSource" ORDER BY id ASC'
-        );
-      } catch {
-        sources = [];
-      }
-    } else {
-      throw e;
-    }
-  }
-
-  try {
-    runs = await prisma.collectionRun.findMany({
-      take: 20,
-      orderBy: { startedAt: 'desc' },
-      include: { source: { select: { name: true } } },
-    });
-  } catch (e: any) {
-    if (/CollectionRun|relation.*does not exist/i.test(String(e))) {
-      migrationNeeded = true;
-    } else {
-      throw e;
-    }
-  }
-
-  const policyCount = await prisma.policy.count();
+  const sources = await getApiSources()
+  const activeCount = sources.filter(s => s.status === 'active').length
+  const warnCount = sources.filter(s => s.status === 'warn').length
+  const errorCount = sources.filter(s => s.status !== 'active' && s.status !== 'warn').length
+  const todayTotal = sources.reduce((a, b) => a + (b.todayCount ?? 0), 0)
+  const allTotal = sources.reduce((a, b) => a + (b.totalCount ?? 0), 0)
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl lg:text-2xl xl:text-3xl font-semibold text-gray-800 mb-1">
-            API 수집현황
-          </h1>
-          <p className="text-sm lg:text-base text-gray-600">
-            공공데이터포털 각 소스의 수집 상태와 최근 실행 로그를 실시간으로 확인합니다.
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-gray-500">DB 보유 정책</p>
-          <p className="text-2xl font-semibold text-gray-800">{policyCount.toLocaleString()}건</p>
-        </div>
+    <div className="p-4 sm:p-6 max-w-6xl">
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-lg font-medium text-gray-800">API 수집 현황</h1>
+        <span className="text-[10px] text-gray-400">공공데이터포털 + 제휴 API 모니터링</span>
       </div>
 
-      {migrationNeeded && (
-        <div className="mb-4 p-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm">
-          ⚠️ <strong>마이그레이션 필요</strong>: <code>CollectionRun</code> 테이블이 아직 생성되지 않았습니다.
-          Supabase SQL 에디터에서 <code>prisma/migrations/20260419_collection_runs/migration.sql</code>을 실행하세요.
-        </div>
-      )}
+      {/* 요약 카드 */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <Summary label="정상 API"     value={activeCount} accent="text-green-600" />
+        <Summary label="경고"         value={warnCount}   accent="text-amber-600" />
+        <Summary label="오류"         value={errorCount}  accent="text-red-500" />
+        <Summary label="오늘 수집"    value={todayTotal}  accent="text-gray-700" suffix="건" />
+      </div>
 
-      {scheduleMigrationNeeded && (
-        <div className="mb-6 p-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm">
-          ⚠️ <strong>스케줄 컬럼 마이그레이션 필요</strong>: <code>ApiSource</code>에 <code>schedule</code>/<code>autoPublish</code> 컬럼�t씕 아직 없습니다.
-          Supabase SQL 에디터에서 <code>prisma/migrations/20260419_api_schedule/migration.sql</code>을 실행한 뒤 자동 수집 설정이 가능합니다.
-        </div>
-      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+        <Summary label="누적 수집" value={allTotal}  accent="text-gray-700" suffix="건" />
+        <Summary label="등록 소스" value={sources.length} accent="text-gray-700" />
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-8">
-        {sources.length === 0 && (
-          <div className="col-span-full p-6 rounded-xl border border-gray-200 bg-white text-gray-500 text-sm">
-            등록된 API 소스가 없습니다. 마이그레이션 SQL을 먼저 적용하세요.
+      {/* 등록된 API 소스 */}
+      <div className="bg-white border border-gray-100 rounded-xl p-4 mb-5">
+        <div className="text-xs font-medium text-gray-600 mb-3">등록된 API 소스</div>
+        {sources.length === 0 ? (
+          <div className="py-8 text-center text-xs text-gray-400">
+            등록된 API 소스가 아직 없습니다. 먼저 <code className="bg-gray-100 px-1 rounded">ApiSource</code> 테이블에 소스를 추가하세요.
+          </div>
+        ) : (
+          <div className="overflow-x-auto -mx-4 px-4">
+            <table className="w-full text-xs min-w-[520px]">
+              <thead>
+                <tr className="text-gray-400 border-b border-gray-100">
+                  <th className="text-left py-1.5 font-normal">이름</th>
+                  <th className="text-left py-1.5 font-normal hidden sm:table-cell">URL</th>
+                  <th className="text-left py-1.5 font-normal">상태</th>
+                  <th className="text-right py-1.5 font-normal">오늘</th>
+                  <th className="text-right py-1.5 font-normal">누적</th>
+                  <th className="text-right py-1.5 font-normal">최근 성공</th>
+                  <th className="text-right py-1.5 font-normal hidden sm:table-cell">최근 오류</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sources.map((s: ApiSourceRow) => (
+                  <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="py-2 text-gray-700 truncate max-w-[200px]">{s.name}</td>
+                    <td className="py-2 text-gray-400 truncate max-w-[240px] hidden sm:table-cell">{s.url}</td>
+                    <td className="py-2"><StatusBadge status={s.status} /></td>
+                    <td className="py-2 text-right text-gray-500">{s.todayCount.toLocaleString()}</td>
+                    <td className="py-2 text-right text-gray-500">{s.totalCount.toLocaleString()}</td>
+                    <td className="py-2 text-right text-gray-500">{fmt(s.lastSuccess)}</td>
+                    <td className="py-2 text-right text-red-500 hidden sm:table-cell">{fmt(s.lastError)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-        {sources.map((s) => (
-          <div
-            key={s.id}
-            className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow transition"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-gray-800">{s.name}</h3>
-                <span
-                  className={`inline-flex px-2 py-0.5 rounded text-xs ${
-                    s.status === 'active'
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'bg-gray-100 text-gray-500'
-                  }`}
-                >
-                  {s.status}
-                </span>
-              </div>
-              <span className="text-xs text-gray-400">{s.type}</span>
-            </div>
-            <div className="grid grid-cols-3 gap-3 mb-4 text-center">
-              <div>
-                <p className="text-xs text-gray-500 mb-0.5">최근 성공</p>
-                <p className="text-sm font-medium text-gray-800">
-                  {relativeTime(s.lastSuccess)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-0.5">오늘 수집</p>
-                <p className="text-sm font-medium text-gray-800">
-                  {(s.todayCount ?? 0).toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-0.5">누적</p>
-                <p className="text-sm font-medium text-gray-800">
-                  {(s.totalCount ?? 0).toLocaleString()}
-                </p>
-              </div>
-            </div>
-            {s.lastError && (
-              <p className="text-xs text-rose-600 mb-3">
-                마지막 오류: {relativeTime(s.lastError)}
-              </p>
-            )}
-            <TriggerButton
-              source={s.name === '복지로' ? 'bokjiro' : s.name}
-              disabled={s.status !== 'active'}
-            />
-            {!scheduleMigrationNeeded && (
-              <ScheduleEditor
-                id={s.id}
-                name={s.name}
-                schedule={s.schedule ?? null}
-                autoPublish={s.autoPublish ?? false}
-                lastScheduledRun={s.lastScheduledRun ?? null}
-              />
-            )}
-          </div>
-        ))}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-800">최근 수집 로그</h2>
-          <span className="text-xs text-gray-500">최대 20건</span>
+      {/* 권장 카탈로그 */}
+      <div className="bg-white border border-gray-100 rounded-xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-xs font-medium text-gray-600">권장 공공데이터 카탈로그</div>
+          <span className="text-[10px] text-gray-400">등록 후 수집 시작</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
-              <tr>
-                <th className="px-5 py-3 text-left font-medium">소스</th>
-                <th className="px-5 py-3 text-left font-medium">시작</th>
-                <th className="px-5 py-3 text-center font-medium">상태</th>
-                <th className="px-5 py-3 text-right font-medium">수신</th>
-                <th className="px-5 py-3 text-right font-medium">신규</th>
-                <th className="px-5 py-3 text-right font-medium">갱신</th>
-                <th className="px-5 py-3 text-right font-medium">소요</th>
-                <th className="px-5 py-3 text-left font-medium">비고</th>
+        <div className="overflow-x-auto -mx-4 px-4">
+          <table className="w-full text-xs min-w-[420px]">
+            <thead>
+              <tr className="text-gray-400 border-b border-gray-100">
+                <th className="text-left py-1.5 font-normal">소스명</th>
+                <th className="text-left py-1.5 font-normal">호스트</th>
+                <th className="text-left py-1.5 font-normal hidden sm:table-cell">비고</th>
               </tr>
             </thead>
             <tbody>
-              {runs.length === 0 && (
-                <tr>
-                  <td className="px-5 py-8 text-center text-gray-400" colSpan={8}>
-                    아직 실행 이력이 없습니다. 위 카드의 "지금 수집" 버튼을 눌러보세요.
-                  </td>
-                </tr>
-              )}
-              {runs.map((r) => (
-                <tr key={r.id} className="border-t border-gray-100 hover:bg-gray-50/50">
-                  <td className="px-5 py-3 font-medium text-gray-800">{r.source?.name ?? '—'}</td>
-                  <td className="px-5 py-3 text-gray-600">
-                    {new Date(r.startedAt).toLocaleString('ko-KR', {
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </td>
-                  <td className="px-5 py-3 text-center">{statusBadge(r.status)}</td>
-                  <td className="px-5 py-3 text-right tabular-nums text-gray-700">{r.fetched}</td>
-                  <td className="px-5 py-3 text-right tabular-nums text-emerald-700">
-                    {r.created > 0 ? `+${r.created}` : r.created}
-                  </td>
-                  <td className="px-5 py-3 text-right tabular-nums text-sky-700">{r.updated}</td>
-                  <td className="px-5 py-3 text-right tabular-nums text-gray-500">
-                    {r.durationMs ? `${(r.durationMs / 1000).toFixed(1)}s` : '—'}
-                  </td>
-                  <td className="px-5 py-3 text-gray-500 truncate max-w-[320px]" title={r.errorMsg ?? ''}>
-                    {r.errorMsg ?? '—'}
-                  </td>
+              {DEFAULT_CATALOG.map(c => (
+                <tr key={c.name} className="border-b border-gray-50 hover:bg-gray-50">
+                  <td className="py-2 text-gray-700">{c.name}</td>
+                  <td className="py-2 text-gray-400 truncate max-w-[260px]">{c.host}</td>
+                  <td className="py-2 text-gray-500 hidden sm:table-cell">{c.note}</td>
                 </tr>
               ))}
             </tbody>
@@ -229,5 +164,27 @@ export default async function ApiStatusPage() {
         </div>
       </div>
     </div>
-  );
+  )
+}
+
+function Summary({
+  label,
+  value,
+  accent,
+  suffix,
+}: {
+  label: string
+  value: number
+  accent?: string
+  suffix?: string
+}) {
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4">
+      <div className="text-[10px] sm:text-xs text-gray-400 mb-1">{label}</div>
+      <div className={`text-lg sm:text-xl font-medium ${accent ?? 'text-gray-800'}`}>
+        {value.toLocaleString()}
+        {suffix ? <span className="text-xs text-gray-400 ml-0.5">{suffix}</span> : null}
+      </div>
+    </div>
+  )
 }

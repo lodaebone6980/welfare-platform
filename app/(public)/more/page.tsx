@@ -60,9 +60,9 @@ export default async function MorePage() {
 
         {/* Info */}
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
-          <h2 className="text-sm font-bold text-gray-900 mb-2">복지길잡이 정보</h2>
+          <h2 className="text-sm font-bold text-gray-900 mb-2">국민자료실 정보</h2>
           <p className="text-xs text-gray-500 leading-relaxed">
-            복지길잡이은 공공데이터포털(data.go.kr)에서 제공하는 복지 서비스 정보를 활용하여
+            국민자료실은 공공데이터포털(data.go.kr)에서 제공하는 복지 서비스 정보를 활용하여
             국민들이 쉽게 정부 지원 정책을 찾을 수 있도록 돕는 서비스입니다.
           </p>
         </div>

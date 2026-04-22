@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { policyHref } from '@/lib/categories'
 
 interface Policy {
   id: number
@@ -129,7 +130,7 @@ function PolicyCard({ policy }: { policy: Policy }) {
       </div>
 
       {/* 정책명 */}
-      <Link href={`/welfare/${policy.slug}`} className="block mb-2">
+      <Link href={policyHref({ categorySlug: policy.category?.slug, slug: policy.slug })} className="block mb-2">
         <h3 className="text-[15px] font-semibold text-gray-900 group-hover:text-blue-600 transition-colors leading-snug line-clamp-2">
           {policy.title}
         </h3>
@@ -150,15 +151,14 @@ function PolicyCard({ policy }: { policy: Policy }) {
         {policy.applyUrl ? (
           <a
             href={policy.applyUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            rel="nofollow"
             className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             신청하기
           </a>
         ) : (
           <Link
-            href={`/welfare/${policy.slug}`}
+            href={policyHref({ categorySlug: policy.category?.slug, slug: policy.slug })}
             className="px-3 py-1.5 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
           >
             자세히 보기

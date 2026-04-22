@@ -1,269 +1,194 @@
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import CategoryIcon from '@/components/ui/CategoryIcon';
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import {
-  getCachedCategoryBySlug,
-  getCachedCategoryPolicies,
-  getCachedCategoryPolicyCount,
-} from '@/lib/queries';
+import { SITE_NAME } from '@/lib/env';
+import PolicyCard from '@/components/home/PolicyCard';
+import CategoryIcon from '@/components/ui/CategoryIcon';
 
-export const revalidate = 600;
-export const dynamicParams = true;
+export const revalidate = 300;
 
-const ITEMS_PER_PAGE = 20;
+interface Props {
+  params: { slug: string };
+}
 
-const categoryColors: Record<string, string> = {
-  '환급금': 'from-orange-500 to-amber-500',
-  '바우처': 'from-purple-500 to-indigo-500',
-  '지원금': 'from-blue-500 to-cyan-500',
-  '대출': 'from-green-500 to-emerald-500',
-  '보조금': 'from-pink-500 to-rose-500',
-  '교육': 'from-yellow-500 to-orange-500',
-  '주거': 'from-teal-500 to-green-500',
-  '의료': 'from-red-500 to-pink-500',
-  '고용': 'from-indigo-500 to-blue-500',
-  '문화': 'from-fuchsia-500 to-purple-500',
+/**
+ * 카테고리별 상세 리스트 페이지 (/welfare/categories/{slug})
+ *
+ * 기존: 홈에서 카테고리 아이콘 클릭 → 이 경로로 이동하지만 파일이 없어서 404
+ * 수정: 카테고리별 고유 SEO 메타 + 해당 카테고리의 모든 정책 리스트
+ */
+
+// 카테고리별 고유 SEO 설명 — 구글·네이버 색인에 차별화된 의도로 노출되게
+const CATEGORY_META: Record<string, { subtitle: string; desc: string }> = {
+  '생활안정': {
+    subtitle: '생계비·긴급복지·기초생활보장',
+    desc: '저소득층·위기가구를 위한 생계비·긴급복지·기초생활보장 등 생활안정 지원 제도 모음.',
+  },
+  '주거·자립': {
+    subtitle: '전·월세·임대주택·자립지원',
+    desc: '청년·신혼부부·저소득층 대상 전세자금·월세지원·공공임대·자립지원 제도 모음.',
+  },
+  '보육·교육': {
+    subtitle: '어린이집·유아·초중고·대학생',
+    desc: '보육료·유아학비·장학금·교육비·돌봄서비스 등 보육과 교육 관련 지원 제도 모음.',
+  },
+  '고용·창업': {
+    subtitle: '실업급여·구직·창업자금',
+    desc: '실업급여·구직촉진수당·국민취업지원·창업자금·고용장려금 등 일자리 관련 지원 제도 모음.',
+  },
+  '건강·의료': {
+    subtitle: '의료비·건강검진·재활',
+    desc: '건강보험 본인부담경감·의료급여·재난적의료비·건강검진 등 건강 관련 지원 제도 모음.',
+  },
+  '행정·안전': {
+    subtitle: '민원·재난·소방·교통',
+    desc: '민원편의·재난지원·교통안전·소방재난 등 행정과 안전 관련 지원 제도 모음.',
+  },
+  '임신·출산': {
+    subtitle: '출산지원금·난임·육아수당',
+    desc: '출산지원금·첫만남이용권·난임부부 시술지원·부모급여·아동수당 등 임신·출산 지원 제도 모음.',
+  },
+  '보호·돌봄': {
+    subtitle: '노인·장애인·아동보호',
+    desc: '노인장기요양·장애인활동지원·아동보호·한부모가족 등 보호와 돌봄 관련 지원 제도 모음.',
+  },
+  '문화·환경': {
+    subtitle: '문화바우처·관광·환경보전',
+    desc: '문화누리카드·통합문화이용권·관광지원·환경보전 등 문화와 환경 관련 지원 제도 모음.',
+  },
+  '농림·축산·어업': {
+    subtitle: '농어업인·귀농·수산',
+    desc: '농어업인 직불금·귀농귀촌·수산업·축산업 등 1차산업 종사자 지원 제도 모음.',
+  },
 };
 
-function parseKoreanDate(str: string | null): Date | null {
-  if (!str) return null;
-  const m = str.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
-  if (!m) return null;
-  const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
-  return isNaN(d.getTime()) ? null : d;
-}
-
-function getDday(deadline: string | null): { text: string; color: string } | null {
-  if (!deadline) return null;
-  if (deadline.includes('상시') || deadline.includes('수시')) {
-    return { text: '상시', color: 'bg-gray-100 text-gray-600' };
-  }
-  const d = parseKoreanDate(deadline);
-  if (!d) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  d.setHours(0, 0, 0, 0);
-  const diff = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  if (diff < 0) return null;
-  if (diff === 0) return { text: 'D-DAY', color: 'bg-red-100 text-red-700' };
-  if (diff <= 7) return { text: `D-${diff}`, color: 'bg-red-100 text-red-600' };
-  if (diff <= 30) return { text: `D-${diff}`, color: 'bg-orange-100 text-orange-600' };
-  return { text: `D-${diff}`, color: 'bg-blue-100 text-blue-600' };
-}
-
-function cleanTitle(title: string): string {
-  return title.replace(/^\[.*?\]\s*/, '');
-}
-
-export async function generateStaticParams() {
-  try {
-    const cats = await prisma.category.findMany({ select: { slug: true } });
-    return cats.map((c) => ({ slug: c.slug }));
-  } catch {
-    return [];
-  }
-}
-
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const cat = await getCachedCategoryBySlug(params.slug);
-  if (!cat) return { title: '카테고리를 찾을 수 없습니다' };
-  return {
-    title: `${cat.name} 정책 - 복지길잡이`,
-    description: `${cat.name} 관련 정부 지원금, 보조금, 복지 정책 정보를 한눈에 확인하세요.`,
-    openGraph: {
-      title: `${cat.name} 정책 | 복지길잡이`,
-      description: `${cat.name} 분야의 최신 정부 지원금과 복지 정책.`,
-      type: 'website',
+async function getCategoryWithPolicies(slug: string) {
+  return prisma.category.findUnique({
+    where: { slug },
+    include: {
+      _count: { select: { policies: true } },
+      policies: {
+        where: { status: 'PUBLISHED' },
+        orderBy: [{ featured: 'desc' }, { featuredOrder: 'asc' }, { publishedAt: 'desc' }],
+        take: 30,
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          excerpt: true,
+          geoRegion: true,
+          viewCount: true,
+          publishedAt: true,
+          applyUrl: true,
+          deadline: true,
+          category: { select: { name: true, slug: true } },
+        },
+      },
     },
+  });
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const cat = await prisma.category.findUnique({
+    where: { slug: params.slug },
+    select: { name: true, _count: { select: { policies: true } } },
+  });
+  if (!cat) return { title: '카테고리를 찾을 수 없습니다' };
+
+  const meta = CATEGORY_META[cat.name];
+  const title = `${cat.name} 지원금 · ${meta?.subtitle || '정부 복지 제도'} | ${SITE_NAME}`;
+  const description =
+    meta?.desc ||
+    `${cat.name} 분야의 정부 복지 제도 ${cat._count.policies}건을 한눈에. 신청 자격·방법·마감일까지.`;
+
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: 'website' },
+    alternates: { canonical: `/welfare/categories/${params.slug}` },
   };
 }
 
-export default async function CategoryDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { slug: string };
-  searchParams: { page?: string; sort?: string };
-}) {
-  const category = await getCachedCategoryBySlug(params.slug);
-  if (!category) notFound();
+export default async function CategoryDetailPage({ params }: Props) {
+  const cat = await getCategoryWithPolicies(params.slug);
+  if (!cat) notFound();
 
-  const currentPage = Math.max(1, parseInt(searchParams.page || '1'));
-  const sortBy: 'latest' | 'popular' =
-    searchParams.sort === 'popular' ? 'popular' : 'latest';
-
-  const [policies, totalCount] = await Promise.all([
-    getCachedCategoryPolicies(category.id, currentPage, sortBy, ITEMS_PER_PAGE),
-    getCachedCategoryPolicyCount(category.id),
-  ]);
-
-  const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
-  const heroGradient = categoryColors[category.name] || 'from-blue-600 to-indigo-700';
-
-  function buildUrl(p: { page?: number; sort?: string }) {
-    const sp = new URLSearchParams();
-    const sortVal = p.sort ?? sortBy;
-    if (sortVal && sortVal !== 'latest') sp.set('sort', sortVal);
-    if (p.page && p.page > 1) sp.set('page', String(p.page));
-    const qs = sp.toString();
-    return `/welfare/categories/${category.slug}` + (qs ? `?${qs}` : '');
-  }
+  const meta = CATEGORY_META[cat.name];
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Hero */}
-      <section className={`bg-gradient-to-br ${heroGradient} px-4 pt-8 pb-6 text-white`}>
-        <div className="flex items-center gap-2 text-xs text-white/80 mb-2">
-          <Link href="/" className="hover:underline">홈</Link>
-          <span>/</span>
-          <Link href="/welfare/categories" className="hover:underline">카테고리</Link>
-          <span>/</span>
-          <span className="text-white">{category.name}</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
-            <CategoryIcon slug={category.slug} size={28} />
+    <div className="pb-20">
+      {/* Category Hero — 카테고리별 고유 타이틀/설명 */}
+      <section className="bg-gradient-to-br from-blue-600 to-indigo-700 px-4 pt-8 pb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center">
+            <CategoryIcon slug={cat.slug} size={28} />
           </div>
           <div>
-            <h1 className="text-xl font-bold">{category.name}</h1>
-            <p className="text-white/80 text-xs mt-0.5">
-              {totalCount.toLocaleString()}개의 정책이 있어요
-            </p>
+            <h1 className="text-white text-xl font-bold">{cat.name.replace(/·/g, ' ')} 지원금</h1>
+            {meta?.subtitle && (
+              <p className="text-blue-200 text-xs mt-0.5">{meta.subtitle}</p>
+            )}
           </div>
         </div>
+        <p className="text-blue-100 text-xs leading-relaxed mt-2">
+          {meta?.desc || `${cat.name} 관련 정부·지자체 지원 제도 모음.`}
+        </p>
+        <p className="text-white/80 text-[11px] mt-2">
+          총 <strong className="text-white">{cat._count.policies.toLocaleString()}건</strong> 의 제도
+        </p>
       </section>
 
-      <div className="max-w-6xl mx-auto px-4 py-4">
-        {/* Sort toggle */}
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-xs text-gray-500">
-            총 <span className="font-semibold text-blue-600">{totalCount.toLocaleString()}</span>건
-          </p>
-          <div className="flex gap-1">
-            <Link
-              href={buildUrl({ sort: 'latest', page: 1 })}
-              prefetch={false}
-              className={`px-2.5 py-1 rounded-lg text-xs ${sortBy === 'latest' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
-            >
-              최신순
-            </Link>
-            <Link
-              href={buildUrl({ sort: 'popular', page: 1 })}
-              prefetch={false}
-              className={`px-2.5 py-1 rounded-lg text-xs ${sortBy === 'popular' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
-            >
-              인기순
-            </Link>
-          </div>
-        </div>
+      {/* 빵부스러기 */}
+      <nav className="px-4 py-2 text-[11px] text-gray-500 flex items-center gap-1">
+        <Link href="/" className="hover:text-blue-600">홈</Link>
+        <span>›</span>
+        <Link href="/welfare/categories" className="hover:text-blue-600">카테고리</Link>
+        <span>›</span>
+        <span className="text-gray-800">{cat.name.replace(/·/g, ' ')}</span>
+      </nav>
 
-        {/* Empty state */}
-        {policies.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border">
-            <div className="text-4xl mb-3">📭</div>
-            <p className="text-gray-500 text-sm">아직 등록된 정책이 없어요</p>
-            <Link
-              href="/welfare/search"
-              className="inline-block mt-3 text-blue-600 text-sm hover:underline"
-            >
-              전체 정책 둘러보기
-            </Link>
+      {/* Policy Cards Grid */}
+      <section className="px-4 pt-2 pb-4">
+        {cat.policies.length === 0 ? (
+          <div className="text-center py-12 text-sm text-gray-500">
+            등록된 정책이 아직 없습니다. 다른 카테고리를 확인해보세요.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {policies.map((policy) => {
-              const dday = getDday(policy.deadline);
-              return (
-                <Link
-                  key={policy.id}
-                  href={`/welfare/${encodeURIComponent(policy.slug)}`}
-                  prefetch={false}
-                  className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md hover:border-blue-200 transition group"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium">
-                        {category.name}
-                      </span>
-                      {policy.geoRegion && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-50 text-gray-500">
-                          📍 {policy.geoRegion}
-                        </span>
-                      )}
-                    </div>
-                    {dday && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold flex-shrink-0 ${dday.color}`}>
-                        {dday.text}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 line-clamp-2 mb-1.5">
-                    {cleanTitle(policy.title)}
-                  </h3>
-                  {policy.excerpt && (
-                    <p className="text-xs text-gray-500 line-clamp-2">{policy.excerpt}</p>
-                  )}
-                </Link>
-              );
-            })}
+            {cat.policies.map((p) => (
+              <PolicyCard
+                key={p.id}
+                policy={{
+                  slug: p.slug,
+                  title: p.title,
+                  excerpt: p.excerpt,
+                  category: p.category,
+                  geoRegion: p.geoRegion,
+                  viewCount: p.viewCount,
+                  publishedAt: p.publishedAt,
+                  applyUrl: p.applyUrl,
+                }}
+                variant="default"
+              />
+            ))}
           </div>
         )}
+      </section>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-1 mt-8">
-            {currentPage > 1 && (
-              <Link
-                href={buildUrl({ page: currentPage - 1 })}
-                prefetch={false}
-                className="px-3 py-2 rounded-lg text-sm bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-              >
-                이전
-              </Link>
-            )}
-            {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
-              const startPage = Math.max(1, Math.min(currentPage - 4, totalPages - 9));
-              const pageNum = startPage + i;
-              if (pageNum > totalPages) return null;
-              return (
-                <Link
-                  key={pageNum}
-                  href={buildUrl({ page: pageNum })}
-                  prefetch={false}
-                  className={`px-3 py-2 rounded-lg text-sm transition ${pageNum === currentPage ? 'bg-blue-600 text-white font-medium' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                >
-                  {pageNum}
-                </Link>
-              );
-            })}
-            {currentPage < totalPages && (
-              <Link
-                href={buildUrl({ page: currentPage + 1 })}
-                prefetch={false}
-                className="px-3 py-2 rounded-lg text-sm bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-              >
-                다음
-              </Link>
-            )}
-          </div>
-        )}
-
-        {/* Footer CTA */}
-        <div className="mt-8">
+      {/* 관련 탐색 */}
+      <section className="px-4 pt-3 pb-4">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4">
+          <p className="text-sm font-bold text-gray-800">다른 카테고리도 둘러보세요</p>
+          <p className="text-xs text-gray-500 mt-0.5">10개 분야의 지원 제도를 한곳에서</p>
           <Link
             href="/welfare/categories"
-            className="block text-center bg-white border border-gray-200 text-gray-600 py-3 rounded-xl text-sm hover:bg-gray-50"
+            className="inline-flex mt-2 text-xs font-medium text-white bg-blue-500 px-3 py-1.5 rounded-lg"
           >
-            다른 카테고리 보기
+            전체 카테고리 보기
           </Link>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

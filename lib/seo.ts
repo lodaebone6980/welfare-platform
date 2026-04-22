@@ -136,8 +136,8 @@ export function generateHomepageJsonLd() {
     '@graph': [
       {
         '@type': 'WebSite',
-        name: '복지길잡이',
-        alternateName: '복지길잡이 - 정부 지원금 찾기',
+        name: '국민자료실',
+        alternateName: '국민자료실 - 정부 지원금 찾기',
         url: BASE_URL,
         description: '나에게 맞는 정부 지원금, 보조금, 복지 혜택을 한눈에 찾아보세요.',
         inLanguage: 'ko-KR',
@@ -152,7 +152,7 @@ export function generateHomepageJsonLd() {
       },
       {
         '@type': 'Organization',
-        name: '복지길잡이',
+        name: '국민자료실',
         url: BASE_URL,
         logo: BASE_URL + '/icon-512.png',
         sameAs: [],
@@ -177,16 +177,16 @@ export function generatePolicyMetaDescription(policy: PolicySeoData): string {
   if (desc) {
     return (base + '. ' + desc).substring(0, 155) + '...';
   }
-  return (base + ' 지원 대상, 신청 방법, 필요 서류를 확인하세요. | 복지길잡이').substring(0, 155);
+  return (base + ' 지원 대상, 신청 방법, 필요 서류를 확인하세요. | 국민자료실').substring(0, 155);
 }
 
 // Generate Open Graph data for policy
 export function generatePolicyOgData(policy: PolicySeoData) {
   return {
-    title: policy.title + ' | 복지길잡이',
+    title: policy.title + ' | 국민자료실',
     description: generatePolicyMetaDescription(policy),
     url: BASE_URL + '/welfare/' + encodeURIComponent(policy.slug),
-    siteName: '복지길잡이',
+    siteName: '국민자료실',
     locale: 'ko_KR',
     type: 'article' as const,
   };

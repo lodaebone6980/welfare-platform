@@ -46,13 +46,6 @@ const NAV: NavItem[] = [
       { label: 'N 블로그',     href: '/marketing/naver-blog' },
     ],
   },
-  {
-    label: '\uACC4\uC815 · \uC2DC\uC2A4\uD15C',
-    children: [
-      { label: '\uD68C\uC6D0 \uAD00\uB9AC', href: '/members' },
-      { label: '\uC124\uC815', href: '/settings' },
-    ],
-  },
 ]
 
 export function Sidebar() {
@@ -89,7 +82,7 @@ export function Sidebar() {
         <div className="px-4 py-3.5 border-b border-gray-100 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2" onClick={() => setOpen(false)}>
             <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
-            <span className="text-sm font-medium text-gray-800">복지길잡이 Admin</span>
+            <span className="text-sm font-medium text-gray-800">국민자료실 Admin</span>
           </Link>
           <button onClick={() => setOpen(false)} className="lg:hidden p-1 text-gray-400 hover:text-gray-600">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
