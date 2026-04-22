@@ -16,6 +16,10 @@
     {
       "path": "/api/cron/daily-index",
       "schedule": "0 19 * * *"
+    },
+    {
+      "path": "/api/cron/external-popularity",
+      "schedule": "30 18 * * *"
     }
   ],
   "functions": {
@@ -30,6 +34,9 @@
     },
     "app/api/cron/daily-index/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/cron/external-popularity/route.ts": {
+      "maxDuration": 300
     }
   }
 }
