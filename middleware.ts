@@ -30,7 +30,7 @@ export async function middleware(req: NextRequest) {
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
 
-  const isAdmin = role === 'admin' || adminEmails.includes(email);
+  const isAdmin = role === 'ADMIN' || role === 'admin' || adminEmails.includes(email);
 
   if (!isAdmin) {
     const loginUrl = req.nextUrl.clone();
