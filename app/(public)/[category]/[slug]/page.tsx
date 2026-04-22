@@ -12,6 +12,11 @@ import {
   PolicySeoData,
 } from '@/lib/seo';
 import { normalizePolicyHtml } from '@/lib/markdown-safe';
+import {
+  cleanTitle as cleanPolicyTitle,
+  getDday as getDdayShared,
+  extractBenefitSummary,
+} from '@/lib/policy-display';
 
 /**
  * 새 Canonical URL: /:category/:slug
@@ -131,14 +136,26 @@ export default async function CategoryPolicyDetailPage({ params }: Props) {
     permanentRedirect(`/welfare/${encodeURIComponent(policy.slug)}`);
   }
 
-  const dday = getDday(policy.deadline);
+  const dday = getDdayShared(policy.deadline);
 
-  try {
-    await prisma.policy.update({
+  // 로딩 최적화: viewCount 증가는 fire-and-forget (await 제거) — 서버 렌더를 막지 않음
+  prisma.policy
+    .update({
       where: { id: policy.id },
       data: { viewCount: { increment: 1 } },
-    });
-  } catch (e) {}
+    })
+    .catch(() => {});
+
+  const benefit = extractBenefitSummary({
+    title: policy.title,
+    excerpt: policy.excerpt,
+    content: policy.content,
+    description: policy.description,
+    eligibility: policy.eligibility,
+    deadline: policy.deadline,
+    applicationMethod: policy.applicationMethod,
+  });
+  const displayTitle = cleanPolicyTitle(policy.title);
 
   let relatedPolicies: any[] = [];
   try {
@@ -199,18 +216,53 @@ export default async function CategoryPolicyDetailPage({ params }: Props) {
         </nav>
 
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${catBadgeClass}`}>{(catName || '기타').replace(/·/g, ' ')}</span>
             {policy.geoRegion && <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{policy.geoRegion}</span>}
-            {dday ? (
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${dday.urgent ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{dday.text}</span>
-            ) : (
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">🔁 상시신청</span>
+            {dday && (
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold ${
+                  dday.always
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : dday.urgent
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-blue-100 text-blue-700'
+                }`}
+              >
+                {dday.always ? '🔁 상시신청' : dday.text}
+              </span>
             )}
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">{policy.title}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">{displayTitle}</h1>
           {policy.excerpt && <p className="text-gray-600 leading-relaxed">{policy.excerpt}</p>}
+        </div>
+
+        {/* 혜택 한눈에 (지원금24 / 복지킹 스타일) */}
+        <div className="mb-6 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-5">
+          <p className="text-[11px] font-semibold text-blue-700 tracking-wide mb-3">혜택 한눈에</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-white rounded-xl p-3">
+              <p className="text-[11px] text-gray-500 mb-1">💰 지원금액</p>
+              <p className="text-sm font-bold text-gray-900 leading-snug">
+                {benefit.amount || '본문 참고'}
+              </p>
+            </div>
+            <div className="bg-white rounded-xl p-3">
+              <p className="text-[11px] text-gray-500 mb-1">👥 지원대상</p>
+              <p className="text-sm font-medium text-gray-800 leading-snug line-clamp-2">
+                {benefit.target || (policy.geoRegion ? `${policy.geoRegion} 거주자` : '본문 참고')}
+              </p>
+            </div>
+            <div className="bg-white rounded-xl p-3">
+              <p className="text-[11px] text-gray-500 mb-1">📅 신청기간</p>
+              <p className="text-sm font-medium text-gray-800 leading-snug">
+                {policy.deadline && !/상시|수시|연중/.test(policy.deadline)
+                  ? policy.deadline
+                  : '상시 접수'}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Key Info Card */}

@@ -91,6 +91,11 @@ export default function RecommendPage() {
       if (conditions.interests.length > 0) params.set('interests', conditions.interests.join(','));
       if (conditions.applyType) params.set('applyType', conditions.applyType);
 
+      // 홈 "내게 맞는 지원금" 섹션용 조건 저장 (PersonalizedSection 이 읽어감)
+      try {
+        localStorage.setItem('wp_profile', JSON.stringify(conditions));
+      } catch {}
+
       const resp = await fetch(`/api/recommend?${params.toString()}`);
       const data = await resp.json();
       setResults(data.policies || []);

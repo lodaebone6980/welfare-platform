@@ -5,6 +5,12 @@ import CategoryIcon from '@/components/ui/CategoryIcon';
 import { SITE_NAME, SITE_DESC } from '@/lib/env';
 import { policyHref } from '@/lib/categories';
 import { getTrendingPolicies } from '@/lib/trending';
+import {
+  cleanTitle as cleanPolicyTitle,
+  parseKoreanDate as parseKoreanDateShared,
+  getDday as getDdayShared,
+} from '@/lib/policy-display';
+import PersonalizedSection from '@/components/home/PersonalizedSection';
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} - 나에게 맞는 정부 지원금 찾기`,
@@ -132,31 +138,18 @@ async function getCategories() {
   });
 }
 
-function parseKoreanDate(str: string | null): Date | null {
-  if (!str) return null;
-  const m = str.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
-  if (!m) return null;
-  const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
-  return isNaN(d.getTime()) ? null : d;
-}
+// 공용 유틸로 리팩토링 — lib/policy-display.ts 참조
+const parseKoreanDate = parseKoreanDateShared;
 
 function getDday(deadline: string | null): { text: string; urgent: boolean } | null {
-  if (!deadline) return null;
-  if (deadline.includes('상시') || deadline.includes('수시')) return { text: '상시', urgent: false };
-  const deadlineDate = parseKoreanDate(deadline);
-  if (!deadlineDate) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  deadlineDate.setHours(0, 0, 0, 0);
-  const diff = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  if (diff < 0) return null;
-  if (diff === 0) return { text: 'D-DAY', urgent: true };
-  return { text: `D-${diff}`, urgent: diff <= 7 };
+  const d = getDdayShared(deadline);
+  if (!d) return null;
+  if (d.always) return { text: '상시', urgent: false };
+  if (d.text === '마감') return null; // 홈에서는 만료 카드 제외
+  return { text: d.text, urgent: d.urgent };
 }
 
-function cleanTitle(title: string) {
-  return title.replace(/^\[.*?\]\s*/, '');
-}
+const cleanTitle = cleanPolicyTitle;
 
 export default async function HomePage() {
   const [stats, popularPolicies, expiringPolicies, alwaysOpenPolicies, featuredPolicies, latestPolicies, categories] = await Promise.all([
@@ -186,7 +179,44 @@ export default async function HomePage() {
         </Link>
       </section>
 
-      {/* 🔥 인기 지원금 (조회수 TOP) — gg24 스타일, 상단 배치 */}
+      {/* CTA Banner — 맞춤 설정 (검색 바로 아래 복원) */}
+      <section className="px-4 pt-3">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-bold text-gray-800">맞춤 정책을 설정해보세요</p>
+            <p className="text-xs text-gray-500 mt-0.5">나에게 딱 맞는 정책을 찾아드려요</p>
+          </div>
+          <Link href="/recommend" className="text-xs font-medium text-white bg-blue-500 px-3 py-1.5 rounded-lg whitespace-nowrap">
+            설정하기
+          </Link>
+        </div>
+      </section>
+
+      {/* 🎯 내게 맞는 지원금 (recommend 조건 저장돼있을 때만 노출) */}
+      <PersonalizedSection />
+
+      {/* Category Scroll — 검색 바로 아래 복원 */}
+      <section className="px-4 py-4 border-b bg-white">
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-1">
+          {categories.map((cat) => (
+            <Link
+              key={cat.id}
+              href={'/welfare/categories/' + cat.slug}
+              className="flex flex-col items-center gap-1.5 min-w-[56px]"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center">
+                <CategoryIcon slug={cat.slug} size={28} />
+              </div>
+              <span className="text-[11px] text-gray-600 whitespace-nowrap">
+                {displayCategoryName(cat.name)}
+              </span>
+              <span className="text-[9px] text-gray-400">{cat._count.policies}건</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* 🔥 인기 지원금 (조회수 TOP) — gg24 스타일 */}
       <section className="px-4 pt-5 pb-2">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
@@ -194,6 +224,7 @@ export default async function HomePage() {
           </h2>
           <Link href="/welfare/search?sort=popular" className="text-xs text-blue-600">더보기</Link>
         </div>
+        <p className="text-[11px] text-gray-400 mb-2">최근 7일 조회수 가중치 + 누적 조회수 기준</p>
         <div className="space-y-0 bg-white rounded-2xl border overflow-hidden">
           {popularPolicies.map((policy, idx) => {
             const dday = getDday(policy.deadline);
@@ -210,6 +241,11 @@ export default async function HomePage() {
                     {policy.category && (
                       <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
                         {displayCategoryName(policy.category.name)}
+                      </span>
+                    )}
+                    {typeof policy.viewCount === 'number' && policy.viewCount > 0 && (
+                      <span className="text-[10px] text-gray-500">
+                        👀 {policy.viewCount.toLocaleString()}
                       </span>
                     )}
                     {dday && (
@@ -237,6 +273,7 @@ export default async function HomePage() {
             </h2>
             <Link href="/welfare/search?sort=deadline" className="text-xs text-blue-600">더보기</Link>
           </div>
+          <p className="text-[11px] text-gray-400 mb-2">마감일이 가까운 순으로 정렬 · 상시/연중 정책 제외</p>
           <div className="space-y-0 bg-white rounded-2xl border overflow-hidden">
             {expiringPolicies.map((policy) => {
               const dday = getDday(policy.deadline);
@@ -304,40 +341,6 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-
-      {/* Category Scroll — 영어 slug URL */}
-      <section className="px-4 py-4 border-b bg-white">
-        <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-1">
-          {categories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={'/welfare/categories/' + cat.slug}
-              className="flex flex-col items-center gap-1.5 min-w-[56px]"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center">
-                <CategoryIcon slug={cat.slug} size={28} />
-              </div>
-              <span className="text-[11px] text-gray-600 whitespace-nowrap">
-                {displayCategoryName(cat.name)}
-              </span>
-              <span className="text-[9px] text-gray-400">{cat._count.policies}건</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA Banner */}
-      <section className="px-4 py-3">
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-bold text-gray-800">맞춤 정책을 설정해보세요</p>
-            <p className="text-xs text-gray-500 mt-0.5">나에게 딱 맞는 정책을 찾아드려요</p>
-          </div>
-          <Link href="/welfare/search" className="text-xs font-medium text-white bg-blue-500 px-3 py-1.5 rounded-lg whitespace-nowrap">
-            설정하기
-          </Link>
-        </div>
-      </section>
 
       {/* ⭐ 에디터 추천 지원금 */}
       {featuredPolicies.length > 0 && (
