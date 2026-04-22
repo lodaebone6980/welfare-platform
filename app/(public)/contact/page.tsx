@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default function ContactPage() {
-  const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'contact@govmate.co.kr';
+  const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'adenly659@gmail.com';
 
   return (
     <article className="prose prose-sm px-4 py-6 sm:prose-base">
@@ -37,6 +37,8 @@ export default function ContactPage() {
       <h2>운영사 정보</h2>
       <ul>
         <li>운영사: 블루엣지</li>
+        <li>대표: 이재호</li>
+        <li>사업자등록번호: 618-37-93965</li>
         <li>주소: 충청남도 천안시 동남구 청수9로 47, 5층 535호</li>
       </ul>
 

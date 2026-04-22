@@ -30,8 +30,10 @@ export default function AboutPage() {
         본 서비스는 <strong>블루엣지</strong>가 운영합니다.
       </p>
       <ul>
+        <li>대표: 이재호</li>
+        <li>사업자등록번호: 618-37-93965</li>
         <li>주소: 충청남도 천안시 동남구 청수9로 47, 5층 535호</li>
-        <li>문의: contact@govmate.co.kr</li>
+        <li>문의: adenly659@gmail.com</li>
       </ul>
 
       <h2>정보 출처와 면책</h2>
