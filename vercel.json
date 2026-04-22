@@ -6,6 +6,10 @@
       "schedule": "0 9 * * *"
     },
     {
+      "path": "/api/cron/collect-news",
+      "schedule": "30 9 * * *"
+    },
+    {
       "path": "/api/cron/notifications",
       "schedule": "0 0 * * *"
     },
@@ -16,6 +20,9 @@
   ],
   "functions": {
     "app/api/cron/collect/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/collect-news/route.ts": {
       "maxDuration": 60
     },
     "app/api/cron/notifications/route.ts": {

@@ -26,6 +26,7 @@ const NAV: NavItem[] = [
       { label: 'API 수집현황', href: '/api-status' },
       { label: '유입 분석',   href: '/traffic' },
       { label: '검색 트렌딩', href: '/trending' },
+      { label: '트렌딩 뉴스', href: '/trending-news' },
     ],
   },
   {
