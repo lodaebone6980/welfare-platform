@@ -23,7 +23,7 @@ export default async function BulkPage() {
   const policies = await getBasePolicies()
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl">
+    <div className="p-4 sm:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full">
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-lg font-medium text-gray-800">GEO 대량 생성</h1>

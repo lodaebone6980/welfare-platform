@@ -68,7 +68,7 @@ export default async function TrendingPage() {
   const keywords = await getTopKeywords()
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl">
+    <div className="p-4 sm:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full">
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-lg font-medium text-gray-800">검색 트렌딩</h1>
         <span className="text-[10px] text-gray-400">최근 7일 유입 키워드 기반</span>

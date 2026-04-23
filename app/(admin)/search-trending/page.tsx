@@ -103,7 +103,7 @@ export default async function SearchTrendingPage() {
   const failed = feeds.filter(f => f.error).length
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 xl:p-10 max-w-[1400px] mx-auto w-full">
+    <div className="p-4 sm:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full">
       <div className="mb-6">
         <h1 className="text-xl lg:text-2xl xl:text-3xl font-semibold text-gray-800">🔥 검색트렌딩</h1>
         <p className="text-xs text-gray-500 mt-1">

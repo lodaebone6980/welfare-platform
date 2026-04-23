@@ -119,7 +119,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AppSmartBanner />
           <MobileHeader />
           <main className="min-h-screen bg-gray-50">
-            <div className="max-w-3xl mx-auto">{children}</div>
+            {/*
+              컨테이너 폭 제한은 (public) / (admin) 레이아웃에서 각각 처리한다.
+              - (public): max-w-3xl (모바일 우선 공개 페이지)
+              - (admin):  max-w-[1600px] (데스크톱 대시보드)
+              루트에서 폭을 고정하면 어드민이 모바일 사이즈로 렌더된다.
+            */}
+            {children}
             <Footer />
           </main>
           <BottomNav />

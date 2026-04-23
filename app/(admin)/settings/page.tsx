@@ -80,7 +80,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full">
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">\uc124\uc815</h1>

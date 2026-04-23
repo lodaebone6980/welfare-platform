@@ -91,7 +91,7 @@ export default async function TrendingNewsPage({
   const { items, counts, naverConfigured } = await getCandidates(queries);
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full">
       <header className="mb-6">
         <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <span className="text-lg">🔥</span>

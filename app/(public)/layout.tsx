@@ -1,17 +1,20 @@
 /**
  * Public route group layout
  * ----------------------------------------------------------------
- * 루트(app/layout.tsx)에서 이미 AppSmartBanner / MobileHeader / Footer /
- * BottomNav / ChannelTalk 를 렌더링하고 max-w-3xl 래퍼까지 씌우고 있으므로,
- * 이 파일은 중복 렌더를 방지하기 위해 단순 pass-through 로만 둔다.
+ * 루트(app/layout.tsx)에서 AppSmartBanner / MobileHeader / Footer /
+ * BottomNav / ChannelTalk 를 렌더링한다. 컨테이너 폭은 루트에서 고정하지
+ * 않고 route group 별로 제한한다.
  *
- * 이전: 이 layout 도 동일 컴포넌트들을 다시 render → 헤더/푸터 2중 노출
- * 수정: pass-through 로 전환 (2026-04-22 bug fix)
+ * - (public): 모바일 우선 레이아웃이므로 max-w-3xl(=768px) 로 제한
+ * - (admin):  데스크톱 대시보드이므로 각 페이지에서 max-w-[1600px] 사용
+ *
+ * 2026-04-23: 루트의 max-w-3xl 전역 래퍼를 제거하고 이 파일로 이동.
+ *             이전에는 admin 페이지도 768px 로 잘려 모바일처럼 보이는 문제가 있었음.
  */
 export default function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <div className="max-w-3xl mx-auto">{children}</div>;
 }

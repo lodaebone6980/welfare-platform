@@ -85,7 +85,7 @@ export default function ThreadsPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl">
+    <div className="p-4 sm:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg font-medium text-gray-800">Threads 관리</h1>
         <span className="hidden sm:flex items-center gap-1.5 text-xs text-green-600">
