@@ -4,7 +4,8 @@
  * 자체 트래픽 수집 클라이언트.
  * - 페이지 전환 시 /api/track/pageview 로 비콘 전송
  * - 30분 롤링 sessionId · 1년 visitorId 쿠키 사용 (1st-party only, no cross-site)
- * - 어드민 경로(/dashboard, /content, /traffic, /api-status, /trending, /marketing)는 자동 스킵
+ * - 어드민 경로(/dashboard, /content, /traffic, /api-status, /trending, /trending-news,
+ *   /marketing, /popularity, /members, /settings, /search-trending, /admin, /access/admin)는 자동 스킵
  * - 환경변수 NEXT_PUBLIC_INTERNAL_TRACKER=0 이면 비활성
  */
 
@@ -20,7 +21,14 @@ const ADMIN_PREFIXES = [
   '/traffic',
   '/api-status',
   '/trending',
+  '/trending-news',
   '/marketing',
+  '/popularity',
+  '/members',
+  '/settings',
+  '/search-trending',
+  '/admin',
+  '/access/admin',
 ]
 
 function isAdminPath(p: string): boolean {

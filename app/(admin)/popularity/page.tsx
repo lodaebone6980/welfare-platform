@@ -4,8 +4,8 @@ export const dynamic = 'force-dynamic';
 
 export default function PopularityAdminPage() {
   return (
-    <div className="p-6 max-w-2xl">
-      <h1 className="text-xl font-bold mb-1">외부 인기도 동기화</h1>
+    <div className="p-4 sm:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full">
+      <h1 className="text-2xl font-bold mb-1">외부 인기도 동기화</h1>
       <p className="text-sm text-gray-500 mb-5">
         네이버 뉴스 매칭 수를 기반으로 각 정책의{' '}
         <code className="text-xs bg-gray-100 px-1 rounded">externalScore</code>{' '}

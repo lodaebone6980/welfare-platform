@@ -7,14 +7,34 @@ import { getToken } from 'next-auth/jwt';
  *
  * 이 파일을 프로젝트 루트에 middleware.ts 로 저장하세요.
  */
+// 관리자 전용 경로 프리픽스 (matcher 와 동기화 유지)
+const ADMIN_ROUTE_PREFIXES = [
+  '/dashboard',
+  '/content',
+  '/marketing',
+  '/popularity',
+  '/members',
+  '/settings',
+  '/search-trending',
+  '/trending',
+  '/trending-news',
+  '/traffic',
+  '/api-status',
+  '/admin',
+];
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // 관리자 전용 경로
-  const isAdminRoute =
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/content') ||
-    pathname.startsWith('/marketing');
+  // 어드민 로그인 페이지 자체는 인증 없이 통과
+  if (
+    pathname.startsWith('/admin/login') ||
+    pathname.startsWith('/access/admin')
+  ) {
+    return NextResponse.next();
+  }
+
+  const isAdminRoute = ADMIN_ROUTE_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (!isAdminRoute) return NextResponse.next();
 
@@ -34,7 +54,7 @@ export async function middleware(req: NextRequest) {
 
   if (!isAdmin) {
     const loginUrl = req.nextUrl.clone();
-    loginUrl.pathname = '/admin/login';
+    loginUrl.pathname = '/access/admin';
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -47,5 +67,14 @@ export const config = {
     '/dashboard/:path*',
     '/content/:path*',
     '/marketing/:path*',
+    '/popularity/:path*',
+    '/members/:path*',
+    '/settings/:path*',
+    '/search-trending/:path*',
+    '/trending/:path*',
+    '/trending-news/:path*',
+    '/traffic/:path*',
+    '/api-status/:path*',
+    '/admin/:path*',
   ],
 };

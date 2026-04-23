@@ -5,71 +5,60 @@
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.govmate.co.kr';
 
+// 어드민/비공개 경로 공통 Disallow (검색엔진 모든 봇 동일 적용)
+const ADMIN_DISALLOW = [
+  '/admin/',
+  '/api/',
+  '/_next/',
+  '/dashboard/',
+  '/content/',
+  '/marketing/',
+  '/popularity/',
+  '/members/',
+  '/settings/',
+  '/search-trending/',
+  '/trending/',
+  '/trending-news/',
+  '/traffic/',
+  '/api-status/',
+  '/access/',
+  '/login/',
+  '/account/',
+  '/mypage/',
+  '/notifications/',
+]
+  .map((p) => `Disallow: ${p}`)
+  .join('\n');
+
 const BODY = `User-Agent: *
 Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
-Disallow: /dashboard/
-Disallow: /login/
-Disallow: /account/
-Disallow: /mypage/
-Disallow: /notifications/
+${ADMIN_DISALLOW}
 Disallow: /*?*sort=
 Disallow: /*?*page=
 
 User-Agent: Googlebot
 Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
-Disallow: /dashboard/
-Disallow: /login/
-Disallow: /account/
-Disallow: /mypage/
+${ADMIN_DISALLOW}
 
 User-Agent: Googlebot-Image
 Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
-Disallow: /dashboard/
+${ADMIN_DISALLOW}
 
 User-Agent: Yeti
 Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
-Disallow: /dashboard/
-Disallow: /login/
-Disallow: /account/
-Disallow: /mypage/
+${ADMIN_DISALLOW}
 
 User-Agent: Yeti-Mobile
 Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
-Disallow: /dashboard/
+${ADMIN_DISALLOW}
 
 User-Agent: Daumoa
 Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
-Disallow: /dashboard/
-Disallow: /login/
-Disallow: /account/
-Disallow: /mypage/
+${ADMIN_DISALLOW}
 
 User-Agent: Bingbot
 Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
-Disallow: /dashboard/
-Disallow: /login/
-Disallow: /account/
+${ADMIN_DISALLOW}
 
 #DaumWebMasterTool:1d1c83a6a81ba6a42a7262cae8562baa06f19ae2517989e7da365193f33e786d:lnJIfW6J3SEu/tDeE4/ZJg==
 

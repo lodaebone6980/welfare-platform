@@ -1,68 +1,10 @@
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import { Suspense } from 'react'
 
 export const dynamic = 'force-dynamic'
-
-async function getData() {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const weekAgo = new Date()
-  weekAgo.setDate(weekAgo.getDate() - 7)
-  weekAgo.setHours(0, 0, 0, 0)
-
-  try {
-    const [
-      totalPolicies,
-      todayNewPolicies,
-      weekUpdatedPolicies,
-      draftPolicies,
-      todayThreads,
-      recentPolicies,
-      apiSources,
-      recentRuns,
-    ] = await Promise.all([
-      prisma.policy.count({ where: { status: 'PUBLISHED' } }),
-      prisma.policy.count({ where: { status: 'PUBLISHED', createdAt: { gte: today } } }),
-      prisma.policy.count({ where: { updatedAt: { gte: weekAgo } } }),
-      prisma.policy.count({ where: { status: { in: ['DRAFT', 'REVIEW'] } } }),
-      prisma.threadsPost.count({ where: { createdAt: { gte: today } } }).catch(() => 0),
-      prisma.policy.findMany({
-        where: { status: 'PUBLISHED' },
-        orderBy: { publishedAt: 'desc' },
-        take: 10,
-        include: { category: true },
-      }),
-      (prisma as any).apiSource?.findMany({ orderBy: { name: 'asc' } }).catch(() => []) ?? [],
-      (prisma as any).collectionRun?.findMany({
-        take: 5,
-        orderBy: { startedAt: 'desc' },
-        include: { source: true },
-      }).catch(() => []) ?? [],
-    ])
-
-    return {
-      totalPolicies,
-      todayNewPolicies,
-      weekUpdatedPolicies,
-      draftPolicies,
-      todayThreads,
-      recentPolicies,
-      apiSources: apiSources || [],
-      recentRuns: recentRuns || [],
-    }
-  } catch {
-    return {
-      totalPolicies: 0,
-      todayNewPolicies: 0,
-      weekUpdatedPolicies: 0,
-      draftPolicies: 0,
-      todayThreads: 0,
-      recentPolicies: [] as any[],
-      apiSources: [] as any[],
-      recentRuns: [] as any[],
-    }
-  }
-}
+// KPI 집계는 5분 캐시로 완화 (어드민만 접근하므로 실시간 필요 없음)
+export const revalidate = 300
 
 function statusBadge(status: string | null | undefined) {
   if (status === 'success') return <span className="text-xs px-1.5 py-0.5 rounded bg-green-50 text-green-600">성공</span>
@@ -85,17 +27,31 @@ function relativeTime(d: Date | string | null | undefined) {
   return `${day}일 전`
 }
 
-export default async function DashboardPage() {
-  const {
+// ──────────────────────────────────────────────────────────────
+// KPI (상단 6개 카드) — 독립 Suspense 경계
+// ──────────────────────────────────────────────────────────────
+async function KpiCards() {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const weekAgo = new Date()
+  weekAgo.setDate(weekAgo.getDate() - 7)
+  weekAgo.setHours(0, 0, 0, 0)
+
+  const [
     totalPolicies,
     todayNewPolicies,
     weekUpdatedPolicies,
     draftPolicies,
     todayThreads,
-    recentPolicies,
-    apiSources,
-    recentRuns,
-  } = await getData()
+    apiSourcesCount,
+  ] = await Promise.all([
+    prisma.policy.count({ where: { status: 'PUBLISHED' } }).catch(() => 0),
+    prisma.policy.count({ where: { status: 'PUBLISHED', createdAt: { gte: today } } }).catch(() => 0),
+    prisma.policy.count({ where: { updatedAt: { gte: weekAgo } } }).catch(() => 0),
+    prisma.policy.count({ where: { status: { in: ['DRAFT', 'REVIEW'] } } }).catch(() => 0),
+    prisma.threadsPost.count({ where: { createdAt: { gte: today } } }).catch(() => 0),
+    ((prisma as any).apiSource?.count?.().catch(() => 0) ?? 0) as number | Promise<number>,
+  ])
 
   const kpis = [
     { label: '발행 정책', value: totalPolicies.toLocaleString(), sub: '전체 누적', href: '/content/policy', color: 'text-gray-800' },
@@ -103,9 +59,177 @@ export default async function DashboardPage() {
     { label: '7일 업데이트', value: weekUpdatedPolicies.toLocaleString(), sub: '최근 7일', href: '/content/policy', color: 'text-blue-600' },
     { label: '검토 대기', value: draftPolicies.toLocaleString(), sub: '초안·검토중', href: '/content/policy?status=draft', color: 'text-amber-600' },
     { label: '오늘 Threads', value: todayThreads.toLocaleString(), sub: '발행', href: '/marketing/threads', color: 'text-purple-600' },
-    { label: 'API 소스', value: apiSources.length.toString(), sub: '등록된 소스', href: '/api-status', color: 'text-indigo-600' },
+    { label: 'API 소스', value: String(apiSourcesCount ?? 0), sub: '등록된 소스', href: '/api-status', color: 'text-indigo-600' },
   ]
 
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4 mb-6 lg:mb-8">
+      {kpis.map((k) => (
+        <Link
+          key={k.label}
+          href={k.href}
+          className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4 hover:border-blue-200 hover:shadow-sm transition-all"
+        >
+          <div className="text-[10px] sm:text-xs text-gray-400 mb-1">{k.label}</div>
+          <div className={`text-lg sm:text-xl lg:text-2xl font-medium ${k.color}`}>{k.value}</div>
+          <div className="text-[10px] sm:text-xs text-gray-400 mt-1">{k.sub}</div>
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+function KpiSkeleton() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4 mb-6 lg:mb-8">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4 animate-pulse">
+          <div className="h-3 bg-gray-100 rounded w-1/2 mb-2" />
+          <div className="h-6 bg-gray-100 rounded w-2/3 mb-2" />
+          <div className="h-3 bg-gray-100 rounded w-1/3" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────
+// API 수집 요약
+// ──────────────────────────────────────────────────────────────
+async function ApiSummary() {
+  const [apiSources, recentRuns] = await Promise.all([
+    ((prisma as any).apiSource?.findMany({ orderBy: { name: 'asc' } }).catch(() => []) ?? []) as Promise<any[]>,
+    ((prisma as any).collectionRun?.findMany({
+      take: 5,
+      orderBy: { startedAt: 'desc' },
+      include: { source: true },
+    }).catch(() => []) ?? []) as Promise<any[]>,
+  ])
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-xs font-medium text-gray-600">API 수집 상태</div>
+        <Link href="/api-status" className="text-[10px] text-blue-500 hover:underline">전체 →</Link>
+      </div>
+      {apiSources.length === 0 ? (
+        <div className="py-6 text-center text-xs text-gray-400">
+          등록된 API 소스가 없습니다.<br />
+          <span className="text-amber-600">마이그레이션 SQL 실행 필요</span>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {apiSources.slice(0, 4).map((s: any) => (
+            <div key={s.id} className="flex items-center justify-between text-xs py-1.5 border-b border-gray-50 last:border-0">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-gray-700">{s.name}</span>
+                {statusBadge(s.status)}
+              </div>
+              <div className="text-right">
+                <div className="text-gray-500">오늘 {s.todayCount ?? 0}건</div>
+                <div className="text-[10px] text-gray-400">{relativeTime(s.lastSuccess)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {recentRuns.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="text-[10px] text-gray-400 mb-2">최근 실행</div>
+          <div className="space-y-1">
+            {recentRuns.slice(0, 3).map((r: any) => (
+              <div key={r.id} className="flex items-center justify-between text-[11px]">
+                <span className="text-gray-600 truncate">{r.source?.name ?? '-'}</span>
+                <span className="flex items-center gap-2">
+                  {statusBadge(r.status)}
+                  <span className="text-gray-400">{relativeTime(r.startedAt)}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ApiSummarySkeleton() {
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl p-4 animate-pulse">
+      <div className="h-4 bg-gray-100 rounded w-1/3 mb-4" />
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-6 bg-gray-50 rounded" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────
+// 최근 발행 정책
+// ──────────────────────────────────────────────────────────────
+async function RecentPolicies() {
+  const recentPolicies = await prisma.policy
+    .findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { publishedAt: 'desc' },
+      take: 10,
+      include: { category: true },
+    })
+    .catch(() => [] as any[])
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-xs font-medium text-gray-600">최근 발행 정책</div>
+        <Link href="/content/policy" className="text-[10px] text-blue-500 hover:underline">전체 →</Link>
+      </div>
+      {recentPolicies.length === 0 ? (
+        <div className="py-8 text-center text-xs text-gray-400">아직 발행된 정책이 없습니다</div>
+      ) : (
+        <div className="overflow-x-auto -mx-4 px-4">
+          <table className="w-full text-xs min-w-[300px]">
+            <thead>
+              <tr className="text-gray-400 border-b border-gray-100">
+                <th className="text-left py-1.5 font-normal">정책명</th>
+                <th className="text-left py-1.5 font-normal hidden sm:table-cell">카테고리</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentPolicies.slice(0, 8).map((p: any) => (
+                <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50">
+                  <td className="py-2 text-gray-700 max-w-[200px] truncate">
+                    <Link href={`/content/policy/${p.id}/edit`} className="hover:text-blue-600">{p.title}</Link>
+                  </td>
+                  <td className="py-2 text-gray-400 hidden sm:table-cell">{p.category?.name ?? '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RecentPoliciesSkeleton() {
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl p-4 animate-pulse">
+      <div className="h-4 bg-gray-100 rounded w-1/3 mb-4" />
+      <div className="space-y-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-5 bg-gray-50 rounded" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────
+// 페이지 셸 — 즉시 렌더, 데이터는 스트리밍
+// ──────────────────────────────────────────────────────────────
+export default function DashboardPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full">
       <div className="flex items-end justify-between mb-6 lg:mb-8">
@@ -115,22 +239,12 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI 6개 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4 mb-6 lg:mb-8">
-        {kpis.map((k) => (
-          <Link
-            key={k.label}
-            href={k.href}
-            className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4 hover:border-blue-200 hover:shadow-sm transition-all"
-          >
-            <div className="text-[10px] sm:text-xs text-gray-400 mb-1">{k.label}</div>
-            <div className={`text-lg sm:text-xl lg:text-2xl font-medium ${k.color}`}>{k.value}</div>
-            <div className="text-[10px] sm:text-xs text-gray-400 mt-1">{k.sub}</div>
-          </Link>
-        ))}
-      </div>
+      {/* KPI 6개 — 가장 먼저 쿼리 완료 */}
+      <Suspense fallback={<KpiSkeleton />}>
+        <KpiCards />
+      </Suspense>
 
-      {/* 빠른 액션 */}
+      {/* 빠른 액션 — DB 쿼리 없음, 즉시 렌더 */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 lg:mb-8">
         <Link href="/content/policy" className="bg-white border border-gray-100 rounded-xl p-3 hover:border-blue-200 hover:bg-blue-50 transition-colors group">
           <div className="text-xs font-medium text-gray-700 group-hover:text-blue-700">정책 관리</div>
@@ -150,84 +264,14 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {/* API 수집 요약 + 최근 발행 정책 */}
+      {/* API 수집 + 최근 정책 — 각각 독립 스트리밍 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        {/* API 수집 요약 */}
-        <div className="bg-white border border-gray-100 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-xs font-medium text-gray-600">API 수집 상태</div>
-            <Link href="/api-status" className="text-[10px] text-blue-500 hover:underline">전체 →</Link>
-          </div>
-          {apiSources.length === 0 ? (
-            <div className="py-6 text-center text-xs text-gray-400">
-              등록된 API 소스가 없습니다.<br />
-              <span className="text-amber-600">마이그레이션 SQL 실행 필요</span>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {apiSources.slice(0, 4).map((s: any) => (
-                <div key={s.id} className="flex items-center justify-between text-xs py-1.5 border-b border-gray-50 last:border-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-700">{s.name}</span>
-                    {statusBadge(s.status)}
-                  </div>
-                  <div className="text-right">
-                    <div className="text-gray-500">오늘 {s.todayCount ?? 0}건</div>
-                    <div className="text-[10px] text-gray-400">{relativeTime(s.lastSuccess)}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {recentRuns.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="text-[10px] text-gray-400 mb-2">최근 실행</div>
-              <div className="space-y-1">
-                {recentRuns.slice(0, 3).map((r: any) => (
-                  <div key={r.id} className="flex items-center justify-between text-[11px]">
-                    <span className="text-gray-600 truncate">{r.source?.name ?? '-'}</span>
-                    <span className="flex items-center gap-2">
-                      {statusBadge(r.status)}
-                      <span className="text-gray-400">{relativeTime(r.startedAt)}</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 최근 발행 정책 */}
-        <div className="bg-white border border-gray-100 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-xs font-medium text-gray-600">최근 발행 정책</div>
-            <Link href="/content/policy" className="text-[10px] text-blue-500 hover:underline">전체 →</Link>
-          </div>
-          {recentPolicies.length === 0 ? (
-            <div className="py-8 text-center text-xs text-gray-400">아직 발행된 정책이 없습니다</div>
-          ) : (
-            <div className="overflow-x-auto -mx-4 px-4">
-              <table className="w-full text-xs min-w-[300px]">
-                <thead>
-                  <tr className="text-gray-400 border-b border-gray-100">
-                    <th className="text-left py-1.5 font-normal">정책명</th>
-                    <th className="text-left py-1.5 font-normal hidden sm:table-cell">카테고리</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentPolicies.slice(0, 8).map((p: any) => (
-                    <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="py-2 text-gray-700 max-w-[200px] truncate">
-                        <Link href={`/content/policy/${p.id}/edit`} className="hover:text-blue-600">{p.title}</Link>
-                      </td>
-                      <td className="py-2 text-gray-400 hidden sm:table-cell">{p.category?.name ?? '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        <Suspense fallback={<ApiSummarySkeleton />}>
+            <ApiSummary />
+        </Suspense>
+        <Suspense fallback={<RecentPoliciesSkeleton />}>
+            <RecentPolicies />
+        </Suspense>
       </div>
 
       {/* 하단 안내 */}
