@@ -9,15 +9,15 @@ import {
   getPv,
   getUv,
   getChannelDistribution,
-  getPaidVsOrganic,
-  getSourceDetail,
+  bucketizeChannels,
   getTopCampaigns,
   getReferrerDomains,
   getPaidSummary,
   type Range,
 } from '@/lib/traffic-stats'
-import { CHANNEL_LABEL, type Channel, type TrafficSource } from '@/lib/tracking'
+import { CHANNEL_LABEL, type Channel } from '@/lib/tracking'
 import TrafficCharts from './TrafficCharts'
+import SourceDetailsGrid from './SourceDetailsGrid'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -53,12 +53,6 @@ function label(source: string) {
   return SOURCE_LABEL[source] ?? source
 }
 
-// 상세 카드로 노출할 핵심 채널 소스 (구글/네이버/X/Threads/인스타 + 유튜브/페이스북/틱톡/카카오)
-const DETAIL_SOURCES: TrafficSource[] = [
-  'google', 'naver', 'x', 'threads', 'instagram',
-  'facebook', 'youtube', 'tiktok', 'kakao',
-]
-
 export default async function TrafficPage({
   searchParams,
 }: {
@@ -69,6 +63,8 @@ export default async function TrafficPage({
     ? (rangeRaw as Range)
     : '7d'
 
+  // ⚡ 서버에서는 핵심 지표 12개만 병렬 조회 (캐시 히트 시 거의 즉시).
+  //    9개 소스 상세 카드는 클라이언트가 useEffect + /api/admin/traffic/source-detail 로 지연 로드.
   const [
     today,
     sources,
@@ -79,11 +75,9 @@ export default async function TrafficPage({
     pv,
     uv,
     channels,
-    paidOrganic,
     campaigns,
     referrers,
     paidSummary,
-    detailResults,
   ] = await Promise.all([
     getTodayKpis(),
     getSourceDistribution(range),
@@ -94,12 +88,13 @@ export default async function TrafficPage({
     getPv(range),
     getUv(range),
     getChannelDistribution(range),
-    getPaidVsOrganic(range),
     getTopCampaigns(range, 15),
     getReferrerDomains(range, 10),
     getPaidSummary(range),
-    Promise.all(DETAIL_SOURCES.map(s => getSourceDetail(range, s))),
   ])
+
+  // channels를 재사용하여 7버킷 롤업 — 추가 쿼리 없음.
+  const paidOrganic = bucketizeChannels(channels)
 
   type SourceCount = { source: string; count: number }
   const directToday = today.sourcesToday.find((s: SourceCount) => s.source === 'direct')?.count ?? 0
@@ -206,7 +201,7 @@ export default async function TrafficPage({
         )}
       </div>
 
-      {/* 도넛 + 라인 (기존 차트 유지 — 전체 소스별 추이) */}
+      {/* 도넛 + 라인 (기존 차트) */}
       <TrafficCharts
         sources={sources.map((s: SourceCount) => ({ source: s.source, label: label(s.source), count: s.count }))}
         devices={devices}
@@ -216,12 +211,8 @@ export default async function TrafficPage({
         range={range}
       />
 
-      {/* 소스별 상세 카드 (구글/네이버/X/Threads/인스타 + 기타 주요) */}
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-        {detailResults.map(d => (
-          <SourceDetailCard key={d.source} detail={d} />
-        ))}
-      </div>
+      {/* 소스별 상세 카드 (lazy-load 클라이언트) */}
+      <SourceDetailsGrid range={range} />
 
       {/* 유료 캠페인 요약 */}
       <div className="bg-white border border-gray-100 rounded-xl p-4 mt-5">
@@ -358,7 +349,8 @@ export default async function TrafficPage({
       <p className="text-[10px] text-gray-400 mt-4 leading-relaxed">
         * 관리자/내부 경로(/dashboard, /content, /api-status, /traffic, /marketing 등)는 수집 대상에서 제외됩니다.<br />
         * 유료/자연 분류는 <code className="bg-gray-100 px-1 rounded">utm_medium</code>(cpc/paid/paid_social/display) 및 광고 클릭 ID(gclid, fbclid, msclkid, ttclid, yclid, n_media, kakaoad) 기준입니다.<br />
-        * Meta/네이버 검색광고처럼 utm_medium을 자동으로 넣지 않는 플랫폼은 광고 URL에 직접 UTM을 부여하면 정확도가 올라갑니다.
+        * Meta/네이버 검색광고처럼 utm_medium을 자동으로 넣지 않는 플랫폼은 광고 URL에 직접 UTM을 부여하면 정확도가 올라갑니다.<br />
+        * 서버 캐시 30초 · 소스 상세 카드는 페이지 로드 후 비동기 조회.
       </p>
     </div>
   )
@@ -414,70 +406,4 @@ function channelBarColor(c: Channel) {
   if (c === 'email')                   return 'bg-indigo-400'
   if (c === 'referral')                return 'bg-blue-400'
   return 'bg-slate-300'
-}
-
-function SourceDetailCard({ detail }: {
-  detail: {
-    source: TrafficSource
-    total: number
-    paid: number
-    organic: number
-    topCampaigns: { campaign: string; count: number }[]
-    topLandingPages: { path: string; count: number }[]
-  }
-}) {
-  const paidPct = detail.total > 0 ? Math.round((detail.paid / detail.total) * 100) : 0
-  const organicPct = detail.total > 0 ? 100 - paidPct : 0
-  return (
-    <div className="bg-white border border-gray-100 rounded-xl p-4">
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-sm font-medium text-gray-800">{SOURCE_LABEL[detail.source] ?? detail.source}</div>
-        <div className="text-[10px] text-gray-400">{detail.total.toLocaleString()} PV</div>
-      </div>
-      {detail.total === 0 ? (
-        <div className="py-4 text-center text-[11px] text-gray-400">데이터 없음</div>
-      ) : (
-        <>
-          {/* 유료/자연 바 */}
-          <div className="flex items-center gap-2 text-[10px] text-gray-500 mb-1">
-            <span>유료 {detail.paid.toLocaleString()} ({paidPct}%)</span>
-            <span>·</span>
-            <span>자연 {detail.organic.toLocaleString()} ({organicPct}%)</span>
-          </div>
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex mb-3">
-            {paidPct > 0 && <div className="h-full bg-red-400" style={{ width: `${paidPct}%` }} />}
-            {organicPct > 0 && <div className="h-full bg-amber-300" style={{ width: `${organicPct}%` }} />}
-          </div>
-
-          {detail.topCampaigns.length > 0 && (
-            <div className="mb-2">
-              <div className="text-[10px] text-gray-400 mb-1">상위 캠페인</div>
-              <ul className="space-y-0.5">
-                {detail.topCampaigns.slice(0, 3).map((c, i) => (
-                  <li key={`${c.campaign}-${i}`} className="flex justify-between text-[11px]">
-                    <span className="text-gray-600 truncate max-w-[70%]">{c.campaign}</span>
-                    <span className="text-gray-400">{c.count.toLocaleString()}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {detail.topLandingPages.length > 0 && (
-            <div>
-              <div className="text-[10px] text-gray-400 mb-1">상위 랜딩 페이지</div>
-              <ul className="space-y-0.5">
-                {detail.topLandingPages.slice(0, 3).map((p, i) => (
-                  <li key={`${p.path}-${i}`} className="flex justify-between text-[11px]">
-                    <span className="text-gray-600 truncate max-w-[70%]">{p.path}</span>
-                    <span className="text-gray-400">{p.count.toLocaleString()}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  )
 }

@@ -176,6 +176,10 @@ model PageView {
   @@index([platform, createdAt])
   @@index([sessionId])
   @@index([visitorId])
+  // 유료/오가닉 분류 + 캠페인 분석용 (2026-04 추가)
+  @@index([utmMedium, createdAt])
+  @@index([utmCampaign, createdAt])
+  @@index([source, utmMedium, createdAt])
 }
 
 enum PolicyStatus {
