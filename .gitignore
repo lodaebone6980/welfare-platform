@@ -26,3 +26,6 @@ yarn-debug.log*
 
 # Prisma artifacts
 prisma/migrations/dev.db*
+
+# Batch AI content pipeline (export/import JSON)
+tmp/
