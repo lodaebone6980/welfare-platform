@@ -6,7 +6,7 @@ import PolicyListClient from './PolicyListClient'
  * 기존 CSR 의 "불러오는 중..." 스피너를 제거하고 즉시 테이블 렌더.
  * 상태/검색 필터는 클라이언트에서 기존 API 로 refetch.
  */
-export const dynamic = 'force-dynamic'
+// force-dynamic 제거: Link prefetch 활성화
 export const revalidate = 30
 
 const PAGE_SIZE = 20

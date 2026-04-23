@@ -4,7 +4,7 @@ import { unstable_cache } from 'next/cache'
 import CategoryClient from './CategoryClient'
 
 // 카테고리 편집은 빈도가 낮으므로 5분 캐시. 편집 시 revalidatePath 수동 호출로 무효화.
-export const dynamic = 'force-dynamic'
+// force-dynamic 제거: Link prefetch 활성화
 export const revalidate = 300
 
 type CategoryRow = {

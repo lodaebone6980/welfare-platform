@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 
-export const dynamic = 'force-dynamic'
+// force-dynamic 제거: Link prefetch 활성화
 export const revalidate = 600
 
 type FeedItem = {

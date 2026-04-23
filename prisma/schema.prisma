@@ -200,14 +200,20 @@ model User {
   name          String?
   image         String?
   emailVerified DateTime?
-  role          String    @default("USER")
+  role          String    @default("USER")  // USER | ADMIN | BLOCKED
   passwordHash  String?
+  // 2026-04 추가: 회원관리 확장
+  lastLoginAt   DateTime?                    // 마지막 로그인 (NextAuth signIn 콜백에서 갱신)
+  blockedAt     DateTime?                    // 차단 처리 시각 (role = BLOCKED 일 때만 의미 있음)
+  blockedReason String?                      // 차단 사유 (관리 메모)
   accounts      Account[]
   sessions      Session[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   @@index([role])
+  @@index([createdAt(sort: Desc)])
+  @@index([lastLoginAt])
 }
 
 model Account {

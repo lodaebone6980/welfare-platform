@@ -19,9 +19,19 @@ export const authOptions: NextAuthOptions = {
 
   providers: [
     // ── 일반 유저: 카카오 ──────────────────────────────
+    // scope:
+    //   profile_nickname, profile_image, account_email — 기본 프로필/이메일
+    //   plusfriends — 카카오톡 채널 추가 상태/메시지 수신 동의
+    //     (활성화 조건: 개발자콘솔 > 카카오 로그인 > 동의항목에서 "카카오톡 채널 추가 상태 및 내역"
+    //      을 선택 동의로 설정, 그리고 비즈 앱 전환 필요)
     KakaoProvider({
       clientId: process.env.KAKAO_CLIENT_ID || '',
       clientSecret: process.env.KAKAO_CLIENT_SECRET || '',
+      authorization: {
+        params: {
+          scope: 'profile_nickname profile_image account_email plusfriends',
+        },
+      },
     }),
 
     // ── 일반 유저: 구글 (ENV: GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET) ──
@@ -100,6 +110,22 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
+    // 차단(BLOCKED)된 유저의 로그인 거부. providers 의 authorize 와 별개로
+    // Kakao/Google 등 OAuth 로 가입되어 있는 유저도 여기서 막힌다.
+    async signIn({ user }) {
+      try {
+        const id = (user as any)?.id as string | undefined;
+        if (!id) return true; // 최초 가입: DB 에 아직 없음 → 통과
+        const db = await prisma.user.findUnique({
+          where: { id },
+          select: { role: true },
+        });
+        if (db?.role === 'BLOCKED') return false;
+      } catch {
+        // DB 장애 시 로그인은 허용 (가용성 우선)
+      }
+      return true;
+    },
     async jwt({ token, user, account }) {
       // 최초 로그인: DB 에서 role 재확정
       if (user) {
@@ -138,6 +164,18 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account }) {
       if (account?.provider === 'admin-credentials') {
         console.log(`[ADMIN SIGNIN] ${user.email} @ ${new Date().toISOString()}`);
+      }
+      // 마지막 로그인 시각 갱신 (실패해도 로그인 흐름에 영향 없도록 swallow)
+      try {
+        const id = (user as any)?.id as string | undefined;
+        if (id) {
+          await prisma.user.update({
+            where: { id },
+            data: { lastLoginAt: new Date() as any },
+          });
+        }
+      } catch {
+        // ignore
       }
     },
   },

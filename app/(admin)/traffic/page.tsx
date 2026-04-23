@@ -19,8 +19,10 @@ import { CHANNEL_LABEL, type Channel } from '@/lib/tracking'
 import TrafficCharts from './TrafficCharts'
 import SourceDetailsGrid from './SourceDetailsGrid'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// ⚠️ force-dynamic 제거: Next.js 14에서 force-dynamic은 <Link prefetch> 가
+//   HTML 을 prefetch 하지 못하게 만들어 메뉴 클릭 시 "서버 풀 렌더 대기" 를
+//   유발한다. admin 은 인증 쿠키로 이미 런타임 dynamic 이 되므로 굳이 강제하지 않는다.
+export const revalidate = 30
 
 const RANGE_OPTIONS: { label: string; value: Range }[] = [
   { label: '24시간', value: '24h' },

@@ -32,6 +32,12 @@ const NAV: NavItem[] = [
     ],
   },
   {
+    label: '사용자',
+    children: [
+      { label: '회원 관리', href: '/members' },
+    ],
+  },
+  {
     label: '마케팅 · 광고',
     children: [
       { label: '구글광고 에이전트', href: '/marketing/google-ads' },

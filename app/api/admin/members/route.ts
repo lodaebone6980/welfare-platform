@@ -22,6 +22,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const q = (url.searchParams.get('q') || '').trim();
   const provider = (url.searchParams.get('provider') || '').trim();
+  const role = (url.searchParams.get('role') || '').trim();   // USER | ADMIN | BLOCKED
   const limitRaw = Number(url.searchParams.get('limit') || '100');
   const limit = Math.max(1, Math.min(500, isNaN(limitRaw) ? 100 : limitRaw));
 
@@ -35,17 +36,23 @@ export async function GET(req: Request) {
   if (provider) {
     where.accounts = { some: { provider } };
   }
+  if (role && ['USER', 'ADMIN', 'BLOCKED'].includes(role)) {
+    where.role = role;
+  }
 
-  const users = await prisma.user.findMany({
-    where,
-    include: {
-      accounts: { select: { provider: true, providerAccountId: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: limit,
-  });
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      include: {
+        accounts: { select: { provider: true, providerAccountId: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    }),
+    prisma.user.count({ where }),
+  ]);
 
-  const sanitized = users.map((u) => ({
+  const sanitized = (users as any[]).map((u: any) => ({
     id: u.id,
     email: u.email,
     name: u.name,
@@ -53,10 +60,10 @@ export async function GET(req: Request) {
     role: u.role,
     emailVerified: u.emailVerified,
     createdAt: u.createdAt,
-    providers: u.accounts.map((a) => a.provider),
+    lastLoginAt: u.lastLoginAt ?? null,
+    blockedAt: u.blockedAt ?? null,
+    providers: (u.accounts ?? []).map((a: any) => a.provider),
   }));
-
-  const total = await prisma.user.count({ where });
 
   return NextResponse.json({ ok: true, total, users: sanitized });
 }

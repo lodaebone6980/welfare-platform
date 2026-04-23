@@ -2,8 +2,7 @@ import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 
-export const dynamic = 'force-dynamic'
-// 5분 캐시 — 검색 유입 키워드 변동 빈도 대비 충분
+// force-dynamic 제거: Link prefetch 활성화 + unstable_cache 가 이미 실 데이터 캐시.
 export const revalidate = 300
 
 /**

@@ -4,7 +4,7 @@ import { KR_REGIONS } from '@/lib/regions'
 import BulkClient from './BulkClient'
 
 // 최근 발행 정책 50건 리스트는 5분 주기로 충분
-export const dynamic = 'force-dynamic'
+// force-dynamic 제거: Link prefetch 활성화
 export const revalidate = 300
 
 async function getBasePolicies() {

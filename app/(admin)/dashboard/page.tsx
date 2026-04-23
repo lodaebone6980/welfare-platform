@@ -2,8 +2,8 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Suspense } from 'react'
 
-export const dynamic = 'force-dynamic'
-// KPI 집계는 5분 캐시로 완화 (어드민만 접근하므로 실시간 필요 없음)
+// force-dynamic 제거: Link prefetch가 RSC payload 를 재사용하도록 허용.
+// KPI 집계는 unstable_cache + 5분 revalidate 로 이미 캐시됨.
 export const revalidate = 300
 
 function statusBadge(status: string | null | undefined) {

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 
 // 어드민만 접근 → 2분 캐시 허용 (API 상태는 cron 이후에만 갱신되므로 실시간 불필요)
-export const dynamic = 'force-dynamic'
+// force-dynamic 제거: Link prefetch 활성화
 export const revalidate = 120
 
 type ApiSourceRow = {

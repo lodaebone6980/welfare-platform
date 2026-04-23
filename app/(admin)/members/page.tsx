@@ -1,12 +1,16 @@
 import { prisma } from '@/lib/prisma'
 import MembersClient, { type MemberRow } from './MembersClient'
+import MembersStats from './MembersStats'
 
 /**
- * 회원 관리 — 초기 데이터를 서버에서 prefetch 해서 HTML 과 함께 내려준다.
- *   기존: CSR + useEffect fetch → 3번의 네트워크 홉(HTML → JS → /api/admin/members → DB)
- *   변경: 서버 컴포넌트가 DB 직접 조회 → 1번의 홉으로 데이터까지 포함
+ * 회원 관리
+ *   상단: 통계 카드 (CSR, /api/admin/members/stats 호출)
+ *   하단: 회원 테이블 (서버 prefetch 된 초기 200건)
+ *
+ * 서버에서 기본 목록을 prefetch 해 첫 페인트에서 바로 테이블이 보이도록 하고,
+ * 통계는 별도 CSR 로딩으로 점진 렌더.
  */
-export const dynamic = 'force-dynamic'
+// force-dynamic 제거: 인증 쿠키로 이미 런타임 dynamic 이지만 Link prefetch 차단을 피함.
 export const revalidate = 60
 
 async function getInitialMembers(): Promise<{ rows: MemberRow[]; total: number }> {
@@ -27,6 +31,8 @@ async function getInitialMembers(): Promise<{ rows: MemberRow[]; total: number }
       role: u.role,
       emailVerified: u.emailVerified ? new Date(u.emailVerified).toISOString() : null,
       createdAt: new Date(u.createdAt).toISOString(),
+      lastLoginAt: u.lastLoginAt ? new Date(u.lastLoginAt).toISOString() : null,
+      blockedAt: u.blockedAt ? new Date(u.blockedAt).toISOString() : null,
       providers: (u.accounts ?? []).map((a: any) => a.provider),
     }))
     return { rows, total }
@@ -37,5 +43,10 @@ async function getInitialMembers(): Promise<{ rows: MemberRow[]; total: number }
 
 export default async function MembersPage() {
   const { rows, total } = await getInitialMembers()
-  return <MembersClient initialRows={rows} initialTotal={total} />
+  return (
+    <div className="space-y-6 p-6">
+      <MembersStats />
+      <MembersClient initialRows={rows} initialTotal={total} />
+    </div>
+  )
 }

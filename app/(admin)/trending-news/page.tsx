@@ -14,7 +14,7 @@ import { collectTrendingSupportNews, stripHtml } from '@/lib/collectors/naver-ne
 import { collectGovNews } from '@/lib/collectors/gov-rss';
 import TrendingNewsClient from './_components/TrendingNewsClient';
 
-export const dynamic = 'force-dynamic';
+// force-dynamic 제거: Link prefetch 활성화.
 export const revalidate = 600; // 10분 캐시
 
 type Candidate = {
