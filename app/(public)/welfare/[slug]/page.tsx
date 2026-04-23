@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
-import { notFound, permanentRedirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { isValidCategorySlug } from '@/lib/categories';
-import { SITE_NAME } from '@/lib/env';
+import { SITE_NAME, SITE_URL } from '@/lib/env';
 import {
   generatePolicyJsonLd,
   generateFaqJsonLd,
@@ -18,31 +18,29 @@ import {
   getDday as getDdayShared,
   extractBenefitSummary,
 } from '@/lib/policy-display';
+import { getPolicyBySlug, getRelatedPolicies } from '@/lib/policy-detail';
+
+/**
+ * 레거시 URL: /welfare/:slug
+ * ---------------------------------------------------------------
+ * Google/Naver 가 과거에 색인한 URL 이라 살려둠.
+ *
+ * [성능 최적화 — 2026-04 변경]
+ *   - 기존: 카테고리가 있으면 /:category/:slug 로 301 리다이렉트
+ *           → 검색 클릭 1회 = 2번의 SSR + 2번의 DB 조회 + 추가 RTT
+ *   - 변경: 그 자리에서 직접 렌더 + <link rel="canonical"> 으로 새 URL 가리킴
+ *           → 검색 엔진은 canonical 을 따라 점진적으로 새 URL 로 이전
+ *           → 사용자는 redirect 없이 즉시 페이지 확인
+ *
+ *   - getPolicyBySlug: React.cache() 로 generateMetadata + page render dedupe
+ *   - revalidate=300: 5분 ISR (정책 데이터 변경 빈도 낮음)
+ */
+
+// ISR: 5분마다 재검증
+export const revalidate = 300;
 
 interface Props {
   params: { slug: string };
-}
-
-function decodeSlug(slug: string): string {
-  try {
-    return decodeURIComponent(slug);
-  } catch (e) {
-    return slug;
-  }
-}
-
-async function getPolicy(slug: string) {
-  try {
-    const decoded = decodeSlug(slug);
-    const policy = await prisma.policy.findFirst({
-      where: { slug: decoded, status: 'PUBLISHED' },
-      include: { category: true, faqs: true },
-    });
-    return policy;
-  } catch (e) {
-    console.error('getPolicy error:', e);
-    return null;
-  }
 }
 
 function formatDate(date: Date | string | null | undefined): string {
@@ -80,7 +78,7 @@ function getDday(
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const policy = await getPolicy(params.slug);
+  const policy = await getPolicyBySlug(params.slug);
   if (!policy) {
     return { title: '정책을 찾을 수 없습니다' };
   }
@@ -94,22 +92,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     applicationMethod: policy.applicationMethod || undefined,
   };
   const ogData = generatePolicyOgData(seoData);
+
+  // canonical: 카테고리가 있으면 새 URL, 없으면 현재 URL
+  const catSlug = policy.category?.slug;
+  const canonicalPath =
+    catSlug && isValidCategorySlug(catSlug)
+      ? `/${catSlug}/${encodeURIComponent(policy.slug)}`
+      : `/welfare/${encodeURIComponent(policy.slug)}`;
+
   return {
     title: `${policy.title} | ${SITE_NAME}`,
     description: generatePolicyMetaDescription(seoData),
     openGraph: { title: ogData.title, description: ogData.description, type: 'article' },
+    alternates: { canonical: `${SITE_URL}${canonicalPath}` },
   };
 }
 
 export default async function PolicyDetailPage({ params }: Props) {
-  const policy = await getPolicy(params.slug);
+  // cache() 로 generateMetadata 와 동일 SQL 1회 공유
+  const policy = await getPolicyBySlug(params.slug);
   if (!policy) notFound();
 
-  // 카테고리가 유효하면 새 canonical URL (/:category/:slug) 로 301 리다이렉트
-  const catSlug = policy.category?.slug;
-  if (catSlug && isValidCategorySlug(catSlug)) {
-    permanentRedirect(`/${catSlug}/${encodeURIComponent(policy.slug)}`);
-  }
+  // [성능] 과거에는 카테고리가 있으면 /:category/:slug 로 301 리다이렉트했으나,
+  // 검색 클릭 시 RTT 1회 추가 + DB 조회 2회를 유발하므로 제거.
+  // <link rel="canonical"> 메타 태그로 검색엔진에게 새 URL 을 알리고
+  // 사용자에게는 즉시 페이지를 보여줌.
 
   const dday = getDdayShared(policy.deadline);
 
@@ -132,15 +139,11 @@ export default async function PolicyDetailPage({ params }: Props) {
   });
   const displayTitle = cleanPolicyTitle(policy.title);
 
-  let relatedPolicies: any[] = [];
-  try {
-    relatedPolicies = await prisma.policy.findMany({
-      where: { categoryId: policy.categoryId, id: { not: policy.id }, status: 'PUBLISHED' },
-      take: 4,
-      orderBy: { viewCount: 'desc' },
-      select: { id: true, title: true, slug: true, geoRegion: true, excerpt: true, category: { select: { name: true, slug: true } } },
-    });
-  } catch (e) {}
+  const relatedPolicies = await getRelatedPolicies({
+    categoryId: policy.categoryId,
+    excludeId: policy.id,
+    take: 4,
+  });
 
   const seoData: PolicySeoData = {
     title: policy.title,
@@ -398,16 +401,22 @@ export default async function PolicyDetailPage({ params }: Props) {
           <section className="mb-8">
             <h2 className="text-lg font-bold mb-4">관련 정책</h2>
             <div className="space-y-3">
-              {relatedPolicies.map((rp: any) => (
-                <Link key={rp.id} href={`/welfare/${encodeURIComponent(rp.slug)}`} className="block bg-white rounded-xl border p-4 hover:border-blue-300 hover:shadow-sm transition-all">
-                  <div className="flex items-center gap-2 mb-1">
-                    {rp.category?.name && <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-gray-600">{rp.category.name}</span>}
-                    {rp.geoRegion && <span className="text-xs text-gray-400">{rp.geoRegion}</span>}
-                  </div>
-                  <p className="font-medium text-gray-900">{rp.title}</p>
-                  {rp.excerpt && <p className="text-sm text-gray-500 mt-1 line-clamp-1">{rp.excerpt}</p>}
-                </Link>
-              ))}
+              {relatedPolicies.map((rp) => {
+                const relHref =
+                  rp.category?.slug && isValidCategorySlug(rp.category.slug)
+                    ? `/${rp.category.slug}/${encodeURIComponent(rp.slug)}`
+                    : `/welfare/${encodeURIComponent(rp.slug)}`;
+                return (
+                  <Link key={rp.id} href={relHref} className="block bg-white rounded-xl border p-4 hover:border-blue-300 hover:shadow-sm transition-all">
+                    <div className="flex items-center gap-2 mb-1">
+                      {rp.category?.name && <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-gray-600">{rp.category.name}</span>}
+                      {rp.geoRegion && <span className="text-xs text-gray-400">{rp.geoRegion}</span>}
+                    </div>
+                    <p className="font-medium text-gray-900">{rp.title}</p>
+                    {rp.excerpt && <p className="text-sm text-gray-500 mt-1 line-clamp-1">{rp.excerpt}</p>}
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}

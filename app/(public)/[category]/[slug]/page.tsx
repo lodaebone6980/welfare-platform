@@ -18,6 +18,7 @@ import {
   getDday as getDdayShared,
   extractBenefitSummary,
 } from '@/lib/policy-display';
+import { getPolicyBySlug, getRelatedPolicies } from '@/lib/policy-detail';
 
 /**
  * 새 Canonical URL: /:category/:slug
@@ -29,32 +30,17 @@ import {
  *   4) 모두 일치하면 상세 페이지 렌더
  *
  * 기존 /welfare/:slug 는 여전히 작동하나 이 URL 을 점진적으로 canonical 로 삼음.
+ *
+ * 성능:
+ *   - getPolicyBySlug 는 React.cache() 로 generateMetadata + page render 간 dedupe
+ *   - revalidate=300: 5분 ISR 캐시 (정책 데이터 변경 빈도 낮음)
  */
+
+// ISR: 5분마다 재검증 — 검색 트래픽이 많은 페이지는 캐시에서 즉시 응답
+export const revalidate = 300;
 
 interface Props {
   params: { category: string; slug: string };
-}
-
-function decodeSlug(slug: string): string {
-  try {
-    return decodeURIComponent(slug);
-  } catch (e) {
-    return slug;
-  }
-}
-
-async function getPolicy(slug: string) {
-  try {
-    const decoded = decodeSlug(slug);
-    const policy = await prisma.policy.findFirst({
-      where: { slug: decoded, status: 'PUBLISHED' },
-      include: { category: true, faqs: true },
-    });
-    return policy;
-  } catch (e) {
-    console.error('getPolicy error:', e);
-    return null;
-  }
 }
 
 function formatDate(date: Date | string | null | undefined): string {
@@ -95,7 +81,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isValidCategorySlug(params.category)) {
     return { title: '정책을 찾을 수 없습니다' };
   }
-  const policy = await getPolicy(params.slug);
+  const policy = await getPolicyBySlug(params.slug);
   if (!policy) {
     return { title: '정책을 찾을 수 없습니다' };
   }
@@ -124,8 +110,8 @@ export default async function CategoryPolicyDetailPage({ params }: Props) {
   // 1) 화이트리스트 체크
   if (!isValidCategorySlug(params.category)) notFound();
 
-  // 2) Policy 조회
-  const policy = await getPolicy(params.slug);
+  // 2) Policy 조회 (cache() 로 generateMetadata 와 dedupe)
+  const policy = await getPolicyBySlug(params.slug);
   if (!policy) notFound();
 
   // 3) 카테고리 불일치 → canonical URL 로 301 리다이렉트
@@ -159,15 +145,11 @@ export default async function CategoryPolicyDetailPage({ params }: Props) {
   });
   const displayTitle = cleanPolicyTitle(policy.title);
 
-  let relatedPolicies: any[] = [];
-  try {
-    relatedPolicies = await prisma.policy.findMany({
-      where: { categoryId: policy.categoryId, id: { not: policy.id }, status: 'PUBLISHED' },
-      take: 4,
-      orderBy: { viewCount: 'desc' },
-      select: { id: true, title: true, slug: true, geoRegion: true, excerpt: true, category: { select: { name: true, slug: true } } },
-    });
-  } catch (e) {}
+  const relatedPolicies = await getRelatedPolicies({
+    categoryId: policy.categoryId,
+    excludeId: policy.id,
+    take: 4,
+  });
 
   // SEO + AEO + GEO 용 structured data — title/slug 필수, 나머지는 optional
   const seoData: PolicySeoData = {
