@@ -86,6 +86,7 @@ async function getCategoryWithPolicies(slug: string) {
           slug: true,
           title: true,
           excerpt: true,
+          tags: true, // 정책타입 자동 뱃지 추론에 활용
           geoRegion: true,
           viewCount: true,
           publishedAt: true,

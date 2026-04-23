@@ -1,11 +1,16 @@
 import Link from 'next/link';
 import { policyHref } from '@/lib/categories';
+import { inferPolicyTypes } from '@/lib/policy-tags';
 
 interface PolicyCardProps {
   policy: {
     slug: string;
     title: string;
     excerpt?: string | null;
+    content?: string | null;
+    description?: string | null;
+    eligibility?: string | null;
+    applicationMethod?: string | null;
     category?: { name: string; slug: string } | null;
     geoRegion?: string | null;
     viewCount?: number;
@@ -19,6 +24,8 @@ interface PolicyCardProps {
   variant?: 'default' | 'compact' | 'horizontal';
   /** 카드 하단에 "자료: 정부24·복지로" 출처 한 줄 노출 (default 기준 true) */
   showSource?: boolean;
+  /** 카테고리 뱃지 옆에 정책타입 뱃지(지역화폐·현금지급 등) 노출 */
+  showTypeBadges?: boolean;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -65,13 +72,33 @@ function isAlwaysOpen(deadline?: string | null): boolean {
   return !d || /상시|수시|연중|상시모집|상시접수/.test(d);
 }
 
-export default function PolicyCard({ policy, variant = 'default', showSource = true }: PolicyCardProps) {
+export default function PolicyCard({
+  policy,
+  variant = 'default',
+  showSource = true,
+  showTypeBadges = true,
+}: PolicyCardProps) {
   const categoryColor = CATEGORY_COLORS[policy.category?.name || ''] || 'bg-gray-50 text-gray-700';
   const publishDate = policy.publishedAt
     ? new Date(policy.publishedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
     : '';
   const detailHref = policyHref({ categorySlug: policy.category?.slug, slug: policy.slug });
   const cta = ctaLabel(policy.category?.name, !!policy.applyUrl);
+  // 정책 타입 자동 뱃지 — 카드 종류별로 max 개수 다름
+  const typeBadges = showTypeBadges
+    ? inferPolicyTypes(
+        {
+          title: policy.title,
+          excerpt: policy.excerpt,
+          content: policy.content,
+          description: policy.description,
+          eligibility: policy.eligibility,
+          applicationMethod: policy.applicationMethod,
+          tags: policy.tags,
+        },
+        { max: variant === 'horizontal' ? 3 : 2 }
+      )
+    : [];
 
   if (variant === 'compact') {
     return (
@@ -105,11 +132,21 @@ export default function PolicyCard({ policy, variant = 'default', showSource = t
           className="absolute inset-0 z-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-200"
         />
         <div className="relative z-10 flex-1 min-w-0 flex flex-col pointer-events-none">
-          {policy.category && (
-            <span className={`inline-flex w-fit px-2 py-0.5 rounded-full text-[11px] font-medium mb-2 ${categoryColor}`}>
-              {displayCategoryName(policy.category.name)}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 flex-wrap mb-2">
+            {policy.category && (
+              <span className={`inline-flex w-fit px-2 py-0.5 rounded-full text-[11px] font-medium ${categoryColor}`}>
+                {displayCategoryName(policy.category.name)}
+              </span>
+            )}
+            {typeBadges.map((b) => (
+              <span
+                key={b.key}
+                className={`inline-flex w-fit px-2 py-0.5 rounded-full text-[11px] font-medium ${b.className}`}
+              >
+                {b.label}
+              </span>
+            ))}
+          </div>
           <h3 className="text-base font-bold text-gray-900 line-clamp-2 leading-tight">{policy.title}</h3>
           <p className="mt-1.5 text-sm text-gray-500 line-clamp-2 min-h-[2.5rem]">
             {policy.excerpt ?? ' '}
@@ -159,6 +196,14 @@ export default function PolicyCard({ policy, variant = 'default', showSource = t
               {displayCategoryName(policy.category.name)}
             </span>
           )}
+          {typeBadges.map((b) => (
+            <span
+              key={b.key}
+              className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium ${b.className}`}
+            >
+              {b.label}
+            </span>
+          ))}
           {isAlwaysOpen(policy.deadline) ? (
             <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700">
               🔁 상시

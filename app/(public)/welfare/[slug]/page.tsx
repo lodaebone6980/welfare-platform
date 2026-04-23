@@ -19,6 +19,7 @@ import {
   extractBenefitSummary,
 } from '@/lib/policy-display';
 import { getPolicyBySlug, getRelatedPolicies } from '@/lib/policy-detail';
+import { inferPolicyTypes } from '@/lib/policy-tags';
 
 /**
  * 레거시 URL: /welfare/:slug
@@ -181,6 +182,20 @@ export default async function PolicyDetailPage({ params }: Props) {
   };
   const catBadgeClass = categoryColor[catName] || 'bg-gray-100 text-gray-800';
 
+  // 정책타입 다중 뱃지 (지역화폐·현금지급·서민금융 등)
+  const typeBadges = inferPolicyTypes(
+    {
+      title: policy.title,
+      excerpt: policy.excerpt,
+      content: policy.content,
+      description: policy.description,
+      eligibility: policy.eligibility,
+      applicationMethod: policy.applicationMethod,
+      tags: policy.tags,
+    },
+    { max: 3 }
+  );
+
   return (
     <>
       {/* JSON-LD: SEO(GovernmentService) + GEO(BreadcrumbList) + AEO(FAQPage) */}
@@ -206,6 +221,11 @@ export default async function PolicyDetailPage({ params }: Props) {
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${catBadgeClass}`}>{(catName || '기타').replace(/·/g, ' ')}</span>
+            {typeBadges.map((b) => (
+              <span key={b.key} className={`px-3 py-1 rounded-full text-xs font-medium ${b.className}`}>
+                {b.label}
+              </span>
+            ))}
             {policy.geoRegion && <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{policy.geoRegion}</span>}
             {dday && (
               <span
