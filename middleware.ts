@@ -20,6 +20,7 @@ const ADMIN_ROUTE_PREFIXES = [
   '/trending-news',
   '/traffic',
   '/api-status',
+  '/diagnostics',
   '/admin',
 ];
 
@@ -75,6 +76,7 @@ export const config = {
     '/trending-news/:path*',
     '/traffic/:path*',
     '/api-status/:path*',
+    '/diagnostics/:path*',
     '/admin/:path*',
   ],
 };

@@ -1,30 +1,17 @@
-import { redirect } from 'next/navigation'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { Sidebar } from '@/components/layout/Sidebar'
 
-export const dynamic = 'force-dynamic'
-
-export default async function AdminLayout({
+/**
+ * 어드민 레이아웃.
+ * 인증은 프로젝트 루트 middleware.ts 에서 JWT 토큰 기반으로 이미 처리하므로
+ * 레이아웃 자체에서는 getServerSession을 호출하지 않는다.
+ *   → force-dynamic 제거 → 페이지 이동시 레이아웃 재렌더링 비용 최소화.
+ * 페이지별로 필요한 dynamic/revalidate 설정은 각 page.tsx에서 개별 지정한다.
+ */
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const session = await getServerSession(authOptions)
-  const role = (session?.user as { role?: string } | undefined)?.role
-  const email = session?.user?.email?.toLowerCase() ?? ''
-  const adminEmails = (process.env.ADMIN_EMAILS ?? '')
-    .split(',')
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean)
-
-  const isAdmin =
-    role === 'ADMIN' || role === 'admin' || adminEmails.includes(email)
-
-  if (!session || !isAdmin) {
-    redirect('/access/admin')
-  }
-
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar />

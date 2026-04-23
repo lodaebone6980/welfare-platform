@@ -28,7 +28,7 @@ export default async function BulkPage() {
         <div>
           <h1 className="text-lg font-medium text-gray-800">GEO 대량 생성</h1>
           <p className="text-[11px] text-gray-500 mt-0.5">
-            대표 정책 1건을 17개 광역시·도별 랜딩으로 복제합니다. (MVP 스텁)
+            대표 정책 1건을 17개 광역시·도별 랜딩으로 복제합니다.
           </p>
         </div>
         <Link
@@ -53,12 +53,12 @@ export default async function BulkPage() {
 
       <BulkClient policies={policies} regions={KR_REGIONS} />
 
-      <div className="mt-8 rounded-lg border border-amber-100 bg-amber-50 p-4 text-[12px] text-amber-800">
-        <p className="font-medium mb-1">⚠️ 현재 MVP 스텁 단계</p>
+      <div className="mt-8 rounded-lg border border-blue-100 bg-blue-50 p-4 text-[12px] text-blue-800">
+        <p className="font-medium mb-1">ℹ️ 복제 규칙 안내</p>
         <ul className="list-disc pl-4 space-y-0.5">
-          <li>실제 DB 복제는 아직 연결되어 있지 않습니다. 다음 PR에서 <code>/api/admin/bulk-region</code> 라우트를 붙입니다.</li>
+          <li>복제 실행은 <code>/api/admin/bulk-region</code> 을 호출합니다. <b>dryRun</b> 옵션으로 미리 시뮬레이션 가능합니다.</li>
           <li>SEO 리스크 방지를 위해 복제본은 canonical 을 원본에 걸고 지역 문구만 치환합니다.</li>
-          <li>복제 전 반드시 원본 정책의 <code>geoRegion</code> 이 전국 또는 null 인지 확인하세요.</li>
+          <li>복제 전 원본 정책의 <code>geoRegion</code> 이 전국 또는 null 인지 확인하세요. 이미 존재하는 slug 는 자동으로 건너뜁니다.</li>
         </ul>
       </div>
     </div>

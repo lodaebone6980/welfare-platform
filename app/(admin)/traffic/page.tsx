@@ -8,8 +8,15 @@ import {
   getTopPages,
   getPv,
   getUv,
+  getChannelDistribution,
+  getPaidVsOrganic,
+  getSourceDetail,
+  getTopCampaigns,
+  getReferrerDomains,
+  getPaidSummary,
   type Range,
 } from '@/lib/traffic-stats'
+import { CHANNEL_LABEL, type Channel, type TrafficSource } from '@/lib/tracking'
 import TrafficCharts from './TrafficCharts'
 
 export const dynamic = 'force-dynamic'
@@ -46,6 +53,12 @@ function label(source: string) {
   return SOURCE_LABEL[source] ?? source
 }
 
+// 상세 카드로 노출할 핵심 채널 소스 (구글/네이버/X/Threads/인스타 + 유튜브/페이스북/틱톡/카카오)
+const DETAIL_SOURCES: TrafficSource[] = [
+  'google', 'naver', 'x', 'threads', 'instagram',
+  'facebook', 'youtube', 'tiktok', 'kakao',
+]
+
 export default async function TrafficPage({
   searchParams,
 }: {
@@ -65,6 +78,12 @@ export default async function TrafficPage({
     topPages,
     pv,
     uv,
+    channels,
+    paidOrganic,
+    campaigns,
+    referrers,
+    paidSummary,
+    detailResults,
   ] = await Promise.all([
     getTodayKpis(),
     getSourceDistribution(range),
@@ -74,6 +93,12 @@ export default async function TrafficPage({
     getTopPages(range, 10),
     getPv(range),
     getUv(range),
+    getChannelDistribution(range),
+    getPaidVsOrganic(range),
+    getTopCampaigns(range, 15),
+    getReferrerDomains(range, 10),
+    getPaidSummary(range),
+    Promise.all(DETAIL_SOURCES.map(s => getSourceDetail(range, s))),
   ])
 
   type SourceCount = { source: string; count: number }
@@ -83,6 +108,8 @@ export default async function TrafficPage({
   const naverToday  = today.sourcesToday.find((s: SourceCount) => s.source === 'naver')?.count ?? 0
 
   const totalRange = sources.reduce((a: number, b: SourceCount) => a + b.count, 0)
+  const totalBucket = paidOrganic.paid + paidOrganic.organicSearch + paidOrganic.socialOrganic + paidOrganic.direct + paidOrganic.referral + paidOrganic.email + paidOrganic.other
+  const pct = (v: number) => (totalBucket > 0 ? Math.round((v / totalBucket) * 1000) / 10 : 0)
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full">
@@ -107,7 +134,7 @@ export default async function TrafficPage({
       </div>
 
       {/* 오늘 KPI */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
         <KpiCard label="오늘 페이지뷰" value={today.pvToday} suffix="회" accent="text-green-600" />
         <KpiCard label="오늘 UV"       value={today.uvToday} suffix="명" accent="text-blue-600" />
         <KpiCard label="직접 방문"     value={directToday}   suffix="회" accent="text-gray-500" />
@@ -121,7 +148,65 @@ export default async function TrafficPage({
         <KpiCard label="X(트위터) 유입"       value={xToday}     suffix="회" accent="text-sky-600" />
       </div>
 
-      {/* 도넛 + 라인 */}
+      {/* 유료 vs 자연 vs 소셜 vs 직접 */}
+      <div className="bg-white border border-gray-100 rounded-xl p-4 mb-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-xs font-medium text-gray-600">채널 요약 (기간 {range})</div>
+          <div className="text-[10px] text-gray-400">총 {totalBucket.toLocaleString()} PV</div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3 text-center">
+          <BucketCard label="유료 광고"      value={paidOrganic.paid}          pctVal={pct(paidOrganic.paid)}          color="bg-red-50 text-red-700" />
+          <BucketCard label="자연 검색"      value={paidOrganic.organicSearch} pctVal={pct(paidOrganic.organicSearch)} color="bg-amber-50 text-amber-700" />
+          <BucketCard label="소셜"           value={paidOrganic.socialOrganic} pctVal={pct(paidOrganic.socialOrganic)} color="bg-purple-50 text-purple-700" />
+          <BucketCard label="직접 방문"      value={paidOrganic.direct}        pctVal={pct(paidOrganic.direct)}        color="bg-gray-50 text-gray-700" />
+          <BucketCard label="레퍼럴"         value={paidOrganic.referral}      pctVal={pct(paidOrganic.referral)}      color="bg-blue-50 text-blue-700" />
+          <BucketCard label="이메일"         value={paidOrganic.email}         pctVal={pct(paidOrganic.email)}         color="bg-indigo-50 text-indigo-700" />
+          <BucketCard label="기타"           value={paidOrganic.other}         pctVal={pct(paidOrganic.other)}         color="bg-slate-50 text-slate-600" />
+        </div>
+      </div>
+
+      {/* 채널 세부 (paid_search_google / organic_search_naver …) */}
+      <div className="bg-white border border-gray-100 rounded-xl p-4 mb-5">
+        <div className="text-xs font-medium text-gray-600 mb-3">채널 세부 분포 (paid/organic × 소스)</div>
+        {channels.length === 0 ? (
+          <div className="py-6 text-center text-xs text-gray-400">아직 수집된 채널 데이터가 없습니다.</div>
+        ) : (
+          <div className="overflow-x-auto -mx-4 px-4">
+            <table className="w-full text-xs min-w-[380px]">
+              <thead>
+                <tr className="text-gray-400 border-b border-gray-100">
+                  <th className="text-left py-1.5 font-normal">채널</th>
+                  <th className="text-right py-1.5 font-normal">PV</th>
+                  <th className="text-right py-1.5 font-normal w-16">%</th>
+                  <th className="text-left py-1.5 font-normal pl-3 hidden sm:table-cell">점유</th>
+                </tr>
+              </thead>
+              <tbody>
+                {channels.map(c => {
+                  const p = totalBucket > 0 ? (c.count / totalBucket) * 100 : 0
+                  return (
+                    <tr key={c.channel} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="py-1.5 text-gray-700">
+                        <span className={`inline-block w-2 h-2 rounded-full mr-2 align-middle ${channelDotColor(c.channel)}`} />
+                        {CHANNEL_LABEL[c.channel]}
+                      </td>
+                      <td className="py-1.5 text-right text-gray-500">{c.count.toLocaleString()}</td>
+                      <td className="py-1.5 text-right text-gray-400">{p.toFixed(1)}</td>
+                      <td className="py-1.5 pl-3 hidden sm:table-cell">
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className={`h-full ${channelBarColor(c.channel)}`} style={{ width: `${Math.min(100, p)}%` }} />
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* 도넛 + 라인 (기존 차트 유지 — 전체 소스별 추이) */}
       <TrafficCharts
         sources={sources.map((s: SourceCount) => ({ source: s.source, label: label(s.source), count: s.count }))}
         devices={devices}
@@ -130,6 +215,111 @@ export default async function TrafficPage({
         totalRange={totalRange}
         range={range}
       />
+
+      {/* 소스별 상세 카드 (구글/네이버/X/Threads/인스타 + 기타 주요) */}
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        {detailResults.map(d => (
+          <SourceDetailCard key={d.source} detail={d} />
+        ))}
+      </div>
+
+      {/* 유료 캠페인 요약 */}
+      <div className="bg-white border border-gray-100 rounded-xl p-4 mt-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-xs font-medium text-gray-600">유료 캠페인 요약</div>
+          <div className="text-[10px] text-gray-400">
+            유료 PV {paidSummary.paidPv.toLocaleString()} · UV {paidSummary.paidUv.toLocaleString()}
+          </div>
+        </div>
+        {paidSummary.topCampaigns.length === 0 ? (
+          <div className="py-6 text-center text-xs text-gray-400">
+            아직 유료 캠페인 유입이 감지되지 않았습니다. <br className="hidden sm:block" />
+            광고 URL 에 <code className="bg-gray-100 px-1 rounded">utm_source</code>/<code className="bg-gray-100 px-1 rounded">utm_medium=cpc</code>/<code className="bg-gray-100 px-1 rounded">utm_campaign</code> 을 추가하거나,
+            광고 플랫폼의 자동 태깅(gclid, fbclid, msclkid, ttclid)으로 감지됩니다.
+          </div>
+        ) : (
+          <div className="overflow-x-auto -mx-4 px-4">
+            <table className="w-full text-xs min-w-[360px]">
+              <thead>
+                <tr className="text-gray-400 border-b border-gray-100">
+                  <th className="text-left py-1.5 font-normal">캠페인</th>
+                  <th className="text-left py-1.5 font-normal">소스</th>
+                  <th className="text-right py-1.5 font-normal">PV</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paidSummary.topCampaigns.map((c, i) => (
+                  <tr key={`${c.campaign}-${i}`} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="py-1.5 text-gray-700 truncate max-w-[220px]">{c.campaign}</td>
+                    <td className="py-1.5 text-gray-500">{label(c.source)}</td>
+                    <td className="py-1.5 text-right text-gray-500">{c.count.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* 전체 UTM 캠페인 Top 15 */}
+      <div className="bg-white border border-gray-100 rounded-xl p-4 mt-5">
+        <div className="text-xs font-medium text-gray-600 mb-3">UTM 캠페인 Top 15 (전체)</div>
+        {campaigns.length === 0 ? (
+          <div className="py-6 text-center text-xs text-gray-400">
+            utm_campaign 파라미터가 붙은 유입이 아직 없습니다.
+          </div>
+        ) : (
+          <div className="overflow-x-auto -mx-4 px-4">
+            <table className="w-full text-xs min-w-[420px]">
+              <thead>
+                <tr className="text-gray-400 border-b border-gray-100">
+                  <th className="text-left py-1.5 font-normal">캠페인</th>
+                  <th className="text-left py-1.5 font-normal">Source</th>
+                  <th className="text-left py-1.5 font-normal">Medium</th>
+                  <th className="text-right py-1.5 font-normal">PV</th>
+                </tr>
+              </thead>
+              <tbody>
+                {campaigns.map((c, i) => (
+                  <tr key={`${c.campaign}-${i}`} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="py-1.5 text-gray-700 truncate max-w-[240px]">{c.campaign}</td>
+                    <td className="py-1.5 text-gray-500">{c.source}</td>
+                    <td className="py-1.5 text-gray-500">{c.medium}</td>
+                    <td className="py-1.5 text-right text-gray-500">{c.count.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* 레퍼럴 도메인 Top 10 */}
+      <div className="bg-white border border-gray-100 rounded-xl p-4 mt-5">
+        <div className="text-xs font-medium text-gray-600 mb-3">레퍼럴 도메인 Top 10 (미분류 외부 유입)</div>
+        {referrers.length === 0 ? (
+          <div className="py-6 text-center text-xs text-gray-400">분류되지 않은 외부 레퍼럴이 없습니다.</div>
+        ) : (
+          <div className="overflow-x-auto -mx-4 px-4">
+            <table className="w-full text-xs min-w-[300px]">
+              <thead>
+                <tr className="text-gray-400 border-b border-gray-100">
+                  <th className="text-left py-1.5 font-normal">도메인</th>
+                  <th className="text-right py-1.5 font-normal">PV</th>
+                </tr>
+              </thead>
+              <tbody>
+                {referrers.map((r, i) => (
+                  <tr key={`${r.domain}-${i}`} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="py-1.5 text-gray-700">{r.domain}</td>
+                    <td className="py-1.5 text-right text-gray-500">{r.count.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Top 페이지 */}
       <div className="bg-white border border-gray-100 rounded-xl p-4 mt-5">
@@ -165,8 +355,10 @@ export default async function TrafficPage({
         )}
       </div>
 
-      <p className="text-[10px] text-gray-400 mt-4">
-        * 관리자/내부 경로(/dashboard, /content, /api-status, /traffic, /marketing, /api 등)는 수집 대상에서 제외됩니다.
+      <p className="text-[10px] text-gray-400 mt-4 leading-relaxed">
+        * 관리자/내부 경로(/dashboard, /content, /api-status, /traffic, /marketing 등)는 수집 대상에서 제외됩니다.<br />
+        * 유료/자연 분류는 <code className="bg-gray-100 px-1 rounded">utm_medium</code>(cpc/paid/paid_social/display) 및 광고 클릭 ID(gclid, fbclid, msclkid, ttclid, yclid, n_media, kakaoad) 기준입니다.<br />
+        * Meta/네이버 검색광고처럼 utm_medium을 자동으로 넣지 않는 플랫폼은 광고 URL에 직접 UTM을 부여하면 정확도가 올라갑니다.
       </p>
     </div>
   )
@@ -190,6 +382,102 @@ function KpiCard({
         {value.toLocaleString()}{suffix ? <span className="text-xs text-gray-400 ml-0.5">{suffix}</span> : null}
       </div>
       <div className={`text-[10px] sm:text-xs mt-1 ${accent ?? 'text-gray-500'}`}>실시간 집계</div>
+    </div>
+  )
+}
+
+function BucketCard({ label, value, pctVal, color }: { label: string; value: number; pctVal: number; color: string }) {
+  return (
+    <div className={`rounded-lg px-2 py-2 ${color}`}>
+      <div className="text-[10px] font-medium opacity-80">{label}</div>
+      <div className="text-base sm:text-lg font-semibold mt-0.5">{value.toLocaleString()}</div>
+      <div className="text-[10px] opacity-70 mt-0.5">{pctVal}%</div>
+    </div>
+  )
+}
+
+function channelDotColor(c: Channel) {
+  if (c.startsWith('paid_'))           return 'bg-red-500'
+  if (c.startsWith('organic_search_')) return 'bg-amber-500'
+  if (c.startsWith('social_organic_')) return 'bg-purple-500'
+  if (c === 'direct')                  return 'bg-gray-400'
+  if (c === 'email')                   return 'bg-indigo-500'
+  if (c === 'referral')                return 'bg-blue-500'
+  return 'bg-slate-400'
+}
+
+function channelBarColor(c: Channel) {
+  if (c.startsWith('paid_'))           return 'bg-red-400'
+  if (c.startsWith('organic_search_')) return 'bg-amber-400'
+  if (c.startsWith('social_organic_')) return 'bg-purple-400'
+  if (c === 'direct')                  return 'bg-gray-300'
+  if (c === 'email')                   return 'bg-indigo-400'
+  if (c === 'referral')                return 'bg-blue-400'
+  return 'bg-slate-300'
+}
+
+function SourceDetailCard({ detail }: {
+  detail: {
+    source: TrafficSource
+    total: number
+    paid: number
+    organic: number
+    topCampaigns: { campaign: string; count: number }[]
+    topLandingPages: { path: string; count: number }[]
+  }
+}) {
+  const paidPct = detail.total > 0 ? Math.round((detail.paid / detail.total) * 100) : 0
+  const organicPct = detail.total > 0 ? 100 - paidPct : 0
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl p-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-sm font-medium text-gray-800">{SOURCE_LABEL[detail.source] ?? detail.source}</div>
+        <div className="text-[10px] text-gray-400">{detail.total.toLocaleString()} PV</div>
+      </div>
+      {detail.total === 0 ? (
+        <div className="py-4 text-center text-[11px] text-gray-400">데이터 없음</div>
+      ) : (
+        <>
+          {/* 유료/자연 바 */}
+          <div className="flex items-center gap-2 text-[10px] text-gray-500 mb-1">
+            <span>유료 {detail.paid.toLocaleString()} ({paidPct}%)</span>
+            <span>·</span>
+            <span>자연 {detail.organic.toLocaleString()} ({organicPct}%)</span>
+          </div>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex mb-3">
+            {paidPct > 0 && <div className="h-full bg-red-400" style={{ width: `${paidPct}%` }} />}
+            {organicPct > 0 && <div className="h-full bg-amber-300" style={{ width: `${organicPct}%` }} />}
+          </div>
+
+          {detail.topCampaigns.length > 0 && (
+            <div className="mb-2">
+              <div className="text-[10px] text-gray-400 mb-1">상위 캠페인</div>
+              <ul className="space-y-0.5">
+                {detail.topCampaigns.slice(0, 3).map((c, i) => (
+                  <li key={`${c.campaign}-${i}`} className="flex justify-between text-[11px]">
+                    <span className="text-gray-600 truncate max-w-[70%]">{c.campaign}</span>
+                    <span className="text-gray-400">{c.count.toLocaleString()}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {detail.topLandingPages.length > 0 && (
+            <div>
+              <div className="text-[10px] text-gray-400 mb-1">상위 랜딩 페이지</div>
+              <ul className="space-y-0.5">
+                {detail.topLandingPages.slice(0, 3).map((p, i) => (
+                  <li key={`${p.path}-${i}`} className="flex justify-between text-[11px]">
+                    <span className="text-gray-600 truncate max-w-[70%]">{p.path}</span>
+                    <span className="text-gray-400">{p.count.toLocaleString()}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

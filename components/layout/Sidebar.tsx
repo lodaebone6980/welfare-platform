@@ -28,6 +28,7 @@ const NAV: NavItem[] = [
       { label: '검색 트렌딩', href: '/trending' },
       { label: '트렌딩 뉴스', href: '/trending-news' },
       { label: '외부 인기도',  href: '/popularity' },
+      { label: '환경 진단',   href: '/diagnostics' },
     ],
   },
   {
