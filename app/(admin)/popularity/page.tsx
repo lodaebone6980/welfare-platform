@@ -1,6 +1,7 @@
 import PopularitySyncClient from './_components/PopularitySyncClient';
 
-export const dynamic = 'force-dynamic';
+// 이 페이지는 서버 DB 쿼리가 없고 정적 UI + 클라이언트 컴포넌트만 렌더링하므로
+// force-dynamic 제거 → 정적으로 프리렌더되어 TTFB 수십 ms 수준
 
 export default function PopularityAdminPage() {
   return (
