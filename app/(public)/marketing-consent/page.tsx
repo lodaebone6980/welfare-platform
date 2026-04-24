@@ -5,7 +5,7 @@ import PageContent from '@/components/PageContent';
 const SLUG = 'marketing-consent';
 
 const DEFAULT_TITLE = '마케팅 정보 수신 동의';
-const DEFAULT_CONTENT = `블루엣지(이하 "회사")는 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 제50조 및 「개인정보 보호법」에 따라 이용자로부터 광고성 정보 수신에 대한 사전 동의를 받고 있습니다. 본 동의는 선택 사항이며, 동의하지 않더라도 복지길잡이(www.govmate.co.kr, 이하 "서비스")의 기본 이용에는 제한이 없습니다.
+const DEFAULT_CONTENT = `블루엣지(이하 "회사")는 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 제50조 및 「개인정보 보호법」에 따라 이용자로부터 광고성 정보 수신에 대한 사전 동의를 받고 있습니다. 본 동의는 선택 사항이며, 동의하지 않더라도 지원금길잡이(www.govmate.co.kr, 이하 "서비스")의 기본 이용에는 제한이 없습니다.
 
 ## 1. 수집 및 이용 목적
 
@@ -52,7 +52,7 @@ const DEFAULT_CONTENT = `블루엣지(이하 "회사")는 「정보통신망 이
 
 ## 7. 발신자 정보
 
-- 서비스명: 복지길잡이 (www.govmate.co.kr)
+- 서비스명: 지원금길잡이 (www.govmate.co.kr)
 - 운영사: 블루엣지
 - 개인정보 보호책임자: adenly659@gmail.com
 
@@ -63,9 +63,9 @@ const DEFAULT_CONTENT = `블루엣지(이하 "회사")는 「정보통신망 이
 시행일: 2026년 4월 24일`;
 
 export const metadata: Metadata = {
-  title: '마케팅 정보 수신 동의 | 복지길잡이',
+  title: '마케팅 정보 수신 동의 | 지원금길잡이',
   description:
-    '복지길잡이의 광고성 정보 수신 동의에 대한 수집 항목, 이용 목적, 보유 기간 및 철회 방법 안내입니다.',
+    '지원금길잡이의 광고성 정보 수신 동의에 대한 수집 항목, 이용 목적, 보유 기간 및 철회 방법 안내입니다.',
   alternates: { canonical: 'https://www.govmate.co.kr/marketing-consent' },
   robots: { index: true, follow: true },
 };

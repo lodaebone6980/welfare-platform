@@ -5,7 +5,7 @@ import { SITE_URL, SITE_NAME } from '@/lib/env'
  * - HowTo (신청 방법 단계)
  * - Speakable (구글 어시스턴트/보이스 SEO)
  * - Region landing (CollectionPage + ItemList)
- * - Organization (복지길잡이 브랜드)
+ * - Organization (지원금길잡이 브랜드)
  * - SearchBox WebSite
  */
 

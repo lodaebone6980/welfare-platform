@@ -34,7 +34,7 @@ self.addEventListener('message', (event) => {
     firebase.initializeApp(data.config);
     const messaging = firebase.messaging();
     messaging.onBackgroundMessage((payload) => {
-      const title = payload.notification?.title || '복지길잡이';
+      const title = payload.notification?.title || '지원금길잡이';
       const body = payload.notification?.body || '새 소식이 있습니다.';
       const url = payload.fcmOptions?.link || payload.data?.url || '/';
       self.registration.showNotification(title, {

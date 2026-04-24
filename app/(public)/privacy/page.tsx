@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
-  const service = SITE_NAME || '복지길잡이';
+  const service = SITE_NAME || '지원금길잡이';
 
   return (
     <article className="prose prose-sm px-4 py-6 sm:prose-base">

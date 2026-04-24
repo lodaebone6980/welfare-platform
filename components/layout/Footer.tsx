@@ -57,7 +57,7 @@ export default async function Footer() {
         {/* 브랜드 블록 */}
         <div className="mb-6">
           <div className="text-base font-semibold text-gray-900 mb-1.5">
-            복지길잡이
+            지원금길잡이
           </div>
           <div className="text-xs text-gray-500 leading-relaxed">{s.slogan}</div>
         </div>

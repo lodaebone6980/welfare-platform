@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     '주거지원',
     '교육보조금',
     '소상공인 지원',
-    '복지길잡이',
+    '지원금길잡이',
   ],
   metadataBase: new URL(SITE_URL),
   openGraph: {

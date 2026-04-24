@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
-const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || '복지길잡이';
+const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || '지원금길잡이';
 
 export default function MobileHeader() {
   const pathname = usePathname();

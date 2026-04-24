@@ -39,7 +39,7 @@ function LoginForm() {
       >
         <h1 className="text-lg font-bold mb-1">관리자 로그인</h1>
         <p className="text-xs text-gray-500 mb-5">
-          복지길잡이 어드민 콘솔
+          지원금길잡이 어드민 콘솔
         </p>
 
         <label className="block mb-3">

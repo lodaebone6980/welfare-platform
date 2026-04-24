@@ -13,7 +13,7 @@ import { SITE_NAME } from '@/lib/env';
 export default function Footer() {
   const year = new Date().getFullYear();
 
-  const service = SITE_NAME || '복지길잡이';
+  const service = SITE_NAME || '지원금길잡이';
   const company = '블루엣지';
   const address = '충청남도 천안시 동남구 청수9로 47, 5층 535호';
   const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'adenly659@gmail.com';

@@ -159,10 +159,10 @@ const REGION_CODES = {
 // post: { title, excerpt, slug, focusKeyword, geoRegion?, geoDistrict?, latitude?, longitude?, faqs?, publishedAt? }
 
 // 반환:
-// title:       "${geoTitle} | 복지길잡이"
+// title:       "${geoTitle} | 지원금길잡이"
 // description: post.excerpt
 // canonical:   "${BASE_URL}/welfare/${post.slug}"
-// openGraph:   { type:'article', url, title:geoTitle, description, locale:'ko_KR', siteName:'복지길잡이' }
+// openGraph:   { type:'article', url, title:geoTitle, description, locale:'ko_KR', siteName:'지원금길잡이' }
 // other: {
 //   'geo.region':   `KR-${REGION_CODES[geoRegion]}` or 'KR'
 //   'geo.placename': geoDistrict or geoRegion or '대한민국'
@@ -173,8 +173,8 @@ const REGION_CODES = {
 
 // Article JSON-LD:
 // { '@type':'Article', '@id':url, headline, description, url,
-//   inLanguage:'ko', datePublished, author:{@type:'Organization', name:'복지길잡이'},
-//   publisher:{@type:'Organization', name:'복지길잡이', logo:{@type:'ImageObject', url:'...logo.png'}} }
+//   inLanguage:'ko', datePublished, author:{@type:'Organization', name:'지원금길잡이'},
+//   publisher:{@type:'Organization', name:'지원금길잡이', logo:{@type:'ImageObject', url:'...logo.png'}} }
 
 // FAQPage JSON-LD (faqs 있을 때만):
 // { '@type':'FAQPage', mainEntity: faqs.map(f => ({

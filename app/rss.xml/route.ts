@@ -4,7 +4,7 @@ const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   'https://welfare-platform-five.vercel.app';
 
-const SITE_TITLE = (process.env.NEXT_PUBLIC_SITE_NAME || '복지길잡이') + ' – 정부 지원금·환급금·보조금 통합검색';
+const SITE_TITLE = (process.env.NEXT_PUBLIC_SITE_NAME || '지원금길잡이') + ' – 정부 지원금·환급금·보조금 통합검색';
 const SITE_DESC =
   '2026년 최신 정부 지원금, 환급금, 보조금, 바우처 정보를 한눈에.';
 
