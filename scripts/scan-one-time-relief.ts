@@ -104,8 +104,8 @@ async function main() {
       status: true,
       deadline: true,
       geoRegion: true,
-      categorySlug: true,
       excerpt: true,
+      category: { select: { slug: true } },
     },
   });
 
@@ -149,7 +149,7 @@ async function main() {
       status: p.status,
       deadline: p.deadline ?? null,
       region: p.geoRegion ?? null,
-      category: p.categorySlug,
+      category: p.category?.slug ?? '-',
       keyword: k,
       flag,
     });
