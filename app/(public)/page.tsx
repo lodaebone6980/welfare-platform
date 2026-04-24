@@ -56,10 +56,21 @@ async function getFeaturedPolicies() {
   });
 }
 
+/**
+ * 🔥 "곧 마감되는 지원금" 섹션 — D-60 이내 실제 임박 정책만 노출
+ *
+ * 이전 버그: publishedAt desc 로 최근 30건만 뽑아 그 안에서 마감 빠른 5건 선택
+ *   → 전체 pool 을 보지 않아서 D-244 같은 정책이 "곧 마감" 상단에 노출되는 문제
+ *
+ * 수정 후:
+ *   1) deadline 문자열이 있고 상시/수시/연중 아닌 PUBLISHED 정책을 넉넉히(500건) 가져옴
+ *      — DB 에 deadline 파싱 컬럼이 없으므로 앱 레벨 파싱 불가피, ISR=300 캐시로 부하 분산
+ *   2) parseKoreanDate 로 실제 날짜 파싱 성공 + 미래 마감만 필터
+ *   3) 가까운 마감 순으로 정렬
+ *   4) D-60 이내로 1차 컷오프 → 최소 3건 이상이면 상위 5건 반환
+ *   5) D-60 이내가 3건 미만이면 D-90 까지 확장 (빈 섹션 방지)
+ */
 async function getExpiringPolicies() {
-  // DB에서 1차로 deadline 존재하는 것 중 신규순 30건만 가져와 JS로 파싱·정렬·필터 (100→30으로 축소)
-  // (deadline 컬럼이 문자열 형식이라 DB-level 날짜 비교가 어려워 앱 레이어 필터 불가피.
-  //  캐시 revalidate=300 으로 비용 분산)
   const policies = await prisma.policy.findMany({
     where: {
       status: 'PUBLISHED',
@@ -77,21 +88,30 @@ async function getExpiringPolicies() {
       geoRegion: true, viewCount: true, deadline: true,
       category: { select: { name: true, slug: true, icon: true } },
     },
-    take: 30,
+    take: 500,
   });
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return policies
-    .filter((p) => {
-      const d = parseKoreanDate(p.deadline);
-      return d && d.getTime() >= today.getTime();
+  const DAY_MS = 24 * 60 * 60 * 1000;
+
+  const withDate = policies
+    .map((p) => ({ p, d: parseKoreanDate(p.deadline) }))
+    .filter((x): x is { p: typeof policies[number]; d: Date } => {
+      if (!x.d) return false;
+      x.d.setHours(0, 0, 0, 0);
+      return x.d.getTime() >= today.getTime();
     })
-    .sort((a, b) => {
-      const da = parseKoreanDate(a.deadline)!;
-      const db = parseKoreanDate(b.deadline)!;
-      return da.getTime() - db.getTime();
-    })
-    .slice(0, 5);
+    .sort((a, b) => a.d.getTime() - b.d.getTime());
+
+  const within = (days: number) =>
+    withDate.filter((x) => x.d.getTime() - today.getTime() <= days * DAY_MS);
+
+  // D-60 이내 3건 이상이면 5건 반환, 아니면 D-90 까지 확장
+  let bucket = within(60);
+  if (bucket.length < 3) bucket = within(90);
+
+  return bucket.slice(0, 5).map((x) => x.p);
 }
 
 /** 상시신청 지원금 — deadline이 없거나 '상시/수시/연중' 포함 */
