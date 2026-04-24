@@ -38,9 +38,13 @@ function LoginInner() {
           카카오로 시작하기
         </button>
 
-        <p className="mt-6 text-xs text-gray-400 text-center">
-          로그인 시 <a href="/terms" className="underline">이용약관</a> 과{' '}
-          <a href="/privacy" className="underline">개인정보 처리방침</a> 에 동의한 것으로 간주됩니다.
+        <p className="mt-6 text-xs text-gray-400 text-center leading-relaxed">
+          로그인 시{' '}
+          <a href="/terms" className="underline">이용약관</a>과{' '}
+          <a href="/privacy-policy" className="underline">개인정보처리방침</a>에 동의한 것으로 간주됩니다.
+          <br />
+          <a href="/marketing-consent" className="underline">마케팅 정보 수신 동의</a>는 선택이며,
+          가입 후 마이페이지 &gt; 알림 설정에서 언제든 변경할 수 있습니다.
         </p>
       </div>
     </main>
