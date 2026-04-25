@@ -4,7 +4,6 @@ import { Suspense } from 'react';
 import './globals.css';
 import BottomNav from '@/components/layout/BottomNav';
 import MobileHeader from '@/components/layout/MobileHeader';
-import AppSmartBanner from '@/components/layout/AppSmartBanner';
 import SessionProvider from '@/components/auth/SessionProvider';
 import ChannelTalk from '@/components/layout/ChannelTalk';
 import Footer from '@/components/common/Footer';
@@ -116,7 +115,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className}>
         <SessionProvider>
-          <AppSmartBanner />
           <MobileHeader />
           <main className="min-h-screen bg-gray-50">
             {/*
