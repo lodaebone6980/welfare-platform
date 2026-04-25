@@ -25,7 +25,7 @@ export function generateStaticParams() {
 export function generateMetadata({ params }: PageProps): Metadata {
   const region = REGION_BY_SLUG[params.region]
   if (!region) return { title: SITE_NAME }
-  const title = `${region.name} 정부지원금·복지 혜택 모음 2026 | ${SITE_NAME}`
+  const title = `${region.name} 정부지원금·복지 혜택 모음 2026`
   const description = `${region.name} 거주자가 받을 수 있는 2026년 정부지원금·보조금·환급금·바우처 정책을 모았습니다. 나에게 맞는 혜택을 바로 찾아보세요.`
   const url = `${SITE_URL}/welfare/region/${region.slug}`
   return {

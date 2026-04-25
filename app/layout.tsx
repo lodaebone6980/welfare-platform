@@ -34,7 +34,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: {
     default: `${SITE_NAME} – 2026 정부지원금·복지·보조금·환급금 안내`,
-    template: `%s | ${SITE_NAME}`,
+    template: `%s`,
   },
   description: SITE_DESC,
   keywords: [

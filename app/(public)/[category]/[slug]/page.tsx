@@ -19,6 +19,7 @@ import {
   extractBenefitSummary,
 } from '@/lib/policy-display';
 import { getPolicyBySlug, getRelatedPolicies } from '@/lib/policy-detail';
+import { getCanonicalPath } from '@/lib/policy-canonical';
 import { inferPolicyTypes } from '@/lib/policy-tags';
 
 /**
@@ -96,11 +97,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     applicationMethod: policy.applicationMethod || undefined,
   };
   const ogData = generatePolicyOgData(seoData);
-  const canonicalPath = policy.category?.slug
-    ? `/${policy.category.slug}/${encodeURIComponent(policy.slug)}`
-    : `/welfare/${encodeURIComponent(policy.slug)}`;
+  const canonicalPath = await getCanonicalPath({
+    id: policy.id,
+    slug: policy.slug,
+    canonicalId: (policy as any).canonicalId ?? null,
+    category: policy.category ?? null,
+  });
   return {
-    title: `${policy.title} | ${SITE_NAME}`,
+    title: policy.title,
     description: generatePolicyMetaDescription(seoData),
     openGraph: { title: ogData.title, description: ogData.description, type: 'article' },
     alternates: { canonical: canonicalPath },

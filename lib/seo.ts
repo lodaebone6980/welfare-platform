@@ -185,7 +185,7 @@ export function generatePolicyMetaDescription(policy: PolicySeoData): string {
 // Generate Open Graph data for policy
 export function generatePolicyOgData(policy: PolicySeoData) {
   return {
-    title: policy.title + ' | ' + SITE_NAME,
+    title: policy.title,
     description: generatePolicyMetaDescription(policy),
     url: BASE_URL + '/welfare/' + encodeURIComponent(policy.slug),
     siteName: SITE_NAME,

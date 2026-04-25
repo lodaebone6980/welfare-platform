@@ -107,7 +107,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!cat) return { title: '카테고리를 찾을 수 없습니다' };
 
   const meta = CATEGORY_META[cat.name];
-  const title = `${cat.name} 지원금 · ${meta?.subtitle || '정부 복지 제도'} | ${SITE_NAME}`;
+  const title = `${cat.name} 지원금 · ${meta?.subtitle || '정부 복지 제도'}`;
   const description =
     meta?.desc ||
     `${cat.name} 분야의 정부 복지 제도 ${cat._count.policies}건을 한눈에. 신청 자격·방법·마감일까지.`;

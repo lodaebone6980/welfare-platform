@@ -6,7 +6,7 @@ import { SITE_NAME } from '@/lib/env';
 import { policyHref } from '@/lib/categories';
 
 export const metadata: Metadata = {
-  title: `분야별·유형별 정부 지원금 전체보기 | ${SITE_NAME}`,
+  title: `분야별·유형별 정부 지원금 전체보기`,
   description:
     '생활안정·주거·보육교육·고용·의료·행정 등 10대 분야와 환급금·바우처·지원금·대출·보조금 등 지원 유형별로 정부·지자체 제도를 한곳에서 확인하세요.',
   alternates: { canonical: '/welfare/categories' },
