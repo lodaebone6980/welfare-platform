@@ -43,6 +43,12 @@ model Policy {
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
   tags              String?
+
+  // ─── Canonical linking (2026-04) ──────────────
+  canonicalId       Int?
+  canonical         Policy?       @relation("PolicyCanonical", fields: [canonicalId], references: [id], onDelete: SetNull)
+  derivatives       Policy[]      @relation("PolicyCanonical")
+
   faqs              Faq[]
   threadsPosts      ThreadsPost[]
   socialPosts       SocialPost[]
@@ -57,6 +63,7 @@ model Policy {
   @@index([status, createdAt(sort: Desc)])
   @@index([categoryId, createdAt(sort: Desc)])
   @@index([geoRegion, createdAt(sort: Desc)])
+  @@index([canonicalId])
 }
 
 model ThreadsPost {
