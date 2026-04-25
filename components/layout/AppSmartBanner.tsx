@@ -20,14 +20,14 @@ export default function AppSmartBanner() {
     <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 flex items-center gap-3 md:hidden">
       <button onClick={dismiss} className="text-white/70 hover:text-white text-lg leading-none">&times;</button>
       <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shrink-0">
-        <span className="text-blue-600 font-bold text-xs">\uC815\uCC45</span>
+        <span className="text-blue-600 font-bold text-xs">정책</span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">\uBCF5\uC9C0\uAE38\uC7A1\uC774 \uC571\uC73C\uB85C \uB354 \uD3B8\uD558\uAC8C!</p>
-        <p className="text-xs text-white/70">\uB9DE\uCDA4 \uC54C\uB9BC \u00B7 \uBE60\uB978 \uAC80\uC0C9 \u00B7 \uC624\uD504\uB77C\uC778 \uC9C0\uC6D0</p>
+        <p className="text-sm font-medium truncate">지원금길잡이 앱으로 더 편하게!</p>
+        <p className="text-xs text-white/70">맞춤 알림 · 빠른 검색 · 오프라인 지원</p>
       </div>
       <a href="#" className="bg-white text-blue-600 px-3 py-1.5 rounded-full text-xs font-bold shrink-0 hover:bg-blue-50 transition-colors">
-        \uC124\uCE58
+        설치
       </a>
     </div>
   );
