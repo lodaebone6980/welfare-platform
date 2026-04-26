@@ -382,7 +382,8 @@ enum IndexingEngine {
  */
 model IndexingQueue {
   id           Int       @id @default(autoincrement())
-  url          String    @db.Text
+  // VarChar(1024) — Postgres B-tree unique 인덱스 한도(8191B) 안전, 실제 정책 URL 은 200자 이내
+  url          String    @db.VarChar(1024)
   engine       IndexingEngine                              // NAVER_MANUAL | DAUM_MANUAL | GOOGLE_API ...
   status       IndexingQueueStatus @default(PENDING)
   priority     Int       @default(0)                       // 높을수록 먼저
@@ -396,7 +397,7 @@ model IndexingQueue {
   updatedAt    DateTime  @updatedAt
 
   @@unique([url, engine])
-  @@index([engine, status, priority(sort: Desc), createdAt])
+  @@index([engine, status, createdAt])
   @@index([status, createdAt])
   @@map("indexing_queue")
 }

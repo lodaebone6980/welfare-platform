@@ -6,6 +6,7 @@
  */
 'use client';
 
+import type { CSSProperties } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type QueueRow = {
@@ -423,11 +424,11 @@ export default function IndexingQueuePage() {
   );
 }
 
-const th: React.CSSProperties = {
+const th: CSSProperties = {
   textAlign: 'left',
   padding: '8px 12px',
   fontSize: 12,
   fontWeight: 600,
   color: '#475569',
 };
-const td: React.CSSProperties = { padding: '8px 12px', verticalAlign: 'top' };
+const td: CSSProperties = { padding: '8px 12px', verticalAlign: 'top' };

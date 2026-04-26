@@ -59,7 +59,6 @@ export async function POST(req: Request) {
     where: {
       status: 'PUBLISHED',
       OR: [{ updatedAt: { gte: since } }, { publishedAt: { gte: since } }],
-      slug: { not: null },
     },
     select: { id: true, slug: true },
     orderBy: { updatedAt: 'desc' },

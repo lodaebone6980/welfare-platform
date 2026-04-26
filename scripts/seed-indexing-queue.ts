@@ -26,7 +26,7 @@ const ENGINES = (process.env.ENGINES || 'NAVER_MANUAL,DAUM_MANUAL')
 async function main() {
   console.log(`[seed-queue] SITE=${SITE} HOURS=${HOURS ?? 'ALL'} ENGINES=${ENGINES.join(',')}`);
 
-  const where: any = { status: 'PUBLISHED', slug: { not: null } };
+  const where: any = { status: 'PUBLISHED' };
   if (HOURS) {
     const since = new Date(Date.now() - HOURS * 60 * 60 * 1000);
     where.OR = [{ updatedAt: { gte: since } }, { publishedAt: { gte: since } }];
