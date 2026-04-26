@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>GovMate Indexer</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        width: 280px;
+        margin: 0;
+        padding: 14px;
+      }
+      h1 { font-size: 15px; margin: 0 0 8px; }
+      .row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+      button {
+        padding: 6px 10px;
+        border-radius: 4px;
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      button.primary { background: #0ea5e9; color: #fff; border-color: #0ea5e9; }
+      .muted { color: #64748b; font-size: 12px; }
+      .err { color: #ef4444; font-size: 12px; }
+      a { color: #0ea5e9; }
+    </style>
+  </head>
+  <body>
+    <h1>GovMate Indexer</h1>
+    <div class="muted" id="server">서버: -</div>
+    <div class="muted" id="status">상태: -</div>
+    <hr />
+    <div class="row">
+      <button class="primary" id="runNow">지금 1회 실행</button>
+      <button id="openOptions">옵션</button>
+    </div>
+    <div class="row">
+      <a href="https://searchadvisor.naver.com/console/board" target="_blank">네이버 SA 열기</a>
+      <span class="muted">·</span>
+      <a href="https://register.search.daum.net/index.daum" target="_blank">다음 등록 열기</a>
+    </div>
+    <div class="muted" id="msg"></div>
+    <script src="popup.js"></script>
+  </body>
+</html>

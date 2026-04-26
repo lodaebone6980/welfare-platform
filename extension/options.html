@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>GovMate Indexer - 옵션</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 520px;
+        margin: 40px auto;
+        padding: 0 16px;
+        color: #1e293b;
+      }
+      h1 { font-size: 18px; }
+      label { display: block; margin: 12px 0 4px; font-size: 13px; font-weight: 600; }
+      input[type='text'], input[type='password'] {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+      .muted { color: #64748b; font-size: 12px; margin-top: 4px; }
+      .row { display: flex; gap: 8px; margin-top: 16px; }
+      button {
+        padding: 8px 14px;
+        border-radius: 4px;
+        border: 1px solid #0ea5e9;
+        background: #0ea5e9;
+        color: #fff;
+        cursor: pointer;
+      }
+      .ok { color: #10b981; }
+      .err { color: #ef4444; }
+      .box {
+        margin-top: 24px;
+        padding: 12px;
+        background: #f1f5f9;
+        border-radius: 6px;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>GovMate Indexer - 설정</h1>
+
+    <label for="serverBase">서버 URL (govmate 어드민 서버)</label>
+    <input type="text" id="serverBase" placeholder="https://www.govmate.co.kr" />
+    <div class="muted">로컬 개발 시 http://localhost:3000 도 가능 (manifest 의 host_permissions 에 포함됨)</div>
+
+    <label for="secret">INDEXING_QUEUE_SECRET</label>
+    <input type="password" id="secret" placeholder="env 의 INDEXING_QUEUE_SECRET 와 동일하게" />
+    <div class="muted">서버 .env 의 INDEXING_QUEUE_SECRET 값과 정확히 일치해야 합니다.</div>
+
+    <label>
+      <input type="checkbox" id="enabled" /> 자동 풀링 활성 (5분마다)
+    </label>
+
+    <div class="row">
+      <button id="save">저장</button>
+      <button id="test" style="background: #fff; color: #0ea5e9">서버 연결 테스트</button>
+    </div>
+    <div id="msg" class="muted"></div>
+
+    <div class="box">
+      <strong>설치 체크리스트</strong>
+      <ol>
+        <li>서버 .env 에 <code>INDEXING_QUEUE_SECRET="긴_랜덤_문자열"</code> 추가</li>
+        <li>위 시크릿을 옵션에도 동일 입력</li>
+        <li>네이버 검색어드바이저(govmate.co.kr 사이트 선택), 다음 페이지등록 페이지에 미리 로그인</li>
+        <li>활성 체크 후 저장 → 5분 뒤 자동 시작</li>
+      </ol>
+    </div>
+
+    <script src="options.js"></script>
+  </body>
+</html>

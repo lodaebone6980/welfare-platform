@@ -1,0 +1,41 @@
+[
+  {
+    "title": "{공식 정책명, 60자 이하}",
+    "categorySlug": "subsidy",
+    "geoRegion": "전국",
+    "geoDistrict": null,
+    "deadline": "상시 또는 YYYY년 M월 D일",
+    "applyUrl": "https://www.bokjiro.go.kr",
+    "tags": ["키워드1", "키워드2", "운영부처", "대상층"],
+
+    "excerpt": "한 문단 100~200자 요약. 첫 문장에 정의 + 핵심 숫자(금액/대상수). 두 번째 문장에 신청 채널.",
+
+    "content": "<h2>정책명이란</h2><p>YYYY년 도입된 운영부처 사업으로, 1~2 문장 정의.</p><div class=\"callout callout-info\"><strong>한눈에 보기:</strong> 핵심 자격 + 금액 한 줄</div><h2>지원 내용 (YYYY년 기준)</h2><ul><li>금액 1: ○○만 원</li><li>금액 2: ○○만 원</li><li>특별 가산: ○○</li></ul><h2>대상 자격</h2><ul><li>연령: 만 ○~○세</li><li>소득: 가구 중위소득 ○○% 이하</li><li>제외: ○○</li></ul><h2>신청 방법</h2><ol class=\"steps\"><li><strong>1단계.</strong> 행복출산 원스톱 또는 행정복지센터 방문</li><li><strong>2단계.</strong> 서류 제출</li><li><strong>3단계.</strong> 심사 약 30일</li><li><strong>4단계.</strong> 자격 확인 시 매월 25일 입금</li></ol><a href=\"https://www.bokjiro.go.kr\" class=\"cta-apply\" target=\"_blank\" rel=\"noopener noreferrer\">복지로에서 바로 신청 →</a><h2>참고 링크</h2><ul><li><a href=\"https://www.bokjiro.go.kr\" target=\"_blank\" rel=\"noopener\">복지로</a> — 통합 신청</li><li><a href=\"https://www.gov.kr\" target=\"_blank\" rel=\"noopener\">정부24</a></li></ul><p><em>2026년 4월 기준</em></p>",
+
+    "eligibility": "1~3 문장 평문. 연령·가구·소득·재산·국적·기타 조건을 명확히. 외국인·특수계층 적용 여부도 포함.",
+    "applicationMethod": "① 1단계 ② 2단계 ③ 3단계. 신청처(URL/오프라인/전화)와 처리기간을 명시.",
+    "requiredDocuments": "신청서, 신분증, 통장 사본, 가족관계증명서, (대상별 추가 증빙).",
+    "metaDesc": "{정책명} {연도} 신청 자격, 지급액(○○만 원), 신청 방법({채널}) 한눈에 정리. 160자 이하.",
+    "focusKeyword": "{정책명} 신청",
+
+    "faqs": [
+      { "question": "다른 제도와 중복 수령 가능한가요?", "answer": "1~3 문장 답변. 구체적 정책명 언급." },
+      { "question": "신청이 늦으면 소급 적용되나요?", "answer": "1~3 문장 답변. 기한과 효과를 명시." },
+      { "question": "온라인 신청이 안 될 때는 어떻게 하나요?", "answer": "1~3 문장 답변. 오프라인 대안 제시." },
+      { "question": "수급 자격이 도중에 바뀌면 어떻게 되나요?", "answer": "1~3 문장 답변. 변경 신고 의무와 정지·환수 안내." }
+    ],
+
+    "targeting": {
+      "ageMin": null,
+      "ageMax": null,
+      "incomeMaxMonthly": null,
+      "incomeBracketCode": null,
+      "householdTypes": [],
+      "employmentStatus": [],
+      "region": ["전국"],
+      "lifeEvents": [],
+      "specialGroups": [],
+      "exclusions": []
+    }
+  }
+]

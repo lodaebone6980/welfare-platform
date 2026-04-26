@@ -360,6 +360,55 @@ enum IndexingEngine {
   GOOGLE_API        // Google Indexing API
   SITEMAP_PING      // Sitemap ping 방식 (Google, Bing)
   NAVER_MANUAL      // Naver 는 API 없음, 수기 클릭 기록용
+  DAUM_MANUAL       // Daum 도 API 없음, 페이지등록/수기 클릭 기록용
+}
+
+/**
+ * 색인 요청 큐 (Chrome 확장이 풀링해서 처리).
+ *
+ * 흐름:
+ *   1) 정책 publish 직후 / 어드민 수동 / 일배치 → 이 큐에 INSERT
+ *   2) Chrome 확장(background.js) 이 X-Indexing-Secret 헤더로
+ *      GET /api/indexing-queue/pull?engine=NAVER_MANUAL&limit=5
+ *      → PENDING 항목 가져가면서 status=IN_PROGRESS, requestedAt=now()
+ *   3) 확장이 Naver/Daum 색인 요청 페이지에 자동 입력 + 클릭
+ *   4) 결과를 POST /api/indexing-queue/result 로 회신
+ *      → status=SUCCESS|FAILED|CAPTCHA|RATE_LIMITED, completedAt=now()
+ *   5) IndexingLog 에도 1건 누적 기록 (대시보드 통계용)
+ *
+ * 일일 한도:
+ *   - NAVER_MANUAL: 50/일/사이트 (검색어드바이저)
+ *   - DAUM_MANUAL : 별도 한도 없으나 보수적으로 30/일 권장
+ */
+model IndexingQueue {
+  id           Int       @id @default(autoincrement())
+  url          String    @db.Text
+  engine       IndexingEngine                              // NAVER_MANUAL | DAUM_MANUAL | GOOGLE_API ...
+  status       IndexingQueueStatus @default(PENDING)
+  priority     Int       @default(0)                       // 높을수록 먼저
+  attempts     Int       @default(0)
+  lastError    String?   @db.Text
+  requestedAt  DateTime?                                    // 확장이 가져간 시각
+  completedAt  DateTime?                                    // 결과 회신 시각
+  resultMeta   Json?                                        // 캡차 종류, HTTP status 등
+  policyId     Int?                                         // 연관 정책(있으면)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([url, engine])
+  @@index([engine, status, priority(sort: Desc), createdAt])
+  @@index([status, createdAt])
+  @@map("indexing_queue")
+}
+
+enum IndexingQueueStatus {
+  PENDING        // 대기
+  IN_PROGRESS    // 확장이 가져감(타임아웃 시 PENDING 으로 복구 가능)
+  SUCCESS        // 색인 요청 완료
+  FAILED         // 실패 (재시도 대상)
+  CAPTCHA        // 캡차 만나서 일시정지
+  RATE_LIMITED   // 일일 한도 도달
+  SKIPPED        // 사용자가 건너뛰기
 }
 
 enum IndexingStatus {
