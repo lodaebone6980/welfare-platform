@@ -195,6 +195,37 @@ function sanitizeHtml(html: string): string {
     .replace(/\sstyle\s*=\s*'[^']*'/gi, '');
 }
 
+/**
+ * LLM 결과 후처리 — 모델이 시스템 프롬프트를 무시하고 만드는 패턴들을 자동 제거.
+ * - \"~는 다음과 같습니다:\", \"~를 따릅니다:\" 같은 redundant 도입부 단락 제거
+ * - <strong>연령:</strong>·<strong>거주:</strong> 같은 콜론 라벨 제거
+ * - \"연령: 만 19~34세\" 처럼 li 시작 부분의 콜론 라벨 제거
+ * - callout 안 \"정책 한눈에 보기\" 헤더 제거
+ */
+export function postProcessHtml(html: string): string {
+  let s = String(html);
+  // 1. 도입부 redundant <p> 제거
+  s = s.replace(
+    /<p[^>]*>\s*[^<]{0,80}(다음과\s*같습니다|절차를\s*따릅니다|아래와\s*같습니다|진행됩니다)\s*[:.\s]*\s*<\/p>/g,
+    '',
+  );
+  // 2. <strong>한글라벨:</strong> 콜론 라벨 제거 (1~15글자 한글/공백 + : + 닫기)
+  s = s.replace(/<strong>\s*[가-힣A-Za-z\s]{1,15}\s*:\s*<\/strong>\s*/g, '');
+  // 3. <li>연령: ...</li> li 시작 콜론 라벨 제거
+  s = s.replace(
+    /<li>\s*[가-힣A-Za-z\s]{1,12}\s*:\s+/g,
+    '<li>',
+  );
+  // 4. callout 헤더 \"정책 한눈에 보기\"·\"한눈에 보기\" 제거
+  s = s.replace(
+    /<strong>\s*(?:정책\s*)?한눈에\s*보기\s*<\/strong>\s*/g,
+    '',
+  );
+  // 5. li 안의 \"<strong>...:</strong>\"가 빠지면 li 처음에 한 칸 공백/콜론 잔재 정리
+  s = s.replace(/<li>\s*[:\s]+/g, '<li>');
+  return s;
+}
+
 /** content 내 키워드 등장 횟수 (대소문자/공백 정규화) */
 function countOccurrences(haystack: string, needle: string): number {
   if (!needle || !haystack) return 0;
@@ -293,10 +324,10 @@ function validate(obj: unknown): GeneratedContent | null {
 
   return {
     excerpt: excerpt.slice(0, 220),
-    content: sanitizeHtml(content).slice(0, 12000),
-    eligibility: eligibility.slice(0, 3000),
-    applicationMethod: applicationMethod.slice(0, 3000),
-    requiredDocuments: requiredDocuments.slice(0, 2000),
+    content: postProcessHtml(sanitizeHtml(content)).slice(0, 12000),
+    eligibility: postProcessHtml(eligibility).slice(0, 3000),
+    applicationMethod: postProcessHtml(applicationMethod).slice(0, 3000),
+    requiredDocuments: postProcessHtml(requiredDocuments).slice(0, 2000),
     metaDesc: String(o.metaDesc ?? '').slice(0, 170),
     focusKeyword: focusKeyword.slice(0, 60),
     faqs: faqsArr.slice(0, 8),
