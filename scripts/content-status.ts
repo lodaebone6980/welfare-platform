@@ -8,8 +8,11 @@
 import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
+import { CONTENT_THRESHOLDS } from '../lib/policy-content-generator';
 
 const prisma = new PrismaClient();
+
+const T = CONTENT_THRESHOLDS;
 
 type P = {
   id: number;
@@ -19,6 +22,8 @@ type P = {
   excerpt: string | null;
   eligibility: string | null;
   applicationMethod: string | null;
+  metaDesc: string | null;
+  focusKeyword: string | null;
   deadline: string | null;
   viewCount: number;
   publishedAt: Date | null;
@@ -36,7 +41,16 @@ function needsGeneration(p: P): boolean {
   const excerptLen = (p.excerpt || '').trim().length;
   const eligLen = (p.eligibility || '').trim().length;
   const applyLen = (p.applicationMethod || '').trim().length;
-  return contentLen < 200 || excerptLen < 20 || eligLen < 20 || applyLen < 20;
+  const metaLen = (p.metaDesc || '').trim().length;
+  const fkLen = (p.focusKeyword || '').trim().length;
+  return (
+    contentLen < T.MIN_CONTENT_LEN ||
+    excerptLen < T.MIN_EXCERPT_LEN ||
+    eligLen < T.MIN_ELIGIBILITY_LEN ||
+    applyLen < T.MIN_APPLY_METHOD_LEN ||
+    metaLen < 50 ||
+    fkLen < 2
+  );
 }
 
 function parseKoreanDate(raw: string | null): Date | null {
@@ -68,6 +82,8 @@ async function main() {
       excerpt: true,
       eligibility: true,
       applicationMethod: true,
+      metaDesc: true,
+      focusKeyword: true,
       deadline: true,
       viewCount: true,
       publishedAt: true,
@@ -94,18 +110,24 @@ async function main() {
     excerptShort: 0,
     eligShort: 0,
     applyShort: 0,
+    metaShort: 0,
+    fkShort: 0,
   };
   for (const p of all) {
-    if (stripHtml(p.content).length < 200) lack.contentShort++;
-    if ((p.excerpt || '').length < 20) lack.excerptShort++;
-    if ((p.eligibility || '').length < 20) lack.eligShort++;
-    if ((p.applicationMethod || '').length < 20) lack.applyShort++;
+    if (stripHtml(p.content).length < T.MIN_CONTENT_LEN) lack.contentShort++;
+    if ((p.excerpt || '').length < T.MIN_EXCERPT_LEN) lack.excerptShort++;
+    if ((p.eligibility || '').length < T.MIN_ELIGIBILITY_LEN) lack.eligShort++;
+    if ((p.applicationMethod || '').length < T.MIN_APPLY_METHOD_LEN) lack.applyShort++;
+    if ((p.metaDesc || '').length < 50) lack.metaShort++;
+    if ((p.focusKeyword || '').length < 2) lack.fkShort++;
   }
-  console.log('부족 항목 분포 (중복 집계):');
-  console.log(`  content < 200자           : ${lack.contentShort}`);
-  console.log(`  excerpt < 20자            : ${lack.excerptShort}`);
-  console.log(`  eligibility < 20자        : ${lack.eligShort}`);
-  console.log(`  applicationMethod < 20자  : ${lack.applyShort}`);
+  console.log('부족 항목 분포 (중복 집계, 새 AdSense 풍부화 임계값 기준):');
+  console.log(`  content < ${T.MIN_CONTENT_LEN}자           : ${lack.contentShort}`);
+  console.log(`  excerpt < ${T.MIN_EXCERPT_LEN}자             : ${lack.excerptShort}`);
+  console.log(`  eligibility < ${T.MIN_ELIGIBILITY_LEN}자        : ${lack.eligShort}`);
+  console.log(`  applicationMethod < ${T.MIN_APPLY_METHOD_LEN}자  : ${lack.applyShort}`);
+  console.log(`  metaDesc < 50자            : ${lack.metaShort}`);
+  console.log(`  focusKeyword 누락          : ${lack.fkShort}`);
   console.log('');
 
   // 카테고리별

@@ -28,6 +28,12 @@ import {
 const DRY = process.env.DRY === '1' || process.argv.includes('--dry');
 const LIMIT = Math.max(1, parseInt(process.env.LIMIT || '100', 10));
 const CATEGORY_SLUG = process.env.CATEGORY_SLUG || '';
+// STATUS=ALL → status 필터 제거(PUBLISHED+DRAFT+ARCHIVED 모두 처리)
+// STATUS=PUBLISHED|DRAFT|ARCHIVED → 해당 status 만
+// 기본값: PUBLISHED (기존 동작 호환)
+const STATUS = (process.env.STATUS || 'PUBLISHED').toUpperCase();
+// 병렬 호출 개수. gpt-4o tier 4 기준 안전한 동시성. 1=순차(기존)
+const CONCURRENCY = Math.max(1, parseInt(process.env.CONCURRENCY || '1', 10));
 
 async function main() {
   if (!process.env.OPENAI_API_KEY) {
@@ -39,8 +45,12 @@ async function main() {
   const categoryFilter = CATEGORY_SLUG
     ? { category: { slug: CATEGORY_SLUG } }
     : {};
+  const statusFilter =
+    STATUS === 'ALL'
+      ? {}
+      : { status: STATUS as 'PUBLISHED' | 'DRAFT' | 'ARCHIVED' | 'REVIEW' };
   const candidates = await prisma.policy.findMany({
-    where: { status: 'PUBLISHED', ...categoryFilter },
+    where: { ...statusFilter, ...categoryFilter },
     select: {
       id: true,
       title: true,
@@ -57,7 +67,14 @@ async function main() {
       category: { select: { name: true, slug: true } },
     },
     take: LIMIT * 3, // 여유분 확보 (필터링 후 LIMIT 맞추기 위해)
-    orderBy: { updatedAt: 'asc' }, // 오래된 것부터
+    // ORDER_BY 환경변수: POPULAR(viewCount desc) | UNPOPULAR(viewCount asc) | OLDEST(updatedAt asc)
+    // 기본: 비인기 우선 — Claude 가 인기 정책 직접 작성하는 흐름과 분리하기 위함
+    orderBy:
+      (process.env.ORDER_BY || 'UNPOPULAR').toUpperCase() === 'POPULAR'
+        ? [{ viewCount: 'desc' }, { id: 'asc' }]
+        : (process.env.ORDER_BY || 'UNPOPULAR').toUpperCase() === 'OLDEST'
+          ? [{ updatedAt: 'asc' }]
+          : [{ viewCount: 'asc' }, { id: 'asc' }],
   });
 
   const targets = candidates.filter((p) => needsGeneration(p)).slice(0, LIMIT);
@@ -73,10 +90,12 @@ async function main() {
 
   let success = 0;
   let failed = 0;
+  let processed = 0;
 
-  for (let i = 0; i < targets.length; i++) {
-    const p = targets[i];
-    const label = `[${i + 1}/${targets.length}] #${p.id} ${p.title.slice(0, 30)}`;
+  type Target = (typeof targets)[number];
+
+  async function processOne(p: Target, idx: number): Promise<void> {
+    const label = `[${idx + 1}/${targets.length}] #${p.id} ${p.title.slice(0, 30)}`;
     try {
       const gen = await generatePolicyContent({
         title: p.title,
@@ -94,7 +113,7 @@ async function main() {
       if (!gen) {
         console.warn(`${label} — LLM returned invalid JSON, skip`);
         failed++;
-        continue;
+        return;
       }
 
       if (DRY) {
@@ -102,10 +121,9 @@ async function main() {
           `${label} ✓ (excerpt=${gen.excerpt.length}자 content=${gen.content.length}자 faqs=${gen.faqs.length})`,
         );
         success++;
-        continue;
+        return;
       }
 
-      // 2) DB 업데이트 (트랜잭션: Policy + Faq 교체)
       await prisma.$transaction(async (tx) => {
         await tx.policy.update({
           where: { id: p.id },
@@ -119,8 +137,6 @@ async function main() {
             focusKeyword: gen.focusKeyword,
           },
         });
-
-        // FAQ 는 기존 것 지우고 새로 생성 (AEO 신뢰도)
         if (gen.faqs.length > 0) {
           await tx.faq.deleteMany({ where: { policyId: p.id } });
           await tx.faq.createMany({
@@ -138,14 +154,38 @@ async function main() {
     } catch (err) {
       failed++;
       console.warn(`${label} ❌`, (err as Error).message);
+    } finally {
+      processed++;
+      if (processed % 25 === 0) {
+        console.log(
+          `[gen] progress ${processed}/${targets.length} success=${success} failed=${failed}`,
+        );
+      }
     }
+  }
 
-    // rate limit 안전 텀 (OpenAI 기본 제한 방어)
-    await new Promise((r) => setTimeout(r, 200));
+  if (CONCURRENCY <= 1) {
+    // 순차 (기존 동작)
+    for (let i = 0; i < targets.length; i++) {
+      await processOne(targets[i], i);
+      await new Promise((r) => setTimeout(r, 200));
+    }
+  } else {
+    // 병렬 풀 — 항상 CONCURRENCY 개의 호출이 동시 진행되도록
+    let next = 0;
+    async function worker(): Promise<void> {
+      while (true) {
+        const i = next++;
+        if (i >= targets.length) return;
+        await processOne(targets[i], i);
+      }
+    }
+    const workers = Array.from({ length: CONCURRENCY }, () => worker());
+    await Promise.all(workers);
   }
 
   console.log(
-    `[gen] done. success=${success} failed=${failed} DRY=${DRY} LIMIT=${LIMIT}`,
+    `[gen] done. success=${success} failed=${failed} DRY=${DRY} LIMIT=${LIMIT} CONCURRENCY=${CONCURRENCY} STATUS=${STATUS}`,
   );
   await prisma.$disconnect();
 }
