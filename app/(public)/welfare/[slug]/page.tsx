@@ -250,22 +250,22 @@ export default async function PolicyDetailPage({ params }: Props) {
         {/* 혜택 한눈에 */}
         <div className="mb-6 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-5">
           <p className="text-[11px] font-semibold text-blue-700 tracking-wide mb-3">혜택 한눈에</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-white rounded-xl p-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-stretch">
+            <div className="bg-white rounded-xl p-3 flex flex-col">
               <p className="text-[11px] text-gray-500 mb-1">💰 지원금액</p>
-              <p className="text-sm font-bold text-gray-900 leading-snug">
+              <p className="text-xs font-bold text-gray-900 leading-snug break-keep">
                 {benefit.amount || '본문 참고'}
               </p>
             </div>
-            <div className="bg-white rounded-xl p-3">
+            <div className="bg-white rounded-xl p-3 flex flex-col">
               <p className="text-[11px] text-gray-500 mb-1">👥 지원대상</p>
-              <p className="text-sm font-medium text-gray-800 leading-snug line-clamp-2">
+              <p className="text-sm font-medium text-gray-800 leading-snug break-keep">
                 {benefit.target || (policy.geoRegion ? `${policy.geoRegion} 거주자` : '본문 참고')}
               </p>
             </div>
-            <div className="bg-white rounded-xl p-3">
+            <div className="bg-white rounded-xl p-3 flex flex-col">
               <p className="text-[11px] text-gray-500 mb-1">📅 신청기간</p>
-              <p className="text-sm font-medium text-gray-800 leading-snug">
+              <p className="text-xs font-medium text-gray-800 leading-snug break-keep">
                 {policy.deadline && !/상시|수시|연중/.test(policy.deadline)
                   ? policy.deadline
                   : '상시 접수'}
