@@ -314,7 +314,7 @@ export default async function CategoryPolicyDetailPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Business Info Table */}
+        {/* Business Info Table — 신청방법 행은 별도 섹션에서 자세히 보여주므로 제거 */}
         <section id="content" className="mb-8">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <span className="w-1 h-6 bg-blue-600 rounded-full inline-block"></span>
@@ -325,31 +325,13 @@ export default async function CategoryPolicyDetailPage({ params }: Props) {
               <tbody>
                 <tr className="border-b"><td className="bg-gray-50 px-4 py-3 font-medium text-gray-600 w-28">지원기관</td><td className="px-4 py-3">{policy.geoRegion || '-'}</td></tr>
                 <tr className="border-b"><td className="bg-gray-50 px-4 py-3 font-medium text-gray-600">마감일</td><td className="px-4 py-3">{policy.deadline ? formatDate(policy.deadline) : '상시접수'}</td></tr>
-                <tr className="border-b"><td className="bg-gray-50 px-4 py-3 font-medium text-gray-600">지원형태</td><td className="px-4 py-3">{catName || '-'}</td></tr>
-                <tr><td className="bg-gray-50 px-4 py-3 font-medium text-gray-600">신청방법</td><td className="px-4 py-3">{policy.applicationMethod || '온라인/방문 신청'}</td></tr>
+                <tr><td className="bg-gray-50 px-4 py-3 font-medium text-gray-600">지원형태</td><td className="px-4 py-3">{catName || '-'}</td></tr>
               </tbody>
             </table>
           </div>
         </section>
 
-        {/* Content Section */}
-        <section className="mb-8">
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <span className="w-1 h-6 bg-blue-600 rounded-full inline-block"></span>
-            상세 설명
-          </h2>
-          <div className="bg-white rounded-xl border p-5">
-            {policy.content ? (
-              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: normalizePolicyHtml(policy.content) }} />
-            ) : policy.description ? (
-              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: normalizePolicyHtml(policy.description) }} />
-            ) : (
-              <p className="text-gray-500">상세 설명이 없습니다.</p>
-            )}
-          </div>
-        </section>
-
-        {/* CTA */}
+        {/* CTA #1 — 사업 정보 직후 */}
         {policy.applyUrl && (
           <div className="mb-8 text-center">
             <Link href={policy.applyUrl} rel="nofollow" className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-lg">
@@ -406,6 +388,34 @@ export default async function CategoryPolicyDetailPage({ params }: Props) {
             </div>
           </section>
         )}
+
+        {/* CTA #2 — 필요 서류 직후 */}
+        {policy.applyUrl && (
+          <div className="mb-8 text-center">
+            <Link href={policy.applyUrl} rel="nofollow" className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-lg">
+              신청하기
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+            </Link>
+          </div>
+        )}
+
+        {/* Content Section — 마지막에 배치 */}
+        <section className="mb-8">
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <span className="w-1 h-6 bg-blue-600 rounded-full inline-block"></span>
+            상세 설명
+          </h2>
+          <div className="bg-white rounded-xl border p-5">
+            {policy.content ? (
+              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: normalizePolicyHtml(policy.content) }} />
+            ) : policy.description ? (
+              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: normalizePolicyHtml(policy.description) }} />
+            ) : (
+              <p className="text-gray-500">상세 설명이 없습니다.</p>
+            )}
+          </div>
+        </section>
+
 
         {/* FAQ */}
         {policy.faqs && policy.faqs.length > 0 && (
