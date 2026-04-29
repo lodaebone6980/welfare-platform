@@ -94,24 +94,26 @@ function buildSystemPrompt(): string {
 - eligibility/applicationMethod/requiredDocuments 필드: HTML 안에 H2를 넣지 마세요(페이지가 자동 추가). 콘텐츠만 ul/ol/p로.
 
 [content 본문 4섹션 구조]
-1) <div class=\"callout callout-info\"><strong>정책 한눈에 보기</strong> ... </div> — 시행기관/지원대상/지원금액/신청기간/처리기간 콜아웃 박스 (H2 아닌 div+strong)
-2) <h2>지원 내용</h2> — 4~6문장 + 표(<table class=\"policy-table\">) 또는 불릿. \"—\" 같은 em-dash 사용 금지, 짧은 명사형 H2.
+1) <div class=\"callout callout-info\"><ul>...</ul></div> — 시행기관/지원대상/지원금액/신청기간/처리기간 정보. <strong>제목 라벨 사용 금지</strong>(\"정책 한눈에 보기\" 같은 헤더 텍스트 X). 바로 ul 시작.
+2) <h2>지원 내용</h2> — 4~6문장 + 표(<table class=\"policy-table\">) 또는 불릿. em-dash 금지, 짧은 명사형 H2.
 3) <h2>신청 후 처리 절차</h2> — 심사 / 결과 통보 / 지급 / 사후관리 단계별 (각 단계 소요일/주체)
 4) <h2>출처 및 참고</h2> — 부처명, 시행 연도, 공식 신청처(applyUrl 그대로), 마지막 업데이트 YYYY년 X월
 
-[eligibility 필드 — H2 없이]
-<ul><li>✅ <strong>연령:</strong> ...</li><li>✅ <strong>거주요건:</strong> ...</li>...</ul><p>참고 안내</p>
-체크리스트 5개 이상.
+[eligibility 필드 — H2 없이, 콜론 라벨 없이, ul 한 덩어리만]
+<ul><li>✅ 만 19~34세 (군 복무 시 최대 만 39세)</li><li>✅ 서울특별시 1년 이상 계속 거주</li>...</ul>
+중요: <strong>...:</strong> 콜론 라벨 사용 금지. 자연 문장으로. ul 뒤에 추가 <p> 안내 금지(줄간격 큼). ul 한 블록만.
 
-[applicationMethod 필드 — H2 없이]
-<ol class=\"steps\"><li><strong>1단계.</strong> ...</li>...<li><strong>5단계.</strong> ...</li></ol>
-5단계 절차, 각 단계 1~2문장 부연설명. \"—\" em-dash 금지.
+[applicationMethod 필드 — H2 없이, 콜론 라벨 없이]
+<ol class=\"steps\"><li>1단계. 서울청년포털에 회원가입 후 ...</li><li>2단계. ...</li>...</ol>
+중요: <strong>1단계.</strong> 처럼 strong 사용 금지. 자연 문장. \"1단계.\" 또는 \"①\" 마커만.
 
-[requiredDocuments 필드 — H2 없이, 컴팩트 형식]
-<p><strong>필수 서류:</strong> 신분증, 주민등록등본, 건강보험 자격득실확인서 ... (콤마 나열)</p>
-<p><strong>해당 시 추가:</strong> 근로/사업/기타소득 증빙, 군 복무 사실 증명서 ...</p>
-<p>발급처: 정부24·홈택스·국민건강보험공단 (온라인 무료 발급)</p>
-ul 사용 금지(prose에서 줄간격이 두 줄로 보임). p 3개로 컴팩트.
+[requiredDocuments 필드 — H2 없이, 줄바꿈 없이 한 단락]
+<p>신분증 사본, 주민등록등본, 건강보험 자격득실확인서 ... 등을 기본 제출합니다. 본인 상황에 따라 근로계약서·소득증빙·군 복무 사실 증명서 등을 추가합니다. 모든 서류는 정부24·국민건강보험공단·홈택스·병무청에서 온라인 무료 발급이 가능합니다.</p>
+중요 금지사항:
+- <strong>필수:</strong>·<strong>해당 시:</strong> 콜론 라벨 사용 금지
+- ul 사용 금지
+- \"필요 서류는 다음과 같습니다\", \"제출 서류는 ~입니다\" 같은 redundant 도입부 문장 금지(페이지가 이미 \"필요 서류\" H2를 자동 표시함)
+- 그냥 첫 단어부터 서류 이름을 나열하는 자연 문장으로.
 
 [글자 수 / 키워드 / 행동유도 — 필수]
 - content 필드 본문(HTML 태그 제외 평문 기준)은 **2,500자 이상 3,500자 이하**가 목표 분량입니다. 절대 1,500자 미만으로 끝내지 마세요.
@@ -539,9 +541,30 @@ export async function generatePolicyContent(
 const DUPLICATE_H2_PATTERN =
   /<h2[^>]*>\s*(지원\s*대상|신청\s*방법|제출\s*서류|필요\s*서류|자주\s*묻는\s*질문|함께\s*보면)/i;
 
+// 옛 형식 — callout 안의 \"정책 한눈에 보기\" 헤더 라벨
+const OLD_CALLOUT_LABEL_PATTERN = /<strong>\s*정책\s*한눈에\s*보기/;
+
+// 옛 형식 — `<strong>연령:</strong>` `<strong>거주요건:</strong>` 같은 콜론 라벨
+const COLON_LABEL_PATTERN = /<strong>[가-힣\s]{1,15}:<\/strong>/;
+
 export function hasDuplicateSectionH2(content?: string | null): boolean {
   if (!content) return false;
   return DUPLICATE_H2_PATTERN.test(content);
+}
+
+export function hasOldFormatMarkers(p: {
+  content?: string | null;
+  eligibility?: string | null;
+  applicationMethod?: string | null;
+  requiredDocuments?: string | null;
+}): boolean {
+  if (p.content && OLD_CALLOUT_LABEL_PATTERN.test(p.content)) return true;
+  if (p.eligibility && COLON_LABEL_PATTERN.test(p.eligibility)) return true;
+  if (p.applicationMethod && COLON_LABEL_PATTERN.test(p.applicationMethod))
+    return true;
+  if (p.requiredDocuments && COLON_LABEL_PATTERN.test(p.requiredDocuments))
+    return true;
+  return false;
 }
 
 /**
@@ -564,6 +587,8 @@ export function needsGeneration(p: {
   if (contentLen < MIN_CONTENT_LEN) return true;
   // 중복 H2 패턴 → 옛 9-섹션 구조 → 새 4섹션 구조로 재작성 필요
   if (hasDuplicateSectionH2(p.content)) return true;
+  // 옛 콜론 라벨/callout 헤더 → 새 자연 문장 형식으로 재작성 필요
+  if (hasOldFormatMarkers(p)) return true;
   if (!p.eligibility || p.eligibility.trim().length < MIN_ELIGIBILITY_LEN)
     return true;
   if (

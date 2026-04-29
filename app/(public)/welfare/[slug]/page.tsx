@@ -339,7 +339,7 @@ export default async function PolicyDetailPage({ params }: Props) {
           </h2>
           <div className="bg-green-50 rounded-xl border border-green-100 p-5">
             {policy.eligibility ? (
-              <div className="prose prose-sm max-w-none text-gray-700" dangerouslySetInnerHTML={{ __html: normalizePolicyHtml(policy.eligibility) }} />
+              <div className="prose prose-sm max-w-none text-gray-700 prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2 prose-p:my-2" dangerouslySetInnerHTML={{ __html: normalizePolicyHtml(policy.eligibility) }} />
             ) : (
               <p className="text-gray-500">지원 대상 정보가 없습니다. 상세 페이지에서 확인해주세요.</p>
             )}
@@ -354,7 +354,7 @@ export default async function PolicyDetailPage({ params }: Props) {
           </h2>
           <div className="bg-white rounded-xl border p-5">
             {policy.applicationMethod ? (
-              <div className="prose prose-sm max-w-none text-gray-700" dangerouslySetInnerHTML={{ __html: normalizePolicyHtml(policy.applicationMethod) }} />
+              <div className="prose prose-sm max-w-none text-gray-700 prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2 prose-p:my-2" dangerouslySetInnerHTML={{ __html: normalizePolicyHtml(policy.applicationMethod) }} />
             ) : (
               <div className="space-y-4">
                 <div className="flex gap-3"><div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-sm font-bold">1</div><div><p className="font-medium">자격 확인</p><p className="text-sm text-gray-500">지원 대상 여부를 확인합니다</p></div></div>
@@ -374,7 +374,7 @@ export default async function PolicyDetailPage({ params }: Props) {
               필요 서류
             </h2>
             <div className="bg-purple-50 rounded-xl border border-purple-100 p-5">
-              <div className="prose prose-sm max-w-none text-gray-700" dangerouslySetInnerHTML={{ __html: normalizePolicyHtml(policy.requiredDocuments) }} />
+              <div className="prose prose-sm max-w-none text-gray-700 prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2 prose-p:my-2" dangerouslySetInnerHTML={{ __html: normalizePolicyHtml(policy.requiredDocuments) }} />
             </div>
           </section>
         )}
