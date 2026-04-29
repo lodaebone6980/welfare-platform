@@ -363,23 +363,21 @@ enum IndexingEngine {
   DAUM_MANUAL       // Daum 도 API 없음, 페이지등록/수기 클릭 기록용
 }
 
-/**
- * 색인 요청 큐 (Chrome 확장이 풀링해서 처리).
- *
- * 흐름:
- *   1) 정책 publish 직후 / 어드민 수동 / 일배치 → 이 큐에 INSERT
- *   2) Chrome 확장(background.js) 이 X-Indexing-Secret 헤더로
- *      GET /api/indexing-queue/pull?engine=NAVER_MANUAL&limit=5
- *      → PENDING 항목 가져가면서 status=IN_PROGRESS, requestedAt=now()
- *   3) 확장이 Naver/Daum 색인 요청 페이지에 자동 입력 + 클릭
- *   4) 결과를 POST /api/indexing-queue/result 로 회신
- *      → status=SUCCESS|FAILED|CAPTCHA|RATE_LIMITED, completedAt=now()
- *   5) IndexingLog 에도 1건 누적 기록 (대시보드 통계용)
- *
- * 일일 한도:
- *   - NAVER_MANUAL: 50/일/사이트 (검색어드바이저)
- *   - DAUM_MANUAL : 별도 한도 없으나 보수적으로 30/일 권장
- */
+// 색인 요청 큐 (Chrome 확장이 풀링해서 처리).
+//
+// 흐름:
+//   1) 정책 publish 직후 / 어드민 수동 / 일배치 → 이 큐에 INSERT
+//   2) Chrome 확장(background.js) 이 X-Indexing-Secret 헤더로
+//      GET /api/indexing-queue/pull?engine=NAVER_MANUAL&limit=5
+//      → PENDING 항목 가져가면서 status=IN_PROGRESS, requestedAt=now()
+//   3) 확장이 Naver/Daum 색인 요청 페이지에 자동 입력 + 클릭
+//   4) 결과를 POST /api/indexing-queue/result 로 회신
+//      → status=SUCCESS|FAILED|CAPTCHA|RATE_LIMITED, completedAt=now()
+//   5) IndexingLog 에도 1건 누적 기록 (대시보드 통계용)
+//
+// 일일 한도:
+//   - NAVER_MANUAL: 50/일/사이트 (검색어드바이저)
+//   - DAUM_MANUAL : 별도 한도 없으나 보수적으로 30/일 권장
 model IndexingQueue {
   id           Int       @id @default(autoincrement())
   // VarChar(1024) — Postgres B-tree unique 인덱스 한도(8191B) 안전, 실제 정책 URL 은 200자 이내
