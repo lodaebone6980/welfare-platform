@@ -1,8 +1,7 @@
 import { prisma } from '@/lib/prisma';
+import { SITE_URL } from '@/lib/env';
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  'https://welfare-platform-five.vercel.app';
+const BASE_URL = SITE_URL;
 
 export const revalidate = 3600;
 export const dynamic = 'force-dynamic';

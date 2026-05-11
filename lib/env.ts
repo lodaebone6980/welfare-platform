@@ -15,6 +15,8 @@ export const SITE_DESC =
 export const GA_ID = process.env.NEXT_PUBLIC_GA_ID || ''
 export const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || ''
 export const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT || ''
+export const ADSENSE_UNITS_ENABLED =
+  (process.env.NEXT_PUBLIC_ADSENSE_UNITS_ENABLED ?? '0') === '1'
 export const NAVER_WCS_ID = process.env.NEXT_PUBLIC_NAVER_WCS || ''
 export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL || ''
 export const KAKAO_PIXEL_ID = process.env.NEXT_PUBLIC_KAKAO_PIXEL || ''

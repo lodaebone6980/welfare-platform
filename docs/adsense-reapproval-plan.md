@@ -1,139 +1,162 @@
-# AdSense reapproval plan
+# AdSense 재승인 실행 플랜
 
 Last updated: 2026-05-12
 
-## Goal
+## 목표
 
-Fix the likely "low value content" rejection by reducing thin/generated pages and making the public site clearly useful before requesting another review.
+`www.govmate.co.kr`의 "가치가 별로 없는 콘텐츠" 거절을 해결하기 위해, 심사자가 보는 공개 페이지를 아래 상태로 만든다.
 
-## What Google is looking for
+- 얇거나 자동 생성에 가까운 정책 페이지는 검색 색인과 sitemap에서 제외한다.
+- 색인되는 정책 페이지에는 충분한 본문, 공식 출처, 검수일, 신청 방법, 지원 대상이 보이게 한다.
+- 로그인, 알림, 마이페이지, 검색 결과, 도구성 화면은 AdSense 심사 대상 콘텐츠처럼 보이지 않게 한다.
+- 광고 코드는 사이트 연결용으로 유지하되, 승인 전 빈 광고 단위는 렌더링하지 않는다.
 
-Use these as the review baseline:
+## Google 기준 요약
 
-- AdSense policies require compliance with Google Publisher Policies and prohibit invalid or misleading ad behavior.
-- Google's beginner guide says sites should have unique, relevant content that adds value to users.
-- Google Publisher Policies call out inventory value issues such as pages without publisher content, low-value content, under-construction screens, or ads overwhelming content.
+심사 기준으로 사용할 공식 문서:
 
-References:
+- AdSense 프로그램 정책: https://support.google.com/adsense/answer/48182
+- AdSense 초보자 정책 가이드: https://support.google.com/adsense/answer/23921
+- 계정 미승인/콘텐츠 품질 안내: https://support.google.com/adsense/answer/81904
+- Publisher Policies, inventory value: https://support.google.com/adsense/answer/10502938
+- 저가치 또는 publisher content 없는 화면: https://support.google.com/publisherpolicies/answer/11112688
+- AdSense 사이트 연결/심사: https://support.google.com/adsense/answer/7584263
 
-- https://support.google.com/adsense/answer/48182
-- https://support.google.com/adsense/answer/23921
-- https://support.google.com/adsense/answer/10502938
+핵심 해석:
 
-## Diagnosis for govmate.co.kr
+- 사이트는 독자적이고 유용한 콘텐츠를 제공해야 한다.
+- 제목만 있거나 짧은 목록, 거의 복사된 자료, 공사 중 화면은 승인 가능성이 낮다.
+- 검색 결과, 로그인, 알림, 계정 화면처럼 콘텐츠가 주목적이 아닌 화면에는 광고를 두지 않는다.
+- 자동 생성 콘텐츠는 사람의 검수와 큐레이션을 거친 뒤 공개/색인해야 한다.
 
-The site has useful intent, but the current risk is that many policy pages can look template-generated:
+## 이번 PR에 적용한 것
 
-- Large numbers of similar welfare pages by category/region can look duplicated.
-- Some policy descriptions are short and list-like.
-- Pages may depend heavily on imported public-data text rather than original explanation.
-- If ad slots appear before approval or near sparse content, reviewers may classify the inventory as low value.
-- Trust signals exist, but they should be more explicit for a welfare/benefit information site.
+### 1. 정책 페이지 품질 게이트
 
-## Content quality standard
+추가 파일: `lib/policy-quality.ts`
 
-Only publish pages that meet all of these:
+색인 가능 조건:
 
-- Minimum 900-1,500 Korean characters of original explanation, not counting copied official descriptions.
-- Clear source link to the official application or announcement page.
-- Visible "last checked" date.
-- At least 5 structured sections:
-  - who qualifies
-  - benefit amount or support details
-  - application period
-  - how to apply
-  - common mistakes or exclusion cases
-- At least 3 FAQs written from a real user perspective.
-- One short editor note explaining when this benefit is worth checking.
-- No empty ad slots, placeholder ads, or ad-like boxes on sparse pages.
+- 본문/요약/FAQ 포함 총 텍스트 900자 이상
+- 지원 대상 또는 신청 방법 중 하나 이상 충분히 작성
+- 요약 또는 본문 설명 존재
+- 공식 출처 URL 존재
+- 분류 정보 존재
+- 총 7개 품질 항목 중 5개 이상 충족
 
-## Publish/noindex rules
+적용 위치:
 
-Use this rule until reapproval:
+- 정책 상세 메타데이터: 기준 미달이면 `noindex, follow`
+- 정책 sitemap: 기준 미달 정책은 `/sitemap-policies-N.xml`에서 제외
 
-- Keep reviewed, high-quality pages indexable.
-- Set DRAFT or `noindex` for imported pages that have only short/generated content.
-- Noindex internal search pages, paginated duplicates, account pages, notification pages, admin paths, and seed/test endpoints.
-- Do not submit low-quality generated detail pages in the sitemap.
+### 2. 출처 및 검수 정보 표시
 
-## First 30 pages to strengthen
+추가 파일: `components/policy/PolicySourceNotice.tsx`
 
-Prioritize pages with broad search intent and practical user value:
+정책 상세 페이지에 아래 신뢰 신호를 표시한다.
 
-- 청년 월세 지원
-- 청년 전세자금 대출
-- 국민내일배움카드
-- 국가장학금
-- 에너지바우처
-- 첫만남이용권
-- 부모급여
-- 아동수당
-- 기초연금
-- 긴급복지 생계지원
-- 실업급여
-- 근로장려금
-- 자녀장려금
-- 자동차세 환급
-- 건강보험료 환급
-- 재난적 의료비 지원
-- 문화누리카드
-- 소상공인 정책자금
-- 신혼부부 전세대출
-- 버팀목 전세자금
-- 주거급여
-- 교육급여
-- 의료급여
-- 장애인 활동지원
-- 한부모가족 양육비
-- 산후조리비 지원
-- 난임시술비 지원
-- 보육료 지원
-- 청년도약계좌
-- 내집마련 디딤돌대출
+- 마지막 확인일
+- 공식 안내/신청 URL
+- 콘텐츠 상태: 색인 가능 또는 검수 보강 대상
+- 민간 정보 서비스이며 최종 확인은 공식 안내가 기준이라는 면책 문구
 
-## Page template
+### 3. sitemap 정리
 
-Use this editorial structure for every strengthened policy page:
+변경 파일: `app/sitemap-static.xml/route.ts`
 
-1. One-paragraph summary: who should read this page and what they can get.
-2. Eligibility checklist: age, income, residence, household, employment, exceptions.
-3. Benefit details: amount, frequency, limit, payment method.
-4. Application period: fixed deadline, rolling application, or expected annual window.
-5. How to apply: official site, offline office, required login/certificate.
-6. Required documents: default and case-specific documents.
-7. Common mistakes: duplicate application, income standard misunderstanding, expired period, wrong local government.
-8. Official source: government URL, source name, last checked date.
-9. FAQ: 3-5 questions.
-10. Related policies: 3 internal links with a reason.
+유지:
 
-## Trust improvements
+- `/`
+- `/welfare/categories`
+- `/about`
+- `/contact`
+- `/editorial-policy`
+- `/terms`
+- `/privacy`
+- `/marketing`
 
-Before resubmitting:
+제외:
 
-- Expand `/about` with operator identity, editorial purpose, and update policy.
-- Expand `/contact` with response channel and correction request process.
-- Keep `/terms`, `/privacy`, and `/marketing` linked from the footer and login flow.
-- Add an editorial policy section: sources, update cycle, correction handling, AI-assisted drafting disclosure if applicable.
-- Make footer business/operator information consistent with `.env.example`.
-- Add visible source and last-checked metadata on policy detail pages.
+- `/welfare/search`: 검색 결과/필터 화면
+- `/recommend`: 사용자 조건 입력 도구
+- `/mypage`: 계정 화면
+- `/more`: 내비게이션 화면
 
-## Technical cleanup before review
+### 4. noindex 정리
 
-- Confirm canonical URLs use `https://www.govmate.co.kr`.
-- Confirm `/og-image.png` returns 200.
-- Confirm sitemap contains only public, useful URLs.
-- Confirm robots.txt blocks admin/account/internal paths.
-- Remove or hide empty AdSense slots until approval.
-- In Search Console, request indexing for the strengthened pages after they are published.
+noindex 처리:
 
-## Reapproval timing
+- `/welfare/search`
+- `/recommend`
+- `/more`
+- `/mypage`
+- `/notifications`
+- `/account/notifications`
 
-Do not request review immediately after edits.
+의도:
 
-Recommended sequence:
+- AdSense가 콘텐츠 페이지가 아닌 화면을 저가치 페이지로 판단할 가능성을 줄인다.
 
-1. Publish 30 strengthened pages.
-2. Noindex or unpublish thin/generated pages.
-3. Submit updated sitemap in Search Console.
-4. Wait until Google has crawled the updated pages.
-5. Reapply after at least 7-14 days of stable indexed content.
+### 5. 신뢰 페이지 강화
+
+추가 페이지:
+
+- `/editorial-policy`
+
+포함 내용:
+
+- 정보 출처
+- 발행 기준
+- 업데이트/검수 방식
+- 자동화 활용 범위
+- 오류 제보와 정정 요청 방법
+
+푸터에서 `/editorial-policy`, `/terms`, `/privacy`, `/marketing`을 모두 접근 가능하게 했다.
+
+### 6. 광고 안전 모드
+
+변경 파일:
+
+- `app/layout.tsx`
+- `components/ads/AdSlot.tsx`
+- `.env.example`
+
+운영 방식:
+
+- `NEXT_PUBLIC_ADSENSE_CLIENT`가 있으면 AdSense 사이트 연결용 스크립트는 로드한다.
+- `NEXT_PUBLIC_ADSENSE_UNITS_ENABLED=0`이면 광고 단위는 렌더링하지 않는다.
+- 승인 전에는 `0` 유지, 승인 후 실제 광고 배치가 준비되면 `1`로 전환한다.
+
+## 콘텐츠 보강 기준
+
+재심사 전 색인할 대표 정책 30개는 아래 기준으로 보강한다.
+
+- 900-1,500자 이상의 자체 설명
+- 지원 대상: 나이, 소득, 거주지, 가구, 예외 조건
+- 지원 내용: 금액, 지급 방식, 한도, 지급 주기
+- 신청 기간: 상시/마감일/예상 접수 시기
+- 신청 방법: 온라인, 방문, 필요 인증, 접수처
+- 필요 서류: 기본 서류와 상황별 추가 서류
+- 주의사항: 중복 신청, 소득 기준 오해, 지역 제한, 예산 소진
+- FAQ 3개 이상
+- 공식 출처 URL과 마지막 확인일
+- 관련 정책 3개 내부 링크
+
+## 재심사 순서
+
+1. 위 품질 기준을 만족하는 정책 30개를 먼저 보강한다.
+2. 기준 미달 정책은 `DRAFT`/`REVIEW`로 돌리거나 품질 게이트가 noindex 처리하게 둔다.
+3. Vercel 환경변수에서 `NEXT_PUBLIC_SITE_URL=https://www.govmate.co.kr` 확인.
+4. `NEXT_PUBLIC_ADSENSE_CLIENT=ca-pub-...` 설정.
+5. 승인 전 `NEXT_PUBLIC_ADSENSE_UNITS_ENABLED=0` 유지.
+6. 배포 후 `/sitemap.xml`, `/sitemap-static.xml`, `/sitemap-policies-1.xml` 확인.
+7. Search Console에서 sitemap 재제출.
+8. 보강 페이지가 Google에 일부 반영된 뒤 7-14일 안정화.
+9. AdSense 재심사 요청.
+
+## 승인 후 작업
+
+- 첫 광고 배치는 본문을 밀어내지 않는 위치에만 추가한다.
+- 로그인, 검색 결과, 알림, 마이페이지에는 광고를 넣지 않는다.
+- 정책 상세의 첫 화면에는 광고보다 본문 요약과 출처가 먼저 보이게 유지한다.
+- `NEXT_PUBLIC_ADSENSE_UNITS_ENABLED=1` 전환은 광고 위치 QA 후 진행한다.

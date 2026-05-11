@@ -90,6 +90,11 @@ export default async function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/editorial-policy" className="text-gray-600 hover:text-green-600 transition-colors">
+                  편집 원칙
+                </Link>
+              </li>
+              <li>
                 <Link href="/contact" className="text-gray-600 hover:text-green-600 transition-colors">
                   문의하기
                 </Link>

@@ -21,6 +21,8 @@ import {
 import { getPolicyBySlug, getRelatedPolicies } from '@/lib/policy-detail';
 import { getCanonicalPath } from '@/lib/policy-canonical';
 import { inferPolicyTypes } from '@/lib/policy-tags';
+import { getPolicyQualityReport } from '@/lib/policy-quality';
+import PolicySourceNotice from '@/components/policy/PolicySourceNotice';
 
 /**
  * 새 Canonical URL: /:category/:slug
@@ -103,11 +105,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     canonicalId: (policy as any).canonicalId ?? null,
     category: policy.category ?? null,
   });
+  const qualityReport = getPolicyQualityReport(policy);
   return {
     title: policy.title,
     description: generatePolicyMetaDescription(seoData),
     openGraph: { title: ogData.title, description: ogData.description, type: 'article' },
     alternates: { canonical: canonicalPath },
+    robots: qualityReport.indexable ? { index: true, follow: true } : { index: false, follow: true },
   };
 }
 
@@ -130,6 +134,7 @@ export default async function CategoryPolicyDetailPage({ params }: Props) {
   }
 
   const dday = getDdayShared(policy.deadline);
+  const qualityReport = getPolicyQualityReport(policy);
 
   // 로딩 최적화: viewCount 증가는 fire-and-forget (await 제거) — 서버 렌더를 막지 않음
   prisma.policy
@@ -303,6 +308,8 @@ export default async function CategoryPolicyDetailPage({ params }: Props) {
             <p className="font-semibold text-sm text-purple-700">{catName || '지원금'}</p>
           </div>
         </div>
+
+        <PolicySourceNotice policy={policy} quality={qualityReport} />
 
         {/* Tabs */}
         <div className="sticky top-0 z-10 bg-white border-b mb-6">

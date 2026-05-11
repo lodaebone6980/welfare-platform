@@ -36,6 +36,10 @@ export default function Footer() {
             문의
           </Link>
           <span className="text-gray-300">·</span>
+          <Link href="/editorial-policy" className="hover:text-gray-900">
+            편집 원칙
+          </Link>
+          <span className="text-gray-300">·</span>
           <Link href="/terms" className="hover:text-gray-900">
             이용약관
           </Link>
