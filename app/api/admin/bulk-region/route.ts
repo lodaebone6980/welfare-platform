@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { KR_REGIONS, REGION_BY_SLUG } from '@/lib/regions'
+import { requireAdmin } from '@/lib/server-auth'
 
 /**
  * POST /api/admin/bulk-region
@@ -44,6 +45,9 @@ function render(template: string, vars: Record<string, string>) {
 }
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAdmin()
+  if (deny) return deny
+
   let body: Body
   try {
     body = await req.json()

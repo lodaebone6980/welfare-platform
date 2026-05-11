@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/server-auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -16,6 +17,9 @@ function slugify(s: string): string {
 }
 
 export async function GET() {
+  const deny = await requireAdmin()
+  if (deny) return deny
+
   try {
     const cats = await prisma.category.findMany({
       orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
@@ -29,6 +33,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAdmin()
+  if (deny) return deny
+
   try {
     const body = await req.json().catch(() => ({}))
     const name = String(body.name ?? '').trim()

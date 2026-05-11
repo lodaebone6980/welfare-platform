@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { requireAdmin } from '@/lib/server-auth';
 
 const prisma = new PrismaClient();
 
@@ -70,15 +71,15 @@ const T2 = [
 ];
 const templates = [...T, ...T2];
 
-function slug(t) { return t.replace(/\s+/g, '-').replace(/[^가-힣a-zA-Z0-9-]/g, '').toLowerCase(); }
-function getSuffix(r) {
+function slug(t: string) { return t.replace(/\s+/g, '-').replace(/[^가-힣a-zA-Z0-9-]/g, '').toLowerCase(); }
+function getSuffix(r: string) {
   if (r==='세종') return '특별자치시';
   if (r==='제주') return '특별자치도';
   if (['서울','부산','대구','인천','광주','대전','울산'].includes(r)) return '광역시';
   return '도';
 }
 
-function gen(count) {
+function gen(count: number) {
   const p = [];
   for (let i=0;i<count;i++) {
     const tmpl=templates[i%templates.length];
@@ -111,9 +112,10 @@ function gen(count) {
 
 export async function GET(request: NextRequest) {
   try {
-    const key=request.nextUrl.searchParams.get('key');
+    const deny = await requireAdmin();
+    if (deny) return deny;
+
     const count=Math.min(parseInt(request.nextUrl.searchParams.get('count')||'500'),2000);
-    if(!key||!key.includes('12ac8429')) return NextResponse.json({success:false,message:'Invalid key'},{status:401});
     const catMap: Record<string,number>={};
     for(const cat of categories){
       const r=await prisma.category.upsert({where:{slug:cat.slug},update:{name:cat.name,icon:cat.icon,displayOrder:cat.displayOrder},create:{name:cat.name,slug:cat.slug,icon:cat.icon,displayOrder:cat.displayOrder}});

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/server-auth'
 
 /**
  * GET /api/admin/diagnostics/env
@@ -76,6 +77,9 @@ type EnvCheck = {
 }
 
 export async function GET() {
+  const deny = await requireAdmin()
+  if (deny) return deny
+
   const results: EnvCheck[] = KEYS.map((key) => {
     const raw = process.env[key]
     const val = typeof raw === 'string' ? raw : ''

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { cronUnauthorized, isCronAuthorized } from '@/lib/server-auth'
 
 // Vercel Cron endpoint: triggered by the schedule in vercel.json.
-// Vercel attaches an x-vercel-cron header on scheduled invocations.
-// For manual calls we also accept a Bearer token matching process.env.CRON_SECRET.
+// Vercel sends Authorization: Bearer <CRON_SECRET> when CRON_SECRET is configured.
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -38,10 +38,15 @@ async function runCollection(sourceName: string): Promise<{ ok: boolean; error?:
   const base = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL || 'http://localhost:3000'
   const origin = base.startsWith('http') ? base : `https://${base}`
   const slug = sourceName === '복지로' ? 'bokjiro' : sourceName.toLowerCase()
+  const headers: Record<string, string> = { 'content-type': 'application/json' }
+  if (process.env.CRON_SECRET) {
+    headers.authorization = `Bearer ${process.env.CRON_SECRET}`
+  }
+
   try {
     const res = await fetch(`${origin}/api/admin/collect/${slug}`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-cron-trigger': '1' },
+      headers,
       body: JSON.stringify({ triggeredBy: 'cron' }),
     })
     if (!res.ok) return { ok: false, error: `HTTP ${res.status}` }
@@ -52,13 +57,7 @@ async function runCollection(sourceName: string): Promise<{ ok: boolean; error?:
 }
 
 export async function GET(req: Request) {
-  // Auth
-  const secret = process.env.CRON_SECRET
-  const auth = req.headers.get('authorization')
-  const vercelCron = req.headers.get('x-vercel-cron')
-  if (!vercelCron && secret && auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  }
+  if (!isCronAuthorized(req)) return cronUnauthorized()
 
   const started = Date.now()
   let sources: any[] = []
