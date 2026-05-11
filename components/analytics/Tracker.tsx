@@ -5,7 +5,7 @@
  * - 페이지 전환 시 /api/track/pageview 로 비콘 전송
  * - 30분 롤링 sessionId · 1년 visitorId 쿠키 사용 (1st-party only, no cross-site)
  * - 어드민 경로(/dashboard, /content, /traffic, /api-status, /trending, /trending-news,
- *   /marketing, /popularity, /members, /settings, /search-trending, /admin, /access/admin)는 자동 스킵
+ *   /marketing/*, /popularity, /members, /settings, /search-trending, /admin, /access/admin)는 자동 스킵
  * - 광고 클릭 ID(gclid/fbclid/yclid/msclkid/ttclid/li_fat_id/n_media/kakaoad) 감지 →
  *   utm_source/utm_medium 미제공시 유료 광고 유입으로 자동 보강
  * - 환경변수 NEXT_PUBLIC_INTERNAL_TRACKER=0 이면 비활성
@@ -24,7 +24,6 @@ const ADMIN_PREFIXES = [
   '/api-status',
   '/trending',
   '/trending-news',
-  '/marketing',
   '/popularity',
   '/members',
   '/settings',
@@ -35,7 +34,7 @@ const ADMIN_PREFIXES = [
 ]
 
 function isAdminPath(p: string): boolean {
-  return ADMIN_PREFIXES.some(x => p === x || p.startsWith(x + '/'))
+  return p.startsWith('/marketing/') || ADMIN_PREFIXES.some(x => p === x || p.startsWith(x + '/'))
 }
 
 function readCookie(name: string): string | null {

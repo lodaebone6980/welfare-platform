@@ -112,6 +112,7 @@ Before resubmitting:
 
 - Expand `/about` with operator identity, editorial purpose, and update policy.
 - Expand `/contact` with response channel and correction request process.
+- Keep `/terms`, `/privacy`, and `/marketing` linked from the footer and login flow.
 - Add an editorial policy section: sources, update cycle, correction handling, AI-assisted drafting disclosure if applicable.
 - Make footer business/operator information consistent with `.env.example`.
 - Add visible source and last-checked metadata on policy detail pages.

@@ -75,12 +75,12 @@ export default async function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/privacy-policy" className="text-gray-600 hover:text-green-600 transition-colors">
+                <Link href="/privacy" className="text-gray-600 hover:text-green-600 transition-colors">
                   개인정보처리방침
                 </Link>
               </li>
               <li>
-                <Link href="/marketing-consent" className="text-gray-600 hover:text-green-600 transition-colors">
+                <Link href="/marketing" className="text-gray-600 hover:text-green-600 transition-colors">
                   마케팅 수신 동의
                 </Link>
               </li>

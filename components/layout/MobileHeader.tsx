@@ -9,7 +9,7 @@ export default function MobileHeader() {
   const pathname = usePathname();
   const [showSearch, setShowSearch] = useState(false);
 
-  if (pathname?.startsWith('/dashboard') || pathname?.startsWith('/content') || pathname?.startsWith('/marketing')) {
+  if (pathname?.startsWith('/dashboard') || pathname?.startsWith('/content') || pathname?.startsWith('/marketing/')) {
     return null;
   }
 
