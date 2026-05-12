@@ -99,12 +99,20 @@ export default function PolicyListClient({
           <h1 className="text-lg font-medium text-gray-800">정책 관리</h1>
           <p className="text-xs text-gray-400 mt-0.5">총 {total.toLocaleString()}건</p>
         </div>
-        <Link
-          href="/content/policy/new"
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          새 정책
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/content/policy/quality"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-white text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            품질 리포트
+          </Link>
+          <Link
+            href="/content/policy/new"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            새 정책
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-4">

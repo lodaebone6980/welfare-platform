@@ -16,6 +16,7 @@ const NAV: NavItem[] = [
     label: '콘텐츠',
     children: [
       { label: '정책 관리',   href: '/content/policy' },
+      { label: '품질 리포트', href: '/content/policy/quality' },
       { label: '대량 생성',   href: '/content/bulk' },
       { label: '카테고리',    href: '/content/category' },
     ],
