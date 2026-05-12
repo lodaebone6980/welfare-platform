@@ -4,24 +4,10 @@ import { isPolicyIndexableForAdsense } from '@/lib/policy-quality';
 
 const BASE_URL = SITE_URL;
 
-const BATCH_SIZE = 1000;
-
 export const revalidate = 3600;
 export const dynamic = 'force-dynamic';
 
-/**
- * 정책 배치별 사이트맵.
- * URL 예: /sitemap-policies-1.xml, /sitemap-policies-2.xml ...
- *
- * 각 배치당 최대 1000개. 구글 제한 5만개·50MB 이하 유지.
- */
-export async function GET(
-  _req: Request,
-  { params }: { params: { batch: string } }
-) {
-  const batch = Math.max(1, parseInt(params.batch, 10) || 1);
-  const skip = (batch - 1) * BATCH_SIZE;
-
+export async function GET() {
   const policies = await prisma.policy.findMany({
     where: { status: 'PUBLISHED' },
     select: {
@@ -41,21 +27,17 @@ export async function GET(
       faqs: { select: { question: true, answer: true } },
     },
     orderBy: { updatedAt: 'desc' },
-    skip,
-    take: BATCH_SIZE,
+    take: 50000,
   });
 
-  // 새 canonical URL: /:category/:slug (카테고리 없으면 /welfare/:slug fallback)
   const urls = policies
     .filter(isPolicyIndexableForAdsense)
     .map((p) => {
-      const priority = Math.min(
-        0.9,
-        0.5 + (p.viewCount || 0) * 0.001
-      ).toFixed(2);
+      const priority = Math.min(0.9, 0.5 + (p.viewCount || 0) * 0.001).toFixed(2);
       const path = p.category?.slug
         ? `/${p.category.slug}/${encodeURIComponent(p.slug)}`
         : `/welfare/${encodeURIComponent(p.slug)}`;
+
       return `  <url>
     <loc>${BASE_URL}${path}</loc>
     <lastmod>${p.updatedAt.toISOString()}</lastmod>
