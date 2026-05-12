@@ -17,7 +17,7 @@ export function cronUnauthorized() {
   return NextResponse.json({ ok: false, error: 'UNAUTHORIZED' }, { status: 401 });
 }
 
-export async function requireAdmin() {
+export async function getAdminSession() {
   const session = await getServerSession(authOptions);
   const role = (session?.user as any)?.role;
   const email = (session?.user?.email || '').toLowerCase();
@@ -27,7 +27,12 @@ export async function requireAdmin() {
     .filter(Boolean);
 
   const isAdmin = role === 'ADMIN' || role === 'admin' || adminEmails.includes(email);
-  if (!session || !isAdmin) {
+  return session && isAdmin ? session : null;
+}
+
+export async function requireAdmin() {
+  const session = await getAdminSession();
+  if (!session) {
     return NextResponse.json({ ok: false, error: 'UNAUTHORIZED' }, { status: 401 });
   }
 

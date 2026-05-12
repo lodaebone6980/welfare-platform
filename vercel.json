@@ -21,6 +21,10 @@
     {
       "path": "/api/cron/external-popularity",
       "schedule": "30 18 * * *"
+    },
+    {
+      "path": "/api/cron/analytics-retention",
+      "schedule": "15 20 * * 0"
     }
   ],
   "functions": {
@@ -38,6 +42,9 @@
     },
     "app/api/cron/external-popularity/route.ts": {
       "maxDuration": 300
+    },
+    "app/api/cron/analytics-retention/route.ts": {
+      "maxDuration": 60
     }
   }
 }

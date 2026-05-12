@@ -570,3 +570,94 @@ export const getPaidSummary = unstable_cache(
   ['traffic:paid-summary'],
   { revalidate: 30, tags: ['traffic'] },
 )
+
+export const getSocialSummary = unstable_cache(
+  async (range: Range) => {
+    const client = pv()
+    const empty = {
+      sources: [] as { source: string; pv: number; uv: number }[],
+      topPages: [] as { source: string; path: string; count: number }[],
+      campaigns: [] as { source: string; campaign: string; content: string; count: number }[],
+      events: [] as { source: string; name: string; count: number }[],
+    }
+    if (!client) return empty
+
+    const from = rangeStart(range)
+    const socialSources = ['threads', 'instagram']
+
+    try {
+      const [sourceRows, pageRows, campaignRows] = await Promise.all([
+        prisma.$queryRawUnsafe<any[]>(
+          `SELECT source,
+                  COUNT(*)::int AS pv,
+                  COUNT(DISTINCT COALESCE("visitorId", "sessionId"))::int AS uv
+             FROM "PageView"
+            WHERE "createdAt" >= $1
+              AND source = ANY($2::text[])
+            GROUP BY 1
+            ORDER BY 2 DESC`,
+          from,
+          socialSources,
+        ),
+        prisma.$queryRawUnsafe<any[]>(
+          `SELECT source, path, COUNT(*)::int AS count
+             FROM "PageView"
+            WHERE "createdAt" >= $1
+              AND source = ANY($2::text[])
+            GROUP BY 1, 2
+            ORDER BY 3 DESC
+            LIMIT 10`,
+          from,
+          socialSources,
+        ),
+        prisma.$queryRawUnsafe<any[]>(
+          `SELECT source,
+                  COALESCE("utmCampaign", '-') AS campaign,
+                  COALESCE("utmContent", '-') AS content,
+                  COUNT(*)::int AS count
+             FROM "PageView"
+            WHERE "createdAt" >= $1
+              AND source = ANY($2::text[])
+              AND "utmCampaign" IS NOT NULL
+            GROUP BY 1, 2, 3
+            ORDER BY 4 DESC
+            LIMIT 10`,
+          from,
+          socialSources,
+        ),
+      ])
+
+      let eventRows: any[] = []
+      try {
+        eventRows = await prisma.$queryRawUnsafe<any[]>(
+          `SELECT source, name, COUNT(*)::int AS count
+             FROM "TrackingEvent"
+            WHERE "createdAt" >= $1
+              AND source = ANY($2::text[])
+            GROUP BY 1, 2
+            ORDER BY 3 DESC`,
+          from,
+          socialSources,
+        )
+      } catch {
+        eventRows = []
+      }
+
+      return {
+        sources: sourceRows.map(r => ({ source: String(r.source), pv: Number(r.pv), uv: Number(r.uv) })),
+        topPages: pageRows.map(r => ({ source: String(r.source), path: String(r.path), count: Number(r.count) })),
+        campaigns: campaignRows.map(r => ({
+          source: String(r.source),
+          campaign: String(r.campaign),
+          content: String(r.content),
+          count: Number(r.count),
+        })),
+        events: eventRows.map(r => ({ source: String(r.source), name: String(r.name), count: Number(r.count) })),
+      }
+    } catch {
+      return empty
+    }
+  },
+  ['traffic:social-summary'],
+  { revalidate: 30, tags: ['traffic'] },
+)

@@ -23,6 +23,7 @@ import { getCanonicalPath, getPolicyPath } from '@/lib/policy-canonical';
 import { inferPolicyTypes } from '@/lib/policy-tags';
 import { getPolicyQualityReport } from '@/lib/policy-quality';
 import PolicySourceNotice from '@/components/policy/PolicySourceNotice';
+import TrackedExternalLink from '@/components/analytics/TrackedExternalLink';
 
 /**
  * 새 Canonical URL: /:category/:slug
@@ -348,10 +349,10 @@ export default async function CategoryPolicyDetailPage({ params }: Props) {
         {/* CTA #1 — 사업 정보 직후 */}
         {policy.applyUrl && (
           <div className="mb-8 text-center">
-            <Link href={policy.applyUrl} rel="nofollow" className="inline-flex items-center gap-2 bg-blue-600 text-white px-16 py-3.5 rounded-xl font-semibold text-base hover:bg-blue-700 transition-colors shadow-lg min-w-[260px] justify-center">
+            <TrackedExternalLink href={policy.applyUrl} eventName="apply_click" metadata={{ policy_id: policy.id, policy_slug: policy.slug }} rel="nofollow" className="inline-flex items-center gap-2 bg-blue-600 text-white px-16 py-3.5 rounded-xl font-semibold text-base hover:bg-blue-700 transition-colors shadow-lg min-w-[260px] justify-center">
               신청하기
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-            </Link>
+            </TrackedExternalLink>
           </div>
         )}
 
@@ -406,10 +407,10 @@ export default async function CategoryPolicyDetailPage({ params }: Props) {
         {/* CTA #2 — 필요 서류 직후 */}
         {policy.applyUrl && (
           <div className="mb-8 text-center">
-            <Link href={policy.applyUrl} rel="nofollow" className="inline-flex items-center gap-2 bg-blue-600 text-white px-16 py-3.5 rounded-xl font-semibold text-base hover:bg-blue-700 transition-colors shadow-lg min-w-[260px] justify-center">
+            <TrackedExternalLink href={policy.applyUrl} eventName="apply_click" metadata={{ policy_id: policy.id, policy_slug: policy.slug }} rel="nofollow" className="inline-flex items-center gap-2 bg-blue-600 text-white px-16 py-3.5 rounded-xl font-semibold text-base hover:bg-blue-700 transition-colors shadow-lg min-w-[260px] justify-center">
               신청하기
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-            </Link>
+            </TrackedExternalLink>
           </div>
         )}
 
@@ -480,9 +481,9 @@ export default async function CategoryPolicyDetailPage({ params }: Props) {
         <div className="fixed bottom-16 left-0 right-0 bg-white border-t shadow-lg px-4 py-3 z-20">
           <div className="max-w-3xl mx-auto flex gap-3">
             {policy.applyUrl ? (
-              <Link href={policy.applyUrl} rel="nofollow" className="flex-1 bg-blue-600 text-white text-center py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors">
+              <TrackedExternalLink href={policy.applyUrl} eventName="apply_click" metadata={{ policy_id: policy.id, policy_slug: policy.slug }} rel="nofollow" className="flex-1 bg-blue-600 text-white text-center py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors">
                 신청하기
-              </Link>
+              </TrackedExternalLink>
             ) : (
               <Link href="https://www.bokjiro.go.kr" rel="nofollow" className="flex-1 bg-blue-600 text-white text-center py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors">
                 복지로 바로가기

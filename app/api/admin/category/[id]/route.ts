@@ -1,19 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-
-async function assertAdmin() {
-  const session = await getServerSession(authOptions as any)
-  const role = (session as any)?.user?.role
-  if (role !== 'ADMIN' && role !== 'admin') {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-  }
-  return null
-}
+import { requireAdmin } from '@/lib/server-auth'
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const deny = await assertAdmin(); if (deny) return deny
+  const deny = await requireAdmin(); if (deny) return deny
   const id = Number(params.id)
   if (!Number.isFinite(id)) return NextResponse.json({ error: 'invalid id' }, { status: 400 })
 
@@ -59,7 +49,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
-  const deny = await assertAdmin(); if (deny) return deny
+  const deny = await requireAdmin(); if (deny) return deny
   const id = Number(params.id)
   if (!Number.isFinite(id)) return NextResponse.json({ error: 'invalid id' }, { status: 400 })
 

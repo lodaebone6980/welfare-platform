@@ -1,18 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-
-async function assertAdmin() {
-  const session = await getServerSession(authOptions as any)
-  const role = (session as any)?.user?.role
-  if (role !== 'ADMIN' && role !== 'admin') {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-  }
-  return null
-}
+import { requireAdmin } from '@/lib/server-auth'
 
 export async function GET() {
+  const deny = await requireAdmin(); if (deny) return deny
   const rows = await prisma.category.findMany({
     orderBy: [{ displayOrder: 'asc' }, { id: 'asc' }],
     include: { _count: { select: { policies: true } } },
@@ -21,7 +12,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const deny = await assertAdmin(); if (deny) return deny
+  const deny = await requireAdmin(); if (deny) return deny
   const body = await req.json().catch(() => ({}))
   const { name, slug, icon, displayOrder } = body ?? {}
   if (!name || !slug) {

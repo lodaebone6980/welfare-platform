@@ -19,7 +19,16 @@ const MAX_TAKE = 100
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const status    = searchParams.get('status')    as any
+  const requestedStatus = searchParams.get('status')
+  const isPublicStatus =
+    !requestedStatus || requestedStatus.toUpperCase() === 'PUBLISHED'
+
+  if (!isPublicStatus) {
+    const deny = await requireAdmin()
+    if (deny) return deny
+  }
+
+  const status = isPublicStatus ? 'PUBLISHED' : requestedStatus?.toUpperCase()
   const geoRegion = searchParams.get('geoRegion') ?? undefined
   const categoryId = searchParams.get('categoryId')
   const search    = searchParams.get('search')    ?? undefined

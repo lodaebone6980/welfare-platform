@@ -191,6 +191,35 @@ model PageView {
   @@index([source, utmMedium, createdAt])
 }
 
+model TrackingEvent {
+  id          BigInt   @id @default(autoincrement())
+  name        String
+  path        String
+  fullPath    String?
+  title       String?
+  source      String
+  medium      String?
+  sessionId   String
+  visitorId   String?
+  userAgent   String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([name, createdAt])
+  @@index([path, createdAt])
+  @@index([source, createdAt])
+  @@index([sessionId])
+  @@index([visitorId])
+  @@index([utmCampaign, createdAt])
+  @@index([source, utmMedium, createdAt])
+}
+
 enum PolicyStatus {
   DRAFT
   REVIEW

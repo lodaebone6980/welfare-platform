@@ -1,4 +1,8 @@
 import { Sidebar } from '@/components/layout/Sidebar'
+import { getAdminSession } from '@/lib/server-auth'
+import { redirect } from 'next/navigation'
+
+export const dynamic = 'force-dynamic'
 
 /**
  * 어드민 레이아웃.
@@ -7,11 +11,16 @@ import { Sidebar } from '@/components/layout/Sidebar'
  *   → force-dynamic 제거 → 페이지 이동시 레이아웃 재렌더링 비용 최소화.
  * 페이지별로 필요한 dynamic/revalidate 설정은 각 page.tsx에서 개별 지정한다.
  */
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const session = await getAdminSession()
+  if (!session) {
+    redirect('/access/admin')
+  }
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar />

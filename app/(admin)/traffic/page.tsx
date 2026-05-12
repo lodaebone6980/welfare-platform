@@ -13,6 +13,7 @@ import {
   getTopCampaigns,
   getReferrerDomains,
   getPaidSummary,
+  getSocialSummary,
   type Range,
 } from '@/lib/traffic-stats'
 import { CHANNEL_LABEL, type Channel } from '@/lib/tracking'
@@ -80,6 +81,7 @@ export default async function TrafficPage({
     campaigns,
     referrers,
     paidSummary,
+    socialSummary,
   ] = await Promise.all([
     getTodayKpis(),
     getSourceDistribution(range),
@@ -93,6 +95,7 @@ export default async function TrafficPage({
     getTopCampaigns(range, 15),
     getReferrerDomains(range, 10),
     getPaidSummary(range),
+    getSocialSummary(range),
   ])
 
   // channels를 재사용하여 7버킷 롤업 — 추가 쿼리 없음.
@@ -215,6 +218,61 @@ export default async function TrafficPage({
 
       {/* 소스별 상세 카드 (lazy-load 클라이언트) */}
       <SourceDetailsGrid range={range} />
+
+      <div className="bg-white border border-gray-100 rounded-xl p-4 mt-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-xs font-medium text-gray-600">SNS 유입 성과 (Threads / Instagram)</div>
+          <div className="text-[10px] text-gray-400">{range}</div>
+        </div>
+        {socialSummary.sources.length === 0 ? (
+          <div className="py-6 text-center text-xs text-gray-400">
+            아직 Threads 또는 Instagram UTM 유입이 없습니다. 정책 목록의 SNS 링크 복사 버튼으로 배포한 링크부터 집계됩니다.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <div>
+              <div className="mb-2 text-[11px] font-medium text-gray-500">PV / UV</div>
+              <div className="space-y-2">
+                {socialSummary.sources.map(s => (
+                  <div key={s.source} className="rounded-lg bg-gray-50 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-700">{label(s.source)}</span>
+                      <span className="text-gray-500">PV {s.pv.toLocaleString()} · UV {s.uv.toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="mb-2 text-[11px] font-medium text-gray-500">상위 정책/랜딩</div>
+              <div className="space-y-2">
+                {socialSummary.topPages.slice(0, 5).map((p, i) => (
+                  <div key={`${p.source}-${p.path}-${i}`} className="rounded-lg bg-gray-50 px-3 py-2 text-xs">
+                    <div className="truncate text-gray-700">{p.path}</div>
+                    <div className="mt-0.5 text-[10px] text-gray-400">{label(p.source)} · {p.count.toLocaleString()} PV</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="mb-2 text-[11px] font-medium text-gray-500">캠페인 / 클릭 이벤트</div>
+              <div className="space-y-2">
+                {socialSummary.campaigns.slice(0, 3).map((c, i) => (
+                  <div key={`${c.source}-${c.campaign}-${c.content}-${i}`} className="rounded-lg bg-gray-50 px-3 py-2 text-xs">
+                    <div className="truncate text-gray-700">{c.campaign}</div>
+                    <div className="mt-0.5 text-[10px] text-gray-400">{label(c.source)} · {c.content} · {c.count.toLocaleString()} PV</div>
+                  </div>
+                ))}
+                {socialSummary.events.slice(0, 3).map((e, i) => (
+                  <div key={`${e.source}-${e.name}-${i}`} className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                    {label(e.source)} · {e.name}: {e.count.toLocaleString()}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* 유료 캠페인 요약 */}
       <div className="bg-white border border-gray-100 rounded-xl p-4 mt-5">

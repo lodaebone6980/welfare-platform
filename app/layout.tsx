@@ -1,25 +1,14 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import Script from 'next/script';
-import { Suspense } from 'react';
 import './globals.css';
-import BottomNav from '@/components/layout/BottomNav';
-import MobileHeader from '@/components/layout/MobileHeader';
 import SessionProvider from '@/components/auth/SessionProvider';
-import ChannelTalk from '@/components/layout/ChannelTalk';
-import Footer from '@/components/common/Footer';
-import Tracker from '@/components/analytics/Tracker';
-import GA4 from '@/components/analytics/GA4';
 import {
   SITE_URL,
   SITE_NAME,
   SITE_DESC,
-  GA_ID,
   GOOGLE_SITE_VERIFICATION,
   NAVER_SITE_VERIFICATION,
   BING_SITE_VERIFICATION,
-  INTERNAL_TRACKER_ENABLED,
-  ADSENSE_CLIENT,
 } from '@/lib/env';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
@@ -117,7 +106,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className}>
         <SessionProvider>
-          <MobileHeader />
           <main className="min-h-screen bg-gray-50">
             {/*
               컨테이너 폭 제한은 (public) / (admin) 레이아웃에서 각각 처리한다.
@@ -126,24 +114,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               루트에서 폭을 고정하면 어드민이 모바일 사이즈로 렌더된다.
             */}
             {children}
-            <Footer />
           </main>
-          <BottomNav />
-          <ChannelTalk />
         </SessionProvider>
-        <Suspense fallback={null}>
-          <Tracker enabled={INTERNAL_TRACKER_ENABLED} />
-          {GA_ID ? <GA4 gaId={GA_ID} /> : null}
-        </Suspense>
-        {ADSENSE_CLIENT ? (
-          <Script
-            id="adsense-review-code"
-            strategy="afterInteractive"
-            async
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
-            crossOrigin="anonymous"
-          />
-        ) : null}
       </body>
     </html>
   );

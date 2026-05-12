@@ -1,7 +1,12 @@
 import OpenAI from 'openai'
 import type { Format } from './rl-engine'
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+function getClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is not configured')
+  }
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+}
 
 // Persona DNA — govhelp.co.kr 스타일 역분석
 const PERSONA = `
@@ -107,7 +112,7 @@ ${FORMAT_PROMPTS[format]}
 페르소나:
 ${PERSONA}
 `
-  const res = await client.chat.completions.create({
+  const res = await getClient().chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
       {

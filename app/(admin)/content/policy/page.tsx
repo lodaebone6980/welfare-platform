@@ -50,5 +50,5 @@ async function getInitialPolicies() {
 
 export default async function PolicyListPage() {
   const { policies, total } = await getInitialPolicies()
-  return <PolicyListClient initialPolicies={policies} initialTotal={total} />
+  return <PolicyListClient initialPolicies={JSON.parse(JSON.stringify(policies))} initialTotal={total} />
 }

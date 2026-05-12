@@ -51,7 +51,7 @@ async function fetchNewsRSS(keyword: string): Promise<FeedItem[]> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const xml = await res.text()
   const items: FeedItem[] = []
-  const matches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g)
+  const matches = Array.from(xml.matchAll(/<item>([\s\S]*?)<\/item>/g))
   for (const m of matches) {
     const block = m[1]
     items.push({
