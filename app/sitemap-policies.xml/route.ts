@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { SITE_URL } from '@/lib/env';
 import { isPolicyIndexableForAdsense } from '@/lib/policy-quality';
+import { getPolicySlugFamilyBase } from '@/lib/policy-canonical';
 
 const BASE_URL = SITE_URL;
 
@@ -11,8 +12,10 @@ export async function GET() {
   const policies = await prisma.policy.findMany({
     where: { status: 'PUBLISHED' },
     select: {
+      id: true,
       slug: true,
       title: true,
+      canonicalId: true,
       content: true,
       excerpt: true,
       description: true,
@@ -26,12 +29,24 @@ export async function GET() {
       category: { select: { slug: true, name: true } },
       faqs: { select: { question: true, answer: true } },
     },
-    orderBy: { updatedAt: 'desc' },
+    orderBy: { id: 'asc' },
     take: 50000,
   });
 
-  const urls = policies
-    .filter(isPolicyIndexableForAdsense)
+  const canonicalPolicies = new Map<string, (typeof policies)[number]>();
+  for (const policy of policies) {
+    if (!isPolicyIndexableForAdsense(policy)) continue;
+
+    const key = policy.canonicalId
+      ? `canonical:${policy.canonicalId}`
+      : `slug:${getPolicySlugFamilyBase(policy.slug)}`;
+
+    if (!canonicalPolicies.has(key)) {
+      canonicalPolicies.set(key, policy);
+    }
+  }
+
+  const urls = Array.from(canonicalPolicies.values())
     .map((p) => {
       const priority = Math.min(0.9, 0.5 + (p.viewCount || 0) * 0.001).toFixed(2);
       const path = p.category?.slug

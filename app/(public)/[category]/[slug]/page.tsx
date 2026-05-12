@@ -3,7 +3,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { isValidCategorySlug, policyHref } from '@/lib/categories';
-import { SITE_NAME } from '@/lib/env';
+import { SITE_NAME, SITE_URL } from '@/lib/env';
 import {
   generatePolicyJsonLd,
   generateFaqJsonLd,
@@ -19,7 +19,7 @@ import {
   extractBenefitSummary,
 } from '@/lib/policy-display';
 import { getPolicyBySlug, getRelatedPolicies } from '@/lib/policy-detail';
-import { getCanonicalPath } from '@/lib/policy-canonical';
+import { getCanonicalPath, getPolicyPath } from '@/lib/policy-canonical';
 import { inferPolicyTypes } from '@/lib/policy-tags';
 import { getPolicyQualityReport } from '@/lib/policy-quality';
 import PolicySourceNotice from '@/components/policy/PolicySourceNotice';
@@ -106,12 +106,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     category: policy.category ?? null,
   });
   const qualityReport = getPolicyQualityReport(policy);
+  const isCanonicalPolicy = canonicalPath === getPolicyPath(policy);
   return {
     title: policy.title,
     description: generatePolicyMetaDescription(seoData),
     openGraph: { title: ogData.title, description: ogData.description, type: 'article' },
-    alternates: { canonical: canonicalPath },
-    robots: qualityReport.indexable ? { index: true, follow: true } : { index: false, follow: true },
+    alternates: { canonical: `${SITE_URL}${canonicalPath}` },
+    robots: qualityReport.indexable && isCanonicalPolicy ? { index: true, follow: true } : { index: false, follow: true },
   };
 }
 
