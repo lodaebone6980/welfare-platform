@@ -84,7 +84,10 @@ function getDday(
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const policy = await getPolicyBySlug(params.slug);
   if (!policy) {
-    return { title: '정책을 찾을 수 없습니다' };
+    return {
+      title: '정책을 찾을 수 없습니다',
+      robots: { index: false, follow: true },
+    };
   }
   const seoData: PolicySeoData = {
     title: policy.title,

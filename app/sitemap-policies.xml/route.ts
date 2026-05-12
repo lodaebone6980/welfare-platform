@@ -35,11 +35,10 @@ export async function GET() {
 
   const canonicalPolicies = new Map<string, (typeof policies)[number]>();
   for (const policy of policies) {
+    if (policy.canonicalId && policy.canonicalId !== policy.id) continue;
     if (!isPolicyIndexableForAdsense(policy)) continue;
 
-    const key = policy.canonicalId
-      ? `canonical:${policy.canonicalId}`
-      : `slug:${getPolicySlugFamilyBase(policy.slug)}`;
+    const key = `slug:${getPolicySlugFamilyBase(policy.slug)}`;
 
     if (!canonicalPolicies.has(key)) {
       canonicalPolicies.set(key, policy);
@@ -49,9 +48,7 @@ export async function GET() {
   const urls = Array.from(canonicalPolicies.values())
     .map((p) => {
       const priority = Math.min(0.9, 0.5 + (p.viewCount || 0) * 0.001).toFixed(2);
-      const path = p.category?.slug
-        ? `/${p.category.slug}/${encodeURIComponent(p.slug)}`
-        : `/welfare/${encodeURIComponent(p.slug)}`;
+      const path = `/welfare/${encodeURIComponent(p.slug)}`;
 
       return `  <url>
     <loc>${BASE_URL}${path}</loc>

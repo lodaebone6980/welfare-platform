@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { isValidCategorySlug } from '@/lib/categories';
 
 export interface PolicyLike {
   id: number;
@@ -71,9 +70,6 @@ async function getSlugFamilyCanonical(policy: PolicyLike): Promise<PolicyLike | 
 }
 
 function buildPath(categorySlug: string | null, policySlug: string): string {
-  if (categorySlug && isValidCategorySlug(categorySlug)) {
-    return `/${categorySlug}/${encodeURIComponent(policySlug)}`;
-  }
   return `/welfare/${encodeURIComponent(policySlug)}`;
 }
 
