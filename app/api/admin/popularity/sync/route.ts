@@ -8,12 +8,16 @@
  */
 import { NextResponse } from 'next/server';
 import { runPopularitySync } from '@/lib/external-popularity';
+import { requireAdmin } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
 export async function POST() {
+  const deny = await requireAdmin();
+  if (deny) return deny;
+
   const result = await runPopularitySync({ batchLimit: 300 });
   return NextResponse.json(result, { status: result.ok ? 200 : 500 });
 }

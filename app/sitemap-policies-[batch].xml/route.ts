@@ -1,8 +1,8 @@
 import { prisma } from '@/lib/prisma';
+import { SITE_URL } from '@/lib/env';
+import { isPolicyIndexableForAdsense } from '@/lib/policy-quality';
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  'https://welfare-platform-five.vercel.app';
+const BASE_URL = SITE_URL;
 
 const BATCH_SIZE = 1000;
 
@@ -26,9 +26,19 @@ export async function GET(
     where: { status: 'PUBLISHED' },
     select: {
       slug: true,
+      title: true,
+      content: true,
+      excerpt: true,
+      description: true,
+      eligibility: true,
+      applicationMethod: true,
+      requiredDocuments: true,
+      applyUrl: true,
+      externalUrl: true,
       updatedAt: true,
       viewCount: true,
-      category: { select: { slug: true } },
+      category: { select: { slug: true, name: true } },
+      faqs: { select: { question: true, answer: true } },
     },
     orderBy: { updatedAt: 'desc' },
     skip,
@@ -37,6 +47,7 @@ export async function GET(
 
   // 새 canonical URL: /:category/:slug (카테고리 없으면 /welfare/:slug fallback)
   const urls = policies
+    .filter(isPolicyIndexableForAdsense)
     .map((p) => {
       const priority = Math.min(
         0.9,

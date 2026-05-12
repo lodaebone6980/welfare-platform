@@ -35,7 +35,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const isAdminRoute = ADMIN_ROUTE_PREFIXES.some((p) => pathname.startsWith(p));
+  if (pathname === '/marketing') return NextResponse.next();
+
+  const isAdminRoute = ADMIN_ROUTE_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
 
   if (!isAdminRoute) return NextResponse.next();
 

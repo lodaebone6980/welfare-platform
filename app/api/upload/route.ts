@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { nanoid } from 'nanoid'
+import { requireAdmin } from '@/lib/server-auth'
 
 const r2 = new S3Client({
   region:   'auto',
@@ -12,11 +13,23 @@ const r2 = new S3Client({
 })
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAdmin()
+  if (deny) return deny
+
   const formData = await req.formData()
   const file     = formData.get('file') as File
   if (!file) return NextResponse.json({ error: 'no file' }, { status: 400 })
 
-  const ext = file.name.split('.').pop()
+  const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'])
+  if (!allowedTypes.has(file.type)) {
+    return NextResponse.json({ error: 'unsupported file type' }, { status: 400 })
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: 'file too large' }, { status: 400 })
+  }
+
+  const ext = (file.name.split('.').pop() || 'bin').replace(/[^a-z0-9]/gi, '').toLowerCase()
   const key = `uploads/${new Date().getFullYear()}/${nanoid()}.${ext}`
   const buf = Buffer.from(await file.arrayBuffer())
 

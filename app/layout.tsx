@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import Script from 'next/script';
 import { Suspense } from 'react';
 import './globals.css';
 import BottomNav from '@/components/layout/BottomNav';
@@ -18,6 +19,7 @@ import {
   NAVER_SITE_VERIFICATION,
   BING_SITE_VERIFICATION,
   INTERNAL_TRACKER_ENABLED,
+  ADSENSE_CLIENT,
 } from '@/lib/env';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
@@ -133,6 +135,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Tracker enabled={INTERNAL_TRACKER_ENABLED} />
           {GA_ID ? <GA4 gaId={GA_ID} /> : null}
         </Suspense>
+        {ADSENSE_CLIENT ? (
+          <Script
+            id="adsense-review-code"
+            strategy="afterInteractive"
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+            crossOrigin="anonymous"
+          />
+        ) : null}
       </body>
     </html>
   );

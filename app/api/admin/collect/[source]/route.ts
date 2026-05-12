@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 import { collectBokjiro } from '@/lib/collectors/bokjiro';
+import { requireAdmin, requireAdminOrCron } from '@/lib/server-auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,27 +12,13 @@ const COLLECTORS: Record<string, typeof collectBokjiro> = {
   복지로: collectBokjiro,
 };
 
-async function assertAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return null;
-  // @ts-expect-error role is augmented on the session user
-  const role = session.user.role;
-  if (role !== 'ADMIN' && role !== 'admin') return null;
-  return session;
-}
-
 // POST /api/admin/collect/[source] — 수동 트리거
 export async function POST(
   req: NextRequest,
   { params }: { params: { source: string } },
 ) {
-  const session = await assertAdmin();
-  if (!session) {
-    return NextResponse.json(
-      { error: '관리자 권한이 필요합니다.' },
-      { status: 403 },
-    );
-  }
+  const deny = await requireAdminOrCron(req);
+  if (deny) return deny;
 
   const key = params.source.toLowerCase();
   const collector = COLLECTORS[key];
@@ -137,10 +122,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { source: string } },
 ) {
-  const session = await assertAdmin();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
+  const deny = await requireAdmin();
+  if (deny) return deny;
 
   const source = await prisma.apiSource.findFirst({
     where: { name: { contains: params.source, mode: 'insensitive' } },

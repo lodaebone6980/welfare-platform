@@ -5,6 +5,7 @@ import { SITE_NAME } from '@/lib/env';
 
 export const metadata: Metadata = {
   title: '더보기',
+  robots: { index: false, follow: true },
 };
 
 export const revalidate = 3600;

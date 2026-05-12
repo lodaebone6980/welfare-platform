@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/server-auth';
 
 // This route runs DB migration - should be called once then removed
 export async function GET(request: Request) {
+  const deny = await requireAdmin();
+  if (deny) return deny;
+
   const { searchParams } = new URL(request.url);
   const key = searchParams.get('key');
   

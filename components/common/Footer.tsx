@@ -36,12 +36,20 @@ export default function Footer() {
             문의
           </Link>
           <span className="text-gray-300">·</span>
+          <Link href="/editorial-policy" className="hover:text-gray-900">
+            편집 원칙
+          </Link>
+          <span className="text-gray-300">·</span>
           <Link href="/terms" className="hover:text-gray-900">
             이용약관
           </Link>
           <span className="text-gray-300">·</span>
           <Link href="/privacy" className="font-semibold text-gray-900 hover:underline">
             개인정보처리방침
+          </Link>
+          <span className="text-gray-300">·</span>
+          <Link href="/marketing" className="hover:text-gray-900">
+            마케팅 수신 동의
           </Link>
         </nav>
 

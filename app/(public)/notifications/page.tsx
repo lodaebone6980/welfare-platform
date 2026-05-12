@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 export const metadata: Metadata = {
   title: '알림',
   description: '정부 지원금 관련 최신 알림과 공지사항을 확인하세요.',
+  robots: { index: false, follow: true },
 };
 
 export default function NotificationsPage() {

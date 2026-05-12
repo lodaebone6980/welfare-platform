@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/server-auth';
 
 const API_KEY = process.env.DATA_GO_KR_API_KEY || '';
 const LIST_URL = 'https://api.odcloud.kr/api/gov24/v3/serviceList';
@@ -32,6 +33,9 @@ function generateSlug(title: string): string {
 }
 
 export async function GET(request: Request) {
+  const deny = await requireAdmin();
+  if (deny) return deny;
+
   const url = new URL(request.url);
   const authKey = url.searchParams.get('key');
 

@@ -20,7 +20,7 @@ const BLOCKED_PATH_PREFIXES = [
   '/api-status',
   '/traffic',
   '/trending',
-  '/marketing',
+  '/marketing/',
 ]
 
 function shouldIgnore(path: string): boolean {

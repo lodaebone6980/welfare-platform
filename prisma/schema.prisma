@@ -77,6 +77,8 @@ model ThreadsPost {
   shares    Int      @default(0)
   verdict   String?
   status    String   @default("draft")
+  scheduledAt DateTime?
+  publishedAt DateTime?
   policyId  Int?
   policy    Policy?  @relation(fields: [policyId], references: [id])
   createdAt DateTime @default(now())

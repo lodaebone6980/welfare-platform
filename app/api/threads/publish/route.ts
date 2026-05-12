@@ -3,8 +3,12 @@ import { prisma }               from '@/lib/prisma'
 import { generateThreadsPost }  from '@/lib/threads-generator'
 import { ThreadsPublisher }     from '@/lib/threads-publisher'
 import type { Format }          from '@/lib/rl-engine'
+import { requireAdmin }         from '@/lib/server-auth'
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAdmin()
+  if (deny) return deny
+
   const { policyId, format, content: customContent } = await req.json()
 
   const policy = await prisma.policy.findUnique({ where: { id: policyId } })

@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { requireAdmin } from '@/lib/server-auth';
 
 const prisma = new PrismaClient();
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    const key = request.nextUrl.searchParams.get('key');
-    if (!key || !key.includes('12ac8429')) {
-      return NextResponse.json({ success: false, message: 'Invalid key' }, { status: 401 });
-    }
+    const deny = await requireAdmin();
+    if (deny) return deny;
 
     // Use raw SQL for speed - single query updates all at once
     const result = await prisma.$executeRaw`

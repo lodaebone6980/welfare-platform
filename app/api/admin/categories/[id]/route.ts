@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/server-auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const deny = await requireAdmin()
+  if (deny) return deny
+
   const id = Number(params.id)
   if (!Number.isFinite(id)) {
     return NextResponse.json({ ok: false, error: 'bad id' }, { status: 400 })
@@ -28,6 +32,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  const deny = await requireAdmin()
+  if (deny) return deny
+
   const id = Number(params.id)
   if (!Number.isFinite(id)) {
     return NextResponse.json({ ok: false, error: 'bad id' }, { status: 400 })

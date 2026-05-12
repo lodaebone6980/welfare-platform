@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/server-auth'
 
 // ============================================================
 // GET /api/policies — 정책 목록 (최적화 버전)
@@ -93,6 +94,9 @@ export async function GET(req: NextRequest) {
 // POST /api/policies — 정책 생성 (기존 유지)
 // ============================================================
 export async function POST(req: NextRequest) {
+  const deny = await requireAdmin()
+  if (deny) return deny
+
   const body = await req.json()
 
   const policy = await prisma.policy.create({

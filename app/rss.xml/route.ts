@@ -1,8 +1,7 @@
 import { prisma } from '@/lib/prisma';
+import { SITE_URL } from '@/lib/env';
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  'https://welfare-platform-five.vercel.app';
+const BASE_URL = SITE_URL;
 
 const SITE_TITLE = (process.env.NEXT_PUBLIC_SITE_NAME || '지원금길잡이') + ' – 정부 지원금·환급금·보조금 통합검색';
 const SITE_DESC =

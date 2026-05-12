@@ -349,7 +349,7 @@ export default async function TrafficPage({
       </div>
 
       <p className="text-[10px] text-gray-400 mt-4 leading-relaxed">
-        * 관리자/내부 경로(/dashboard, /content, /api-status, /traffic, /marketing 등)는 수집 대상에서 제외됩니다.<br />
+        * 관리자/내부 경로(/dashboard, /content, /api-status, /traffic, /marketing/* 등)는 수집 대상에서 제외됩니다.<br />
         * 유료/자연 분류는 <code className="bg-gray-100 px-1 rounded">utm_medium</code>(cpc/paid/paid_social/display) 및 광고 클릭 ID(gclid, fbclid, msclkid, ttclid, yclid, n_media, kakaoad) 기준입니다.<br />
         * Meta/네이버 검색광고처럼 utm_medium을 자동으로 넣지 않는 플랫폼은 광고 URL에 직접 UTM을 부여하면 정확도가 올라갑니다.<br />
         * 서버 캐시 30초 · 소스 상세 카드는 페이지 로드 후 비동기 조회.

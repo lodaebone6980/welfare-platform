@@ -1,7 +1,7 @@
 // 중앙 환경변수 래퍼 — 사이트 URL/브랜드/분석 ID 등
 // 서버·클라이언트 공용 상수는 NEXT_PUBLIC_ prefix로 읽고, 아니면 process.env로.
 
-const DEFAULT_SITE_URL = 'https://govmate.co.kr'
+const DEFAULT_SITE_URL = 'https://www.govmate.co.kr'
 
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || DEFAULT_SITE_URL
@@ -15,6 +15,8 @@ export const SITE_DESC =
 export const GA_ID = process.env.NEXT_PUBLIC_GA_ID || ''
 export const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || ''
 export const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT || ''
+export const ADSENSE_UNITS_ENABLED =
+  (process.env.NEXT_PUBLIC_ADSENSE_UNITS_ENABLED ?? '0') === '1'
 export const NAVER_WCS_ID = process.env.NEXT_PUBLIC_NAVER_WCS || ''
 export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL || ''
 export const KAKAO_PIXEL_ID = process.env.NEXT_PUBLIC_KAKAO_PIXEL || ''

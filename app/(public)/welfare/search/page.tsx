@@ -6,6 +6,7 @@ import { policyHref } from '@/lib/categories';
 export const metadata: Metadata = {
   title: '정책 검색',
   description: '나에게 맞는 정부 지원금을 검색하세요. 카테고리, 지역, 키워드로 필터링할 수 있습니다.',
+  robots: { index: false, follow: true },
 };
 
 export const revalidate = 300;

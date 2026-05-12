@@ -16,8 +16,9 @@ type AdSlotProps = {
 };
 
 /**
- * AdSlot renders a Google AdSense unit when NEXT_PUBLIC_ADSENSE_CLIENT is configured.
- * - Gracefully hides itself when no client id is present (dev/local, or admin pages).
+ * AdSlot renders a Google AdSense unit only after ad units are explicitly enabled.
+ * - Keep NEXT_PUBLIC_ADSENSE_UNITS_ENABLED=0 during reapproval to avoid empty ad inventory.
+ * - The root layout can still load the AdSense review script when the client id is configured.
  * - Safe to re-render thanks to a guarded push().
  */
 export default function AdSlot({
@@ -28,11 +29,13 @@ export default function AdSlot({
   label,
 }: AdSlotProps) {
   const client = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
+  const unitsEnabled = process.env.NEXT_PUBLIC_ADSENSE_UNITS_ENABLED === '1';
   const insRef = useRef<HTMLModElement | null>(null);
   const pushedRef = useRef(false);
 
   useEffect(() => {
     if (!client) return;
+    if (!unitsEnabled) return;
     if (pushedRef.current) return;
     try {
       // @ts-expect-error adsbygoogle is injected at runtime
@@ -41,9 +44,9 @@ export default function AdSlot({
     } catch (e) {
       // swallow — network/blocker related, no-op
     }
-  }, [client]);
+  }, [client, unitsEnabled]);
 
-  if (!client) return null;
+  if (!client || !unitsEnabled) return null;
 
   const adProps: Record<string, string> = {
     'data-ad-client': client,

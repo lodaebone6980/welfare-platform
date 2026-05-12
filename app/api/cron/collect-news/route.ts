@@ -5,8 +5,7 @@
  * "강한 신호" (키워드/길이/날짜) 기사에 한해 Policy DRAFT 로 자동 등록한다.
  *
  * 인증:
- *   - Vercel Cron → x-vercel-cron 헤더
- *   - 수동 호출 → Authorization: Bearer ${CRON_SECRET}
+ *   - Vercel Cron / 수동 호출 → Authorization: Bearer ${CRON_SECRET}
  *
  * 중복 등록 방지:
  *   externalId = hash(link). 동일 기사는 skip.
@@ -24,6 +23,7 @@ import { prisma } from '@/lib/prisma';
 import { collectTrendingSupportNews, stripHtml } from '@/lib/collectors/naver-news';
 import { collectGovNews } from '@/lib/collectors/gov-rss';
 import { nanoid } from 'nanoid';
+import { cronUnauthorized, isCronAuthorized } from '@/lib/server-auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -103,13 +103,7 @@ function escapeHtml(s: string): string {
 }
 
 export async function GET(req: Request) {
-  // --- auth (Vercel Cron 또는 수동 CRON_SECRET) ---
-  const secret = process.env.CRON_SECRET;
-  const auth = req.headers.get('authorization');
-  const vercelCron = req.headers.get('x-vercel-cron');
-  if (!vercelCron && secret && auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
+  if (!isCronAuthorized(req)) return cronUnauthorized();
 
   const startedAt = Date.now();
 

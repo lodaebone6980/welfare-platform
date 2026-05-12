@@ -1,6 +1,6 @@
-const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  'https://welfare-platform-five.vercel.app';
+import { SITE_URL } from '@/lib/env';
+
+const BASE_URL = SITE_URL;
 
 export const revalidate = 3600;
 export const dynamic = 'force-dynamic';
@@ -11,11 +11,13 @@ const STATIC_ROUTES: Array<{
   changefreq: string;
 }> = [
   { path: '/', priority: 1.0, changefreq: 'daily' },
-  { path: '/welfare/search', priority: 0.9, changefreq: 'daily' },
   { path: '/welfare/categories', priority: 0.8, changefreq: 'weekly' },
-  { path: '/recommend', priority: 0.7, changefreq: 'weekly' },
-  { path: '/mypage', priority: 0.3, changefreq: 'monthly' },
-  { path: '/more', priority: 0.4, changefreq: 'monthly' },
+  { path: '/about', priority: 0.5, changefreq: 'monthly' },
+  { path: '/contact', priority: 0.4, changefreq: 'monthly' },
+  { path: '/editorial-policy', priority: 0.4, changefreq: 'monthly' },
+  { path: '/terms', priority: 0.3, changefreq: 'yearly' },
+  { path: '/privacy', priority: 0.3, changefreq: 'yearly' },
+  { path: '/marketing', priority: 0.2, changefreq: 'yearly' },
 ];
 
 export async function GET() {

@@ -13,21 +13,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendToTokens } from '@/lib/push/fcm';
+import { cronUnauthorized, isCronAuthorized } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-function authorized(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // 개발환경: 보호 미설정이면 허용
-  const h = req.headers.get('authorization') || '';
-  return h === `Bearer ${secret}`;
-}
-
 export async function GET(req: NextRequest) {
-  if (!authorized(req)) {
-    return NextResponse.json({ ok: false, error: 'UNAUTHORIZED' }, { status: 401 });
-  }
+  if (!isCronAuthorized(req)) return cronUnauthorized();
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -60,7 +52,7 @@ export async function GET(req: NextRequest) {
     });
     const userIds = prefs.map((p: { userId: string }) => p.userId);
     if (userIds.length > 0) {
-      const t = await prisma.pushToken.findMany({
+      const t = await prisma.fcmToken.findMany({
         where: { userId: { in: userIds } },
         select: { token: true },
       });
@@ -68,7 +60,7 @@ export async function GET(req: NextRequest) {
     }
   } catch {
     // notificationPref 모델이 아직 마이그레이션 전이면 전체 토큰으로 fallback
-    const t = await prisma.pushToken.findMany({ select: { token: true } });
+    const t = await prisma.fcmToken.findMany({ select: { token: true } });
     tokens = t.map((r: { token: string }) => r.token);
   }
 
@@ -102,7 +94,7 @@ export async function GET(req: NextRequest) {
 
   // 4) 무효 토큰 정리
   if (res.invalidTokens.length > 0) {
-    await prisma.pushToken
+    await prisma.fcmToken
       .deleteMany({ where: { token: { in: res.invalidTokens } } })
       .catch(() => {});
   }
