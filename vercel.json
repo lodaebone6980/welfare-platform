@@ -3,46 +3,11 @@
   "regions": ["icn1"],
   "crons": [
     {
-      "path": "/api/cron/collect",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/collect-news",
-      "schedule": "30 9 * * *"
-    },
-    {
-      "path": "/api/cron/notifications",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/daily-index",
-      "schedule": "0 19 * * *"
-    },
-    {
-      "path": "/api/cron/external-popularity",
-      "schedule": "30 18 * * *"
-    },
-    {
       "path": "/api/cron/analytics-retention",
       "schedule": "15 20 * * 0"
     }
   ],
   "functions": {
-    "app/api/cron/collect/route.ts": {
-      "maxDuration": 60
-    },
-    "app/api/cron/collect-news/route.ts": {
-      "maxDuration": 60
-    },
-    "app/api/cron/notifications/route.ts": {
-      "maxDuration": 60
-    },
-    "app/api/cron/daily-index/route.ts": {
-      "maxDuration": 60
-    },
-    "app/api/cron/external-popularity/route.ts": {
-      "maxDuration": 300
-    },
     "app/api/cron/analytics-retention/route.ts": {
       "maxDuration": 60
     }

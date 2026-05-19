@@ -1,12 +1,8 @@
 name: Daily Full Automation
 
 on:
-  schedule:
-    - cron: '0 2 * * *'   # 오전 11시 KST — 크롤러
-    - cron: '0 0 * * *'   # 오전 9시 KST  — Threads 발행
-    - cron: '0 10 * * *'  # 오후 7시 KST  — Threads 발행
-    - cron: '0 17 * * *'  # 오전 2시 KST  — 광고 에이전트
-    - cron: '0 15 * * *'  # 자정 KST       — 성과 수집
+  # Cost guard: scheduled automation is paused while the site is in AdSense/indexing stabilization.
+  # Run this workflow manually only after checking API keys, scripts, and budget impact.
   workflow_dispatch:
 
 jobs:

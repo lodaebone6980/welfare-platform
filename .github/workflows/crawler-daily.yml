@@ -1,9 +1,7 @@
 name: Daily Crawler v2
 
 on:
-  schedule:
-    # 18:00 UTC = 03:00 KST (매일 새벽 3시)
-    - cron: "0 18 * * *"
+  # Cost guard: daily crawling is paused. Use manual dispatch when new policy intake is needed.
   workflow_dispatch:
     inputs:
       source:
